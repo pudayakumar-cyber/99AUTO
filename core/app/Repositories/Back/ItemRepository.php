@@ -6,11 +6,25 @@ use App\Helpers\ImageHelper;
 use App\Models\Item;
 use App\Models\Gallery;
 use App\Models\Currency;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ItemRepository
 {
+
+    public function highlight($item, $request)
+    {
+        $allowedTypes = ['undefine', 'new', 'feature', 'top', 'best', 'flash_deal'];
+        $isType = in_array($request->is_type, $allowedTypes, true) ? $request->is_type : 'undefine';
+
+        $item->update([
+            'is_type' => $isType,
+            'date' => $isType === 'flash_deal' ? $request->date : null,
+        ]);
+
+        $this->clearHomepageCache();
+    }
 
 public function galleryDelete($gallery)
     {
@@ -109,6 +123,8 @@ public function galleryDelete($gallery)
             $this->galleriesUpdate($request,$item_id);
         }
 
+        $this->clearHomepageCache();
+
         return $item_id;
     }
 
@@ -172,6 +188,8 @@ public function galleryDelete($gallery)
         if($request->hasFile('galleries')){
             $this->galleriesUpdate($request,$item->id);
         }
+
+        $this->clearHomepageCache();
     }
 
 
@@ -202,6 +220,8 @@ public function galleryDelete($gallery)
         }
 
         $item->delete();
+
+        $this->clearHomepageCache();
     }
 
 
@@ -237,6 +257,15 @@ public function galleryDelete($gallery)
         }
 
         return $storeData;
+    }
+
+    private function clearHomepageCache()
+    {
+        Cache::forget('homepage_data');
+
+        foreach (['theme1', 'theme2', 'theme3', 'theme4', 'default'] as $theme) {
+            Cache::forget('homepage_full_payload_' . $theme);
+        }
     }
 
 }
