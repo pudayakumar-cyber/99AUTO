@@ -113,25 +113,17 @@
     }
 </style>
 @php
-    $chunkSize = min(8, max(1, $items->count()));
+    $chunkSize = min(4, max(1, $items->count()));
     $itemPartial = $checkType != 'list'
         ? 'front.catalog.partials.grid-item'
         : 'front.catalog.partials.list-item';
-    $renderedCards = collect();
-    if ($items->count() > 0) {
-        $renderedCards = $items->map(function ($item) use ($itemPartial, $resolveProductImageUrl, $extractItemFitmentRows) {
-            return view($itemPartial, compact('item', 'resolveProductImageUrl', 'extractItemFitmentRows'))->render();
-        })->values();
-    }
-    $initialCards = $renderedCards->take($chunkSize);
-    $remainingChunks = $renderedCards->slice($chunkSize)->chunk($chunkSize)->map(function ($chunk) {
-        return $chunk->values()->all();
-    })->values();
+    $initialItems = $items->getCollection()->take($chunkSize);
+    $remainingItemsCount = max(0, $items->count() - $initialItems->count());
 @endphp
-<div class="row g-3 catalog-progressive" id="main_div" data-chunk-size="{{ $chunkSize }}">
+<div class="row g-3 catalog-progressive" id="main_div" data-chunk-size="{{ $chunkSize }}" data-total-items="{{ $items->count() }}">
     @if($items->count() > 0)
-        @foreach ($initialCards as $cardHtml)
-            {!! $cardHtml !!}
+        @foreach ($initialItems as $item)
+            @include($itemPartial, ['item' => $item, 'resolveProductImageUrl' => $resolveProductImageUrl, 'extractItemFitmentRows' => $extractItemFitmentRows])
         @endforeach
     @else
         <div class="col-lg-12">
@@ -144,7 +136,7 @@
     @endif
 </div>
 
-@if ($remainingChunks->count() > 0)
+@if ($remainingItemsCount > 0)
     <div id="catalog_chunk_loader" class="row g-3 d-none mt-0" aria-hidden="true">
         @for ($i = 0; $i < $chunkSize; $i++)
             <div class="{{ $checkType != 'list' ? 'col-xxl-3 col-md-4 col-6' : 'col-lg-12' }}">
@@ -159,7 +151,6 @@
         @endfor
     </div>
     <div id="catalog_chunk_sentinel" class="catalog-progressive-sentinel"></div>
-    <script type="application/json" id="catalog_chunk_payload">{!! json_encode($remainingChunks->all()) !!}</script>
 @endif
 
 
