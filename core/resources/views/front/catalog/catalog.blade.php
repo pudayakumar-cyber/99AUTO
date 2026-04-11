@@ -115,7 +115,7 @@
                         ])->filter(fn ($v) => trim((string) $v) !== '')->implode(' - '), 38) }}
                     </a></h3>
                     <div class="rating-stars">
-                        {!! Helper::renderStarRating($item->reviews->avg('rating'))!!}
+                        {!! Helper::renderStarRating($item->reviews_avg_rating)!!}
                     </div>
                     <h4 class="product-price">
                         @if ($item->previous_price !=0)
@@ -176,7 +176,7 @@
                                         ])->filter(fn ($v) => trim((string) $v) !== '')->implode(' - '), 52) }}
                                     </a></h3>
                                     <div class="rating-stars">
-                                        {!! Helper::renderStarRating($item->reviews->avg('rating')) !!}
+                                        {!! Helper::renderStarRating($item->reviews_avg_rating) !!}
                                     </div>
                                     <h4 class="product-price">
                                         @if ($item->previous_price !=0)

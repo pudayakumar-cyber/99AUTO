@@ -57,7 +57,7 @@
     <!-- Modernizr-->
     <script src="{{ asset('assets/front/js/modernizr.min.js') }}"></script>
 
-    @if (DB::table('languages')->where('is_default', 1)->first()->rtl == 1)
+    @if (optional($default_language)->rtl == 1)
         <link rel="stylesheet" href="{{ asset('assets/front/css/rtl.css') }}">
     @endif
     <style>
@@ -637,7 +637,7 @@ body_theme4 @endif
                                 <a class="main-link" href="#">{{ __('Currency') }}<i
                                         class="icon-chevron-down"></i></a>
                                 <div class="t-h-dropdown-menu">
-                                    @foreach (DB::table('currencies')->get() as $currency)
+                                    @foreach ($site_currencies as $currency)
                                         <a class="{{ Session::get('currency') == $currency->id ? 'active' : ($currency->is_default == 1 && !Session::has('currency') ? 'active' : '') }}"
                                             href="{{ route('front.currency.setup', $currency->id) }}"><i
                                                 class="icon-chevron-right pr-2"></i>{{ $currency->name }}</a>
@@ -687,7 +687,7 @@ body_theme4 @endif
                                     <div class="search-box d-flex">
                                         <!-- <select name="category" id="category_select" class="categoris">
                                             <option value="">{{ __('All') }}</option>
-                                            @foreach (DB::table('categories')->whereStatus(1)->get() as $category)
+                                            @foreach ($header_categories as $category)
                                                 <option value="{{ $category->slug }}">{{ $category->name }}</option>
                                             @endforeach
                                         </select> -->
@@ -857,7 +857,7 @@ body_theme4 @endif
                                                                 href="{{ route('front.faq') }}"><i
                                                                     class="icon-chevron-right pr-2"></i>{{ __('Faq') }}</a>
                                                         @endif
-                                                        @foreach (DB::table('pages')->wherePos(0)->orwhere('pos', 2)->get() as $page)
+                                                        @foreach ($header_pages as $page)
                                                             <a class="{{ request()->url() == route('front.page', $page->slug) ? 'active' : '' }} "
                                                                 href="{{ route('front.page', $page->slug) }}"><i
                                                                     class="icon-chevron-right pr-2"></i>{{ $page->title }}</a>
@@ -902,13 +902,6 @@ body_theme4 @endif
                         <div class="nav-inner">
                             @include('master.inc.site-menu')
                         </div>
-                        @php
-                            $free_shipping = DB::table('shipping_services')
-                                ->whereStatus(1)
-                                ->whereIsCondition(1)
-                                ->first();
-                        @endphp
-
                     </div>
                 </div>
             </div>
@@ -1029,7 +1022,7 @@ body_theme4 @endif
                                     <a class="" href="{{ route('front.faq') }}">{{ __('Faq') }}</a>
                                 </li>
                             @endif
-                            @foreach (DB::table('pages')->wherePos(2)->orwhere('pos', 1)->get() as $page)
+                            @foreach ($footer_pages as $page)
                                 <li><a href="{{ route('front.page', $page->slug) }}">{{ $page->title }}</a></li>
                             @endforeach
 

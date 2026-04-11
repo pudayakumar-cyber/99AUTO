@@ -76,6 +76,7 @@ class CatalogController extends Controller
         $maxPrice = $request->has('maxPrice') ?  ( !empty($request->maxPrice) ? PriceHelper::convertPrice($request->maxPrice) : null ) : null;
         $tag = $request->has('tag') ?  ( !empty($request->tag) ? $request->tag : null ) : null;
         $itemsQuery = Item::with(['category', 'brand'])
+        ->withAvg('reviews', 'rating')
         
         ->when($category, function ($query, $category) {
             return $query->where('category_id', $category->id);
@@ -255,7 +256,8 @@ class CatalogController extends Controller
         $model  = $request->model;
 
         // 1️⃣ BROAD QUERY (cheap, safe)
-        $items = Item::with(['brand', 'category', 'subcategory', 'childcategory', 'reviews'])
+        $items = Item::with(['brand', 'category', 'subcategory', 'childcategory'])
+            ->withAvg('reviews', 'rating')
             ->whereStatus(1)
 
             ->when($search, function ($q) use ($search) {
