@@ -871,6 +871,25 @@ $(function ($) {
         })
 
 
+        $(document).off('click', '#item_pagination .page-item .page-link');
+        $(document).on('click', '#item_pagination .page-item .page-link', function (e) {
+            e.preventDefault();
+            let pagination = null;
+            let href = $(this).attr('href');
+            if (href) {
+                try {
+                    pagination = new URL(href, window.location.origin).searchParams.get('page');
+                } catch (err) {
+                    pagination = null;
+                }
+            }
+            if (!pagination) {
+                return;
+            }
+            $("#search_form #page").val(pagination);
+            $("#search_button").click();
+        })
+
         $(document).on('click', '.option', function () {
 
             let option = [];

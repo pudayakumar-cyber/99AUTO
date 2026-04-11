@@ -75,7 +75,7 @@ class CatalogController extends Controller
         $minPrice = $request->has('minPrice') ?  ( !empty($request->minPrice) ? PriceHelper::convertPrice($request->minPrice) : null ) : null;
         $maxPrice = $request->has('maxPrice') ?  ( !empty($request->maxPrice) ? PriceHelper::convertPrice($request->maxPrice) : null ) : null;
         $tag = $request->has('tag') ?  ( !empty($request->tag) ? $request->tag : null ) : null;
-        $items = Item::with(['category', 'brand'])
+        $itemsQuery = Item::with(['category', 'brand'])
         
         ->when($category, function ($query, $category) {
             return $query->where('category_id', $category->id);
@@ -158,24 +158,27 @@ class CatalogController extends Controller
         })
 
         ->where('status',1)
+        ->orderby('id','desc');
 
-        // ->orderby('id','desc')->paginate($setting->view_product);
-        ->orderby('id','desc')
-        ->get();
-        $items = $this->filterItemsByFitment($items, $year, $make, $model);
-        $items = new \Illuminate\Pagination\LengthAwarePaginator(
-            $items->forPage(
+        if ($year || $make || $model) {
+            $items = $itemsQuery->get();
+            $items = $this->filterItemsByFitment($items, $year, $make, $model);
+            $items = new \Illuminate\Pagination\LengthAwarePaginator(
+                $items->forPage(
+                    \Illuminate\Pagination\Paginator::resolveCurrentPage(),
+                    $setting->view_product
+                ),
+                $items->count(),
+                $setting->view_product,
                 \Illuminate\Pagination\Paginator::resolveCurrentPage(),
-                $setting->view_product
-            ),
-            $items->count(),
-            $setting->view_product,
-            null,
-            [
-                'path'  => request()->url(),
-                'query' => request()->query(),
-            ]
-        );
+                [
+                    'path'  => request()->url(),
+                    'query' => request()->query(),
+                ]
+            );
+        } else {
+            $items = $itemsQuery->paginate($setting->view_product)->appends($request->query());
+        }
 
         $attrubutes_check =[];
        
