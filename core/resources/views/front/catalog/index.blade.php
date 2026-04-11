@@ -165,6 +165,10 @@
 
       <form id="search_form" class="d-none" action="{{route('front.catalog')}}" method="GET">
 
+        <input type="text" name="search" id="search" value="{{request()->input('search') ? request()->input('search') : ''}}">
+        <input type="text" name="year" id="year" value="{{request()->input('year') ? request()->input('year') : ''}}">
+        <input type="text" name="make" id="make" value="{{request()->input('make') ? request()->input('make') : ''}}">
+        <input type="text" name="model" id="model" value="{{request()->input('model') ? request()->input('model') : ''}}">
         <input type="text" name="maxPrice" id="maxPrice" value="{{request()->input('maxPrice') ? request()->input('maxPrice') : ''}}">
         <input type="text" name="minPrice" id="minPrice" value="{{request()->input('minPrice') ? request()->input('minPrice') : ''}}">
         <input type="text" name="brand" id="brand" value="{{isset($brand) ? $brand->slug : ''}}">
