@@ -1,0 +1,30 @@
+# Ignore sensitive database files
+db.sql
+installer/database.sql
+
+# Ignore large files
+core.zip
+core/core/public/assets/temp_files/1774194455.csv
+core/core/public/assets/temp_files/1774201231.csv
+
+core/public/assets/temp_files/1774194455.csv
+core/public/assets/temp_files/1774201231.csv
+
+# Ignore entire temporary files directory
+/core/public/assets/temp_files/
+# Ignore entire temporary files directory
+core/core/public/assets/temp_files/
+
+# Ignore environment files
+.env
+
+# Ignore dependencies
+node_modules/
+vendor/
+
+# Laravel cache and storage
+storage/
+bootstrap/cache/
+
+# Logs
+*.log
