@@ -29,6 +29,7 @@ class HomeCustomizeController extends Controller{
         $childcategory = $datas['child'.$index];
         if($type == 'feature_category'){
             $items = Item::with('category')
+            ->withAvg('reviews', 'rating')
             ->when($category, function ($query, $category) {
                 return $query->where('category_id', $category);
             })
@@ -41,6 +42,7 @@ class HomeCustomizeController extends Controller{
             ->whereStatus(1)->take(10)->orderby('id','desc')->get();
         }else{
             $items = Item::with('category')
+            ->withAvg('reviews', 'rating')
             ->when($category, function ($query, $category) {
                 return $query->where('category_id', $category);
             })
@@ -65,7 +67,13 @@ class HomeCustomizeController extends Controller{
 
     public function productGet($type)
     {
-        $items = Item::where('is_type',$type)->whereStatus(1)->orderby('id','desc')->take(10)->get();
+        $items = Item::with('category')
+            ->withAvg('reviews', 'rating')
+            ->where('is_type',$type)
+            ->whereStatus(1)
+            ->orderby('id','desc')
+            ->take(10)
+            ->get();
         return view('includes.type_product',compact('items'));
     }
 }

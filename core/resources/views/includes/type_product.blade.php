@@ -24,7 +24,7 @@
                         {{ Str::limit($item->name, 35) }}
                     </a></h3>
                     <div class="rating-stars">
-                        {!! Helper::renderStarRating($item->reviews->avg('rating')) !!}
+                        {!! Helper::renderStarRating($item->reviews_avg_rating) !!}
                     </div>
                     <h4 class="product-price">
                         @if ($item->previous_price !=0)

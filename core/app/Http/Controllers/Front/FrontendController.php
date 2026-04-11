@@ -31,6 +31,7 @@ use App\Models\Service;
 use App\Models\Slider;
 use App\Models\TrackOrder;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
@@ -100,9 +101,12 @@ class FrontendController extends Controller
 
     public function index()
     {
-
-        $homeData = $this->repository->homeData();
         $setting = Setting::first();
+        $cacheKey = 'homepage_full_payload_' . ($setting->theme ?? 'default');
+
+        return view('front.index', Cache::remember($cacheKey, 600, function () use ($setting) {
+            return $this->buildHomepagePayload($setting);
+        }));
 
 
         $home_customize = HomeCutomize::first();
@@ -371,6 +375,170 @@ class FrontendController extends Controller
         return redirect()->back();
     }
 
+
+    private function buildHomepagePayload($setting): array
+    {
+        $home_customize = HomeCutomize::first();
+
+        $feature_category_ids = json_decode($home_customize->feature_category, true) ?: [];
+        $feature_category_title = $feature_category_ids['feature_title'] ?? null;
+        $featureCategoryIds = [];
+        for ($i = 1; $i <= 4; $i++) {
+            $categoryId = $feature_category_ids['category_id' . $i] ?? null;
+            if ($categoryId && !in_array($categoryId, $featureCategoryIds, true)) {
+                $featureCategoryIds[] = $categoryId;
+            }
+        }
+
+        $featureCategoryMap = Category::whereIn('id', $featureCategoryIds)->get()->keyBy('id');
+        $feature_categories = collect($featureCategoryIds)
+            ->map(fn ($id) => $featureCategoryMap->get($id))
+            ->filter()
+            ->values();
+
+        $feature_category_items = collect();
+        if ($feature_categories->isNotEmpty()) {
+            $selectedFeatureCategoryId = $feature_category_ids['category_id1'] ?? $feature_categories->first()->id;
+            $feature_category_items = $this->homepageCategoryItems(
+                $selectedFeatureCategoryId,
+                $feature_category_ids['subcategory_id1'] ?? null,
+                $feature_category_ids['childcategory_id1'] ?? null
+            );
+        }
+
+        $popular_category_ids = json_decode($home_customize->popular_category, true) ?: [];
+        $popular_category_title = $popular_category_ids['popular_title'] ?? null;
+        $popularCategoryIds = [];
+        for ($i = 1; $i <= 4; $i++) {
+            $categoryId = $popular_category_ids['category_id' . $i] ?? null;
+            if ($categoryId && !in_array($categoryId, $popularCategoryIds, true)) {
+                $popularCategoryIds[] = $categoryId;
+            }
+        }
+
+        $popularCategoryMap = Category::whereIn('id', $popularCategoryIds)->get()->keyBy('id');
+        $popular_categories = collect($popularCategoryIds)
+            ->map(fn ($id) => $popularCategoryMap->get($id))
+            ->filter()
+            ->values();
+
+        $popular_category_items = collect();
+        if ($popular_categories->isNotEmpty()) {
+            $selectedPopularCategoryId = $popular_category_ids['category_id1'] ?? $popular_categories->first()->id;
+            $popular_category_items = $this->homepageCategoryItems(
+                $selectedPopularCategoryId,
+                $popular_category_ids['subcategory_id1'] ?? null,
+                $popular_category_ids['childcategory_id1'] ?? null
+            );
+        }
+
+        $pupular_cateogry_home4 = collect();
+        if (($setting->theme ?? null) === 'theme4') {
+            $home4CategoryIds = array_values(array_filter((array) json_decode($home_customize->home_4_popular_category, true)));
+            $home4CategoryMap = Category::whereIn('id', $home4CategoryIds)->get()->keyBy('id');
+
+            $pupular_cateogry_home4 = collect($home4CategoryIds)
+                ->map(function ($id) use ($home4CategoryMap) {
+                    $category = $home4CategoryMap->get($id);
+                    if (!$category) {
+                        return null;
+                    }
+
+                    return $category->setRelation('items', $this->homepageCategoryItems($id));
+                })
+                ->filter()
+                ->values();
+        }
+
+        $two_column_category_ids = json_decode($home_customize->two_column_category, true) ?: [];
+        $twoColumnCategoryIds = [];
+        for ($i = 1; $i <= 3; $i++) {
+            $categoryId = $two_column_category_ids['category_id' . $i] ?? null;
+            if ($categoryId && !in_array($categoryId, $twoColumnCategoryIds, true)) {
+                $twoColumnCategoryIds[] = $categoryId;
+            }
+        }
+
+        $twoColumnCategoryMap = Category::whereStatus(1)
+            ->whereIn('id', $twoColumnCategoryIds)
+            ->get()
+            ->keyBy('id');
+
+        $two_column_categoriess = [];
+        foreach ($twoColumnCategoryIds as $index => $categoryId) {
+            $category = $twoColumnCategoryMap->get($categoryId);
+            if (!$category) {
+                continue;
+            }
+
+            $position = $index + 1;
+            $two_column_categoriess[] = [
+                'name' => $category,
+                'items' => $this->homepageCategoryItems(
+                    $two_column_category_ids['category_id' . $position] ?? null,
+                    $two_column_category_ids['subcategory_id' . $position] ?? null,
+                    $two_column_category_ids['childcategory_id' . $position] ?? null
+                ),
+            ];
+        }
+
+        $productBaseQuery = $this->homepageProductQuery();
+        $theme = $setting->theme ?? 'theme1';
+
+        return [
+            'feature_category_items' => $feature_category_items,
+            'feature_categories' => $feature_categories,
+            'feature_category_title' => $feature_category_title,
+            'popular_category_items' => $popular_category_items,
+            'popular_categories' => $popular_categories,
+            'popular_category_title' => $popular_category_title,
+            'sliders' => Slider::where('home_page', $theme)->get(),
+            'services' => Service::orderBy('id', 'desc')->get(),
+            'campaign_items' => CampaignItem::with([
+                'item' => function ($query) {
+                    $query->with('category')->withAvg('reviews', 'rating');
+                },
+            ])->whereStatus(1)->whereIsFeature(1)->orderBy('id', 'desc')->get(),
+            'banner_first' => json_decode($home_customize->banner_first, true),
+            'brands' => Brand::whereStatus(1)->whereIsPopular(1)->orderBy('id')->get(),
+            'two_column_categoriess' => $two_column_categoriess,
+            'hero_banner' => $home_customize->hero_banner != '[]' ? json_decode($home_customize->hero_banner, true) : null,
+            'posts' => Post::with('category')->orderBy('id', 'desc')->take(8)->get(),
+            'banner_secend' => json_decode($home_customize->banner_secend, true),
+            'banner_third' => json_decode($home_customize->banner_third, true),
+            'home_page4_banner' => json_decode($home_customize->home_page4, true),
+            'pupular_cateogry_home4' => $pupular_cateogry_home4,
+            'featured_products' => (clone $productBaseQuery)->where('is_type', 'feature')->latest('id')->take(10)->get(),
+            'flash_deal_products' => (clone $productBaseQuery)->where('is_type', 'flash_deal')->whereNotNull('date')->latest('id')->take(10)->get(),
+            'recent_products' => (clone $productBaseQuery)->latest('id')->take(10)->get(),
+            'best_seller_products' => (clone $productBaseQuery)->where('is_type', 'best')->latest('id')->take(10)->get(),
+            'top_rated_products' => (clone $productBaseQuery)->where('is_type', 'top')->latest('id')->take(10)->get(),
+        ];
+    }
+
+    private function homepageProductQuery()
+    {
+        return Item::with('category')
+            ->withAvg('reviews', 'rating')
+            ->whereStatus(1);
+    }
+
+    private function homepageCategoryItems($categoryId = null, $subcategoryId = null, $childcategoryId = null, int $limit = 10)
+    {
+        return $this->homepageProductQuery()
+            ->when($categoryId, function ($query, $categoryId) {
+                return $query->where('category_id', $categoryId);
+            })
+            ->when($subcategoryId, function ($query, $subcategoryId) {
+                return $query->where('subcategory_id', $subcategoryId);
+            })
+            ->when($childcategoryId, function ($query, $childcategoryId) {
+                return $query->where('childcategory_id', $childcategoryId);
+            })
+            ->latest('id')
+            ->take($limit)
+            ->get();
+    }
 
     public function product($slug)
     {
