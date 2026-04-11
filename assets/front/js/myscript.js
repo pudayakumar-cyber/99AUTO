@@ -710,6 +710,140 @@ $(function ($) {
 
 
         // catalog js start
+        function applyCatalogFitmentStatus(scope) {
+            var container = scope || document;
+            var storageKey = 'selected_vehicle';
+
+            function normalize(v) {
+                return String(v || '').replace(/\s+/g, ' ').trim().toLowerCase();
+            }
+
+            function hasVehicle(v) {
+                return v && v.year && v.make && v.model;
+            }
+
+            function fitsVehicle(rows, vehicle) {
+                var y = normalize(vehicle.year);
+                var mk = normalize(vehicle.make);
+                var md = normalize(vehicle.model);
+                return (rows || []).some(function (row) {
+                    var years = Array.isArray(row.years) ? row.years : [];
+                    var yearMatch = years.some(function (yy) {
+                        return normalize(yy) === y;
+                    });
+                    return yearMatch && normalize(row.make) === mk && normalize(row.model) === md;
+                });
+            }
+
+            var selectedVehicle = null;
+            try {
+                selectedVehicle = JSON.parse(localStorage.getItem(storageKey) || 'null');
+            } catch (e) {
+                selectedVehicle = null;
+            }
+
+            if (!hasVehicle(selectedVehicle)) {
+                return;
+            }
+
+            var vehicleLabel = [selectedVehicle.year, selectedVehicle.make, selectedVehicle.model].join(' ');
+            var fitsText = 'Fits';
+            var notFitsText = 'Does not fit';
+
+            $(container).find('.product-card[data-fitment-rows]').each(function () {
+                var card = this;
+                var statusEl = card.querySelector('.js-fitment-status');
+                if (!statusEl) {
+                    return;
+                }
+                var rows = [];
+                try {
+                    rows = JSON.parse(card.getAttribute('data-fitment-rows') || '[]');
+                } catch (e) {
+                    rows = [];
+                }
+                var matched = fitsVehicle(rows, selectedVehicle);
+                statusEl.classList.remove('d-none', 'text-success', 'text-danger');
+                statusEl.classList.add(matched ? 'text-success' : 'text-danger');
+                statusEl.innerHTML = '<i class="fas ' + (matched ? 'fa-check-circle' : 'fa-times-circle') + '"></i> '
+                    + (matched ? fitsText : notFitsText) + ' ' + vehicleLabel;
+            });
+        }
+
+        function initCatalogProgressiveLoading() {
+            var $main = $('#main_div.catalog-progressive');
+            var payloadEl = document.getElementById('catalog_chunk_payload');
+            var sentinel = document.getElementById('catalog_chunk_sentinel');
+            var loader = document.getElementById('catalog_chunk_loader');
+
+            if (!$main.length) {
+                return;
+            }
+
+            applyCatalogFitmentStatus($main[0]);
+
+            if (!payloadEl || !sentinel || !loader) {
+                return;
+            }
+
+            var remainingChunks = [];
+            try {
+                remainingChunks = JSON.parse(payloadEl.textContent || '[]');
+            } catch (e) {
+                remainingChunks = [];
+            }
+
+            if (!remainingChunks.length) {
+                return;
+            }
+
+            if (window.catalogChunkObserver) {
+                window.catalogChunkObserver.disconnect();
+            }
+
+            var loading = false;
+            function appendNextChunk() {
+                if (loading || !remainingChunks.length) {
+                    return;
+                }
+                loading = true;
+                $(loader).removeClass('d-none');
+
+                setTimeout(function () {
+                    var nextChunk = remainingChunks.shift() || [];
+                    if (nextChunk.length) {
+                        $main.append(nextChunk.join(''));
+                        lazy();
+                        applyCatalogFitmentStatus($main[0]);
+                    }
+                    $(loader).addClass('d-none');
+                    loading = false;
+
+                    if (!remainingChunks.length) {
+                        if (window.catalogChunkObserver) {
+                            window.catalogChunkObserver.disconnect();
+                        }
+                        $(sentinel).remove();
+                        $(payloadEl).remove();
+                    }
+                }, 180);
+            }
+
+            window.catalogChunkObserver = new IntersectionObserver(function (entries) {
+                entries.forEach(function (entry) {
+                    if (entry.isIntersecting) {
+                        appendNextChunk();
+                    }
+                });
+            }, {
+                rootMargin: '250px 0px'
+            });
+
+            window.catalogChunkObserver.observe(sentinel);
+        }
+
+        window.initCatalogProgressiveLoading = initCatalogProgressiveLoading;
+
         $(document).on("click", ".brand-select", function () {
             $('.brand-select').prop('checked', false);
             let brand = $(this).val();
@@ -925,10 +1059,13 @@ $(function ($) {
                 success: function (data) {
                     window.scrollTo(0, 0);
                     $('#list_view_ajax').html(data);
+                    initCatalogProgressiveLoading();
                 }
             });
 
         })
+
+        initCatalogProgressiveLoading();
 
         // catalog script end
 
