@@ -18,6 +18,7 @@ use App\Models\Brand;
 use App\Models\ChieldCategory;
 use App\Models\Setting;
 use App\Models\Subcategory;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 
@@ -36,28 +37,17 @@ class CatalogController extends Controller
         $model = $request->model;
 
         // attribute search
-        $attr_item_ids = [];
-        if($request->attribute){
-            $attrubutes_get = Attribute::where('name',$request->attribute)->get();
-            foreach($attrubutes_get as $attr_item_id){
-                $attr_item_ids[] = $attr_item_id->item_id;
-            }
-        }
+        $attr_item_ids = $request->attribute
+            ? Attribute::where('name', $request->attribute)->pluck('item_id')->all()
+            : [];
 
-        $option_attr_ids = [];
+        $option_attr_ids = $request->option
+            ? AttributeOption::whereIn('name', explode(',', $request->option))->pluck('attribute_id')->all()
+            : [];
 
-        if($request->option){
-            $option_get = AttributeOption::whereIn('name',explode(',',$request->option))->get();
-            foreach($option_get as $option_attr_id){
-                $option_attr_ids[] = $option_attr_id->attribute_id;
-            }
-        }
-
-
-        $option_wise_item_ids = [];
-        foreach(Attribute::whereIn('id',$option_attr_ids)->get() as $attr_item_id){
-            $option_wise_item_ids[] = $attr_item_id->item_id;
-        }
+        $option_wise_item_ids = $option_attr_ids
+            ? Attribute::whereIn('id', $option_attr_ids)->pluck('item_id')->all()
+            : [];
         $setting = Setting::first();
         $perPage = 16;
 
@@ -205,22 +195,24 @@ class CatalogController extends Controller
             ]);
         }
 
-        $attrubutes_check =[];
-       
-        $options = AttributeOption::groupby('name')->select('attribute_id','name','id','keyword')->get();
-        
-        foreach($options as $option){
-            if(!in_array(Attribute::withCount('options')->findOrFail($option->attribute_id)->keyword,$attrubutes_check)){
-                $attrubutes_check[] = Attribute::withCount('options')->findOrFail($option->attribute_id)->keyword;
-            }
-        }
+        $options = Cache::remember('catalog_sidebar_options', 1800, function () {
+            return AttributeOption::with('attribute:id,keyword')
+                ->select('attribute_id', 'name', 'id', 'keyword')
+                ->groupBy('attribute_id', 'name', 'id', 'keyword')
+                ->get();
+        });
 
-        
-        $attrubutes = [];
+        $attrubutes = Cache::remember('catalog_sidebar_attributes', 1800, function () {
+            $attributeIds = AttributeOption::query()
+                ->join('attributes', 'attributes.id', '=', 'attribute_options.attribute_id')
+                ->selectRaw('MIN(attributes.id) as id')
+                ->groupBy('attributes.keyword')
+                ->pluck('id');
 
-        foreach($attrubutes_check as $attr_new_get){
-            $attrubutes[] = Attribute::whereKeyword($attr_new_get)->first();
-        }
+            return Attribute::withCount('options')
+                ->whereIn('id', $attributeIds)
+                ->get();
+        });
       
         $blade = 'front.catalog.index';
 
@@ -233,8 +225,6 @@ class CatalogController extends Controller
             'attrubutes' => $attrubutes,
             'options' => $options,
             'brand' => $brand,
-            'brand' => $brand,
-            'brand' => $brand,
             'items' => $items,
             'name_string_count' => $name_string_count,
             'category' => $category,
@@ -242,10 +232,20 @@ class CatalogController extends Controller
             'childcategory' => $childcategory,
             'checkType'  => $checkType,
             'view_product' => $perPage,
-            'brands' => Brand::withCount('items')->whereStatus(1)->get(),
-            'categories' => Category::whereStatus(1)->orderby('serial','asc')->withCount(['items' => function($query) {
-                $query->where('status',1);
-            }])->get(),
+            'brands' => Cache::remember('catalog_sidebar_brands', 1800, function () {
+                return Brand::withCount('items')->whereStatus(1)->get();
+            }),
+            'categories' => Cache::remember('catalog_sidebar_categories', 1800, function () {
+                return Category::whereStatus(1)
+                    ->orderby('serial','asc')
+                    ->with([
+                        'subcategory.childcategory',
+                    ])
+                    ->withCount(['items' => function($query) {
+                        $query->where('status',1);
+                    }])
+                    ->get();
+            }),
         ]);
 	}
 

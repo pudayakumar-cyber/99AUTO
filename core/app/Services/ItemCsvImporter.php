@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Helpers\ImageHelper;
 use App\Models\ProductUpload;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -612,9 +613,10 @@ class ItemCsvImporter
             ->orderBy('id')
             ->value('photo');
         if (! empty($existingGalleryPhoto)) {
+            $thumbnail = $this->generateThumbnailFromStoredImage($existingGalleryPhoto);
             DB::table('items')->where('id', $itemId)->update([
                 'photo' => $existingGalleryPhoto,
-                'thumbnail' => $existingGalleryPhoto,
+                'thumbnail' => $thumbnail ?: $existingGalleryPhoto,
                 'updated_at' => now(),
             ]);
 
@@ -643,9 +645,10 @@ class ItemCsvImporter
             return;
         }
 
+        $thumbnail = $this->generateThumbnailFromStoredImage($mainPhoto);
         DB::table('items')->where('id', $itemId)->update([
             'photo' => $mainPhoto,
-            'thumbnail' => $mainPhoto,
+            'thumbnail' => $thumbnail ?: $mainPhoto,
             'updated_at' => now(),
         ]);
 
@@ -785,6 +788,31 @@ class ItemCsvImporter
             File::put($servedDir.'/'.$fileName, $body);
 
             return $fileName;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function generateThumbnailFromStoredImage(string $photoName): ?string
+    {
+        try {
+            $sourcePath = public_path('storage/images/'.$photoName);
+            if (! File::exists($sourcePath)) {
+                return null;
+            }
+
+            $thumbnailName = 'TH_'.time().'_'.Str::random(8).'.jpg';
+            $thumbnailBody = ImageHelper::optimizedThumbnailContents($sourcePath);
+
+            Storage::disk('public')->put('images/'.$thumbnailName, $thumbnailBody);
+
+            $servedDir = public_path('storage/images');
+            if (! File::isDirectory($servedDir)) {
+                File::makeDirectory($servedDir, 0755, true);
+            }
+            File::put($servedDir.'/'.$thumbnailName, $thumbnailBody);
+
+            return $thumbnailName;
         } catch (\Throwable) {
             return null;
         }

@@ -7,6 +7,17 @@ use Illuminate\Support\Str;
 
 class ImageHelper
 {
+    public static function optimizedThumbnailContents($file, int $size = 230, int $quality = 78): string
+    {
+        $image = \Image::make($file)
+            ->orientate()
+            ->fit($size, $size, function ($constraint) {
+                $constraint->upsize();
+            });
+
+        return (string) $image->encode('jpg', $quality);
+    }
+
     public static function handleUploadedImage($file, $path, $delete = null)
     {
         if ($file) {
@@ -50,17 +61,13 @@ class ImageHelper
             }
 
             $photoName = 'OM_' . time() . Str::random(8) . '.' . $file->getClientOriginalExtension();
-            $thumbnailName = 'OM_' . time() . Str::random(8) . '.' . $file->getClientOriginalExtension();
+            $thumbnailName = 'OM_' . time() . Str::random(8) . '.jpg';
 
             // Save original image
             Storage::disk('public')->putFileAs($path, $file, $photoName);
 
-            // Create thumbnail
-            $image = \Image::make($file)->resize(230, 230);
-
             $thumbnailPath = $path.'/'.$thumbnailName;
-
-            Storage::disk('public')->put($thumbnailPath, (string) $image->encode());
+            Storage::disk('public')->put($thumbnailPath, self::optimizedThumbnailContents($file));
 
             return [$photoName, $thumbnailName];
         }
@@ -86,14 +93,11 @@ class ImageHelper
     {
 
         $photoName = 'OM_' . time() .  Str::random(8) . '.' . $file->getClientOriginalExtension();
-        $thumbnailName = 'OM_' . time() . Str::random(8) . '.' . $file->getClientOriginalExtension();
-
-
-        $image = \Image::make($file)->resize(230, 230);
+        $thumbnailName = 'OM_' . time() . Str::random(8) . '.jpg';
 
 
         $thumbnailPath = $path . '/' . $thumbnailName;
-        Storage::put($thumbnailPath, (string) $image->encode());
+        Storage::put($thumbnailPath, self::optimizedThumbnailContents($file));
 
 
         $photoPath = $path . '/' . $photoName;

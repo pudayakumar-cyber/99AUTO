@@ -7,6 +7,37 @@
     {{__('Products')}}
 @endsection
 
+@section('styleplugins')
+<style>
+    .catalog-page-loader-wrap {
+        min-height: 18rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.9rem;
+        background: #fff;
+        border-radius: 0.75rem;
+        box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.05);
+    }
+    .catalog-page-loader {
+        width: 2.25rem;
+        height: 2.25rem;
+        border-radius: 50%;
+        border: 3px solid rgba(220, 33, 39, 0.16);
+        border-top-color: #dc2127;
+        animation: catalogPageSpin 0.8s linear infinite;
+    }
+    .catalog-page-loader-text {
+        font-size: 0.95rem;
+        color: #666;
+    }
+    @keyframes catalogPageSpin {
+        to { transform: rotate(360deg); }
+    }
+</style>
+@endsection
+
 @section('content')
     <!-- Page Title-->
 <div class="page-title">
