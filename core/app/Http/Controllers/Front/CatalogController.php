@@ -113,7 +113,25 @@ class CatalogController extends Controller
             return $query->where('brand_id', $brand->id);
         })
         ->when($search, function ($query, $search) {
-            return $query->whereStatus(1)->where('name', 'like', '%' . $search . '%')->orwhere('name', 'like', '%' . $search . '%');
+            return $query->where(function ($searchQuery) use ($search) {
+                $searchQuery
+                    ->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('sku', 'like', '%' . $search . '%')
+                    ->orWhere('prod_number', 'like', '%' . $search . '%')
+                    ->orWhere('tags', 'like', '%' . $search . '%')
+                    ->orWhereHas('brand', function ($brandQuery) use ($search) {
+                        $brandQuery->where('name', 'like', '%' . $search . '%');
+                    })
+                    ->orWhereHas('category', function ($categoryQuery) use ($search) {
+                        $categoryQuery->where('name', 'like', '%' . $search . '%');
+                    })
+                    ->orWhereHas('subcategory', function ($subcategoryQuery) use ($search) {
+                        $subcategoryQuery->where('name', 'like', '%' . $search . '%');
+                    })
+                    ->orWhereHas('childcategory', function ($childcategoryQuery) use ($search) {
+                        $childcategoryQuery->where('name', 'like', '%' . $search . '%');
+                    });
+            });
         })
         ->when($minPrice, function($query, $minPrice) {
           return $query->where('discount_price', '>=', $minPrice);
@@ -234,11 +252,30 @@ class CatalogController extends Controller
         $model  = $request->model;
 
         // 1️⃣ BROAD QUERY (cheap, safe)
-        $items = Item::whereStatus(1)
+        $items = Item::with(['brand', 'category', 'subcategory', 'childcategory', 'reviews'])
+            ->whereStatus(1)
 
-            ->when($search, fn ($q) =>
-                $q->where('name', 'like', "%{$search}%")
-            )
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($searchQuery) use ($search) {
+                    $searchQuery
+                        ->where('name', 'like', "%{$search}%")
+                        ->orWhere('sku', 'like', "%{$search}%")
+                        ->orWhere('prod_number', 'like', "%{$search}%")
+                        ->orWhere('tags', 'like', "%{$search}%")
+                        ->orWhereHas('brand', function ($brandQuery) use ($search) {
+                            $brandQuery->where('name', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('category', function ($categoryQuery) use ($search) {
+                            $categoryQuery->where('name', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('subcategory', function ($subcategoryQuery) use ($search) {
+                            $subcategoryQuery->where('name', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('childcategory', function ($childcategoryQuery) use ($search) {
+                            $childcategoryQuery->where('name', 'like', "%{$search}%");
+                        });
+                });
+            })
 
             ->when($category, fn ($q) =>
                 $q->where('category_id', $category->id)
