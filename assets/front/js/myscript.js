@@ -794,6 +794,7 @@ $(function ($) {
             var renderedCount = $main.children().length;
             var nextChunk = Math.floor(renderedCount / chunkSize) + 1;
             var loading = false;
+            var shouldAutoPreloadAll = window.matchMedia('(max-width: 767.98px)').matches;
 
             function sentinelNeedsMore() {
                 if (!sentinel || renderedCount >= totalItems) {
@@ -845,10 +846,10 @@ $(function ($) {
                         $(loader).addClass('d-none');
                         loading = false;
 
-                        if (sentinelNeedsMore()) {
+                        if (renderedCount < totalItems && (shouldAutoPreloadAll || sentinelNeedsMore())) {
                             setTimeout(function () {
                                 appendNextChunk();
-                            }, 60);
+                            }, shouldAutoPreloadAll ? 120 : 60);
                         }
                     }
                 });
@@ -865,6 +866,10 @@ $(function ($) {
             });
 
             window.catalogChunkObserver.observe(sentinel);
+
+            if (shouldAutoPreloadAll && renderedCount < totalItems) {
+                appendNextChunk();
+            }
         }
 
         window.initCatalogProgressiveLoading = initCatalogProgressiveLoading;
