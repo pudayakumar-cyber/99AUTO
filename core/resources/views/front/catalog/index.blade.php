@@ -32,6 +32,15 @@
         font-size: 0.95rem;
         color: #666;
     }
+    @media (max-width: 767.98px) {
+        .catalog-page-loader-wrap {
+            min-height: 12rem;
+            margin-bottom: 0.75rem;
+        }
+        .catalog-page-loader-text {
+            font-size: 0.88rem;
+        }
+    }
     @keyframes catalogPageSpin {
         to { transform: rotate(360deg); }
     }
