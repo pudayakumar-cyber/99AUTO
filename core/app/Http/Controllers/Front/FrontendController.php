@@ -543,17 +543,54 @@ class FrontendController extends Controller
     public function product($slug)
     {
 
-        $item = Item::with('category')->whereStatus(1)->whereSlug($slug)->firstOrFail();
+        $item = Item::with([
+            'category',
+            'brand',
+            'subcategory',
+            'childcategory',
+            'galleries',
+            'attributes.options',
+        ])
+            ->withAvg(['reviews as reviews_avg_rating' => function ($query) {
+                $query->where('status', 1);
+            }], 'rating')
+            ->whereStatus(1)
+            ->whereSlug($slug)
+            ->firstOrFail();
+
+        $reviews = $item->reviews()
+            ->with('user')
+            ->where('status', 1)
+            ->latest('id')
+            ->paginate(3);
+
+        $reviewBreakdown = $item->reviews()
+            ->where('status', 1)
+            ->selectRaw('rating, COUNT(*) as total')
+            ->groupBy('rating')
+            ->pluck('total', 'rating');
+
+        $relatedItems = $item->category->items()
+            ->with(['category', 'brand'])
+            ->withAvg(['reviews as reviews_avg_rating' => function ($query) {
+                $query->where('status', 1);
+            }], 'rating')
+            ->whereStatus(1)
+            ->where('id', '!=', $item->id)
+            ->take(8)
+            ->get();
+
         $video = explode('=', $item->video);
         return view('front.catalog.product', [
             'item'          => $item,
-            'reviews'       => $item->reviews()->where('status', 1)->paginate(3),
+            'reviews'       => $reviews,
+            'review_breakdown' => $reviewBreakdown,
             'galleries'     => $item->galleries,
             'video'         => $item->video ? end($video) : '',
             'sec_name'      => isset($item->specification_name) ? json_decode($item->specification_name, true) : [],
             'sec_details'   => isset($item->specification_description) ? json_decode($item->specification_description, true) : [],
             'attributes'    => $item->attributes,
-            'related_items' => $item->category->items()->whereStatus(1)->where('id', '!=', $item->id)->take(8)->get()
+            'related_items' => $relatedItems
         ]);
     }
 

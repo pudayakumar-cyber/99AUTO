@@ -245,7 +245,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <h4 class="mb-2 p-title-main">{{ $displayProductName }}</h4>
                         <div class="mb-3">
                             <div class="rating-stars d-inline-block gmr-3">
-                                {!! Helper::renderStarRating($item->reviews->avg('rating')) !!}
+                                {!! Helper::renderStarRating($item->reviews_avg_rating) !!}
                             </div>
                             @if ($item->is_stock())
                                 <span class="text-success  d-inline-block">{{ __('In Stock') }} <b>({{ $item->stock }}
@@ -695,54 +695,54 @@ document.addEventListener('DOMContentLoaded', function () {
                     <div class="card-body">
                         <div class="text-center">
                             <div class="d-inline align-baseline display-3 mr-1">
-                                {{ round($item->reviews->avg('rating'), 2) }}</div>
+                                {{ round($item->reviews_avg_rating ?? 0, 2) }}</div>
                             <div class="d-inline align-baseline text-sm text-warning mr-1">
                                 <div class="rating-stars">
-                                    {!! Helper::renderStarRating($item->reviews->avg('rating')) !!}
+                                    {!! Helper::renderStarRating($item->reviews_avg_rating) !!}
                                 </div>
                             </div>
                         </div>
                         <div class="pt-3">
                             <label class="text-medium text-sm">5 {{ __('stars') }} <span class="text-muted">-
-                                    {{ $item->reviews->where('status', 1)->where('rating', 5)->count() }}</span></label>
+                                    {{ (int) ($review_breakdown[5] ?? 0) }}</span></label>
                             <div class="progress margin-bottom-1x">
                                 <div class="progress-bar bg-warning" role="progressbar"
-                                    style="width: {{ $item->reviews->where('status', 1)->where('rating', 5)->sum('rating') * 20 }}%; height: 2px;"
+                                    style="width: {{ ((int) ($review_breakdown[5] ?? 0)) * 20 }}%; height: 2px;"
                                     aria-valuenow="100"
-                                    aria-valuemin="{{ $item->reviews->where('rating', 5)->sum('rating') * 20 }}"
+                                    aria-valuemin="{{ ((int) ($review_breakdown[5] ?? 0)) * 20 }}"
                                     aria-valuemax="100"></div>
                             </div>
                             <label class="text-medium text-sm">4 {{ __('stars') }} <span class="text-muted">-
-                                    {{ $item->reviews->where('status', 1)->where('rating', 4)->count() }}</span></label>
+                                    {{ (int) ($review_breakdown[4] ?? 0) }}</span></label>
                             <div class="progress margin-bottom-1x">
                                 <div class="progress-bar bg-warning" role="progressbar"
-                                    style="width: {{ $item->reviews->where('status', 1)->where('rating', 4)->sum('rating') * 20 }}%; height: 2px;"
-                                    aria-valuenow="{{ $item->reviews->where('rating', 4)->sum('rating') * 20 }}"
+                                    style="width: {{ ((int) ($review_breakdown[4] ?? 0)) * 20 }}%; height: 2px;"
+                                    aria-valuenow="{{ ((int) ($review_breakdown[4] ?? 0)) * 20 }}"
                                     aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
                             <label class="text-medium text-sm">3 {{ __('stars') }} <span class="text-muted">-
-                                    {{ $item->reviews->where('status', 1)->where('rating', 3)->count() }}</span></label>
+                                    {{ (int) ($review_breakdown[3] ?? 0) }}</span></label>
                             <div class="progress margin-bottom-1x">
                                 <div class="progress-bar bg-warning" role="progressbar"
-                                    style="width: {{ $item->reviews->where('rating', 3)->sum('rating') * 20 }}%; height: 2px;"
-                                    aria-valuenow="{{ $item->reviews->where('rating', 3)->sum('rating') * 20 }}"
+                                    style="width: {{ ((int) ($review_breakdown[3] ?? 0)) * 20 }}%; height: 2px;"
+                                    aria-valuenow="{{ ((int) ($review_breakdown[3] ?? 0)) * 20 }}"
                                     aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
                             <label class="text-medium text-sm">2 {{ __('stars') }} <span class="text-muted">-
-                                    {{ $item->reviews->where('status', 1)->where('rating', 2)->count() }}</span></label>
+                                    {{ (int) ($review_breakdown[2] ?? 0) }}</span></label>
                             <div class="progress margin-bottom-1x">
                                 <div class="progress-bar bg-warning" role="progressbar"
-                                    style="width: {{ $item->reviews->where('status', 1)->where('rating', 2)->sum('rating') * 20 }}%; height: 2px;"
-                                    aria-valuenow="{{ $item->reviews->where('rating', 2)->sum('rating') * 20 }}"
+                                    style="width: {{ ((int) ($review_breakdown[2] ?? 0)) * 20 }}%; height: 2px;"
+                                    aria-valuenow="{{ ((int) ($review_breakdown[2] ?? 0)) * 20 }}"
                                     aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
                             <label class="text-medium text-sm">1 {{ __('star') }} <span class="text-muted">-
-                                    {{ $item->reviews->where('status', 1)->where('rating', 1)->count() }}</span></label>
+                                    {{ (int) ($review_breakdown[1] ?? 0) }}</span></label>
                             <div class="progress mb-2">
                                 <div class="progress-bar bg-warning" role="progressbar"
-                                    style="width: {{ $item->reviews->where('status', 1)->where('rating', 1)->sum('rating') * 20 }}; height: 2px;"
+                                    style="width: {{ ((int) ($review_breakdown[1] ?? 0)) * 20 }}%; height: 2px;"
                                     aria-valuenow="0"
-                                    aria-valuemin="{{ $item->reviews->where('rating', 1)->sum('rating') * 20 }}"
+                                    aria-valuemin="{{ ((int) ($review_breakdown[1] ?? 0)) * 20 }}"
                                     aria-valuemax="100"></div>
                             </div>
                         </div>
