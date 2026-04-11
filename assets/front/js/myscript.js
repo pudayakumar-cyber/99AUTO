@@ -1067,11 +1067,10 @@ $(function ($) {
             e.preventDefault();
 
             let loader = `
-            <div id="view_loader_div" class="">
-            <div class="product-not-found">
-              <img class="loader_image" src="${mainurl + '/assets/images/ajax_loader.gif'}" alt="">
+            <div id="view_loader_div" class="catalog-page-loader-wrap">
+                <div class="catalog-page-loader" aria-hidden="true"></div>
+                <div class="catalog-page-loader-text">Loading products...</div>
             </div>
-          </div>
             `;
             $('#list_view_ajax').html(loader);
 

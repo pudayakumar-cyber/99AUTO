@@ -34,6 +34,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
     <!-- Favicon Icons-->
+    <link rel="dns-prefetch" href="//www.googletagmanager.com">
+    <link rel="dns-prefetch" href="//connect.facebook.net">
+    <link rel="dns-prefetch" href="//www.facebook.com">
+    <link rel="dns-prefetch" href="//static.addtoany.com">
+    <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin>
+    <link rel="preconnect" href="https://connect.facebook.net" crossorigin>
     <link rel="icon" type="image/png" href="{{ asset('storage/images/' . $setting->favicon) }}">
     <link rel="apple-touch-icon" href="{{ asset('storage/images/' . $setting->favicon) }}">
     <link rel="apple-touch-icon" sizes="152x152" href="{{ asset('storage/images/' . $setting->favicon) }}">
@@ -42,8 +48,6 @@
 
     <!-- Vendor Styles including: Bootstrap, Font Icons, Plugins, etc.-->
     <link rel="stylesheet" media="screen" href="{{ asset('assets/front/css/plugins.min.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
     @yield('styleplugins')
 
     <link id="mainStyles" rel="stylesheet" media="screen" href="{{ asset('assets/front/css/styles.min.css') }}">

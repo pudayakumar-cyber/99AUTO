@@ -2,12 +2,12 @@
 
 namespace App\Repositories\Back;
 
+use App\Helpers\ImageHelper;
 use App\Models\Item;
 use App\Models\Gallery;
 use App\Models\Currency;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Image;
 
 class ItemRepository
 {
@@ -35,12 +35,11 @@ public function galleryDelete($gallery)
             $file = $request->file('photo');
 
             $photoName = 'OM_' . time() . Str::random(8) . '.' . $file->getClientOriginalExtension();
-            $thumbnailName = 'OM_' . time() . Str::random(8) . '.' . $file->getClientOriginalExtension();
+            $thumbnailName = 'OM_' . time() . Str::random(8) . '.jpg';
 
             Storage::disk('public')->putFileAs('images', $file, $photoName);
 
-            $thumbnail = Image::make($file)->resize(230,230);
-            Storage::disk('public')->put('images/'.$thumbnailName,(string)$thumbnail->encode());
+            Storage::disk('public')->put('images/'.$thumbnailName, ImageHelper::optimizedThumbnailContents($file));
 
             $input['photo'] = $photoName;
             $input['thumbnail'] = $thumbnailName;
@@ -137,12 +136,11 @@ public function galleryDelete($gallery)
             $file = $request->file('photo');
 
             $photoName = 'OM_' . time() . Str::random(8) . '.' . $file->getClientOriginalExtension();
-            $thumbnailName = 'OM_' . time() . Str::random(8) . '.' . $file->getClientOriginalExtension();
+            $thumbnailName = 'OM_' . time() . Str::random(8) . '.jpg';
 
             Storage::disk('public')->putFileAs('images',$file,$photoName);
 
-            $thumbnail = Image::make($file)->resize(230,230);
-            Storage::disk('public')->put('images/'.$thumbnailName,(string)$thumbnail->encode());
+            Storage::disk('public')->put('images/'.$thumbnailName, ImageHelper::optimizedThumbnailContents($file));
 
             $input['photo'] = $photoName;
             $input['thumbnail'] = $thumbnailName;
