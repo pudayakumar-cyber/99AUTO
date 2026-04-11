@@ -46,7 +46,7 @@
                                     <option value="">{{__('All Products')}}</option>
                                     <option value="low_to_high" {{request()->input('low_to_high') ? 'selected' : ''}}>{{__('Low - High Price')}}</option>
                                     <option value="high_to_low" {{request()->input('high_to_low') ? 'selected' : ''}}>{{__('High - Low Price')}}</option>
-                                    </select><span class="text-muted">{{__('Showing')}}:</span><span>1 - {{$setting->view_product}} {{__('items')}}</span>
+                                    </select><span class="text-muted">{{__('Showing')}}:</span><span>1 - {{$view_product ?? $items->perPage()}} {{__('items')}}</span>
                                 </div>
                             </div>
                         </div>

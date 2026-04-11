@@ -772,7 +772,6 @@ $(function ($) {
 
         function initCatalogProgressiveLoading() {
             var $main = $('#main_div.catalog-progressive');
-            var payloadEl = document.getElementById('catalog_chunk_payload');
             var sentinel = document.getElementById('catalog_chunk_sentinel');
             var loader = document.getElementById('catalog_chunk_loader');
 
@@ -782,18 +781,7 @@ $(function ($) {
 
             applyCatalogFitmentStatus($main[0]);
 
-            if (!payloadEl || !sentinel || !loader) {
-                return;
-            }
-
-            var remainingChunks = [];
-            try {
-                remainingChunks = JSON.parse(payloadEl.textContent || '[]');
-            } catch (e) {
-                remainingChunks = [];
-            }
-
-            if (!remainingChunks.length) {
+            if (!sentinel || !loader) {
                 return;
             }
 
@@ -801,32 +789,69 @@ $(function ($) {
                 window.catalogChunkObserver.disconnect();
             }
 
+            var totalItems = parseInt($main.attr('data-total-items'), 10) || 0;
+            var chunkSize = parseInt($main.attr('data-chunk-size'), 10) || 4;
+            var renderedCount = $main.children().length;
+            var nextChunk = Math.floor(renderedCount / chunkSize) + 1;
             var loading = false;
+
+            function sentinelNeedsMore() {
+                if (!sentinel || renderedCount >= totalItems) {
+                    return false;
+                }
+                var rect = sentinel.getBoundingClientRect();
+                return rect.top <= (window.innerHeight || document.documentElement.clientHeight) + 250;
+            }
+
             function appendNextChunk() {
-                if (loading || !remainingChunks.length) {
+                if (loading || renderedCount >= totalItems) {
                     return;
                 }
                 loading = true;
                 $(loader).removeClass('d-none');
 
-                setTimeout(function () {
-                    var nextChunk = remainingChunks.shift() || [];
-                    if (nextChunk.length) {
-                        $main.append(nextChunk.join(''));
-                        lazy();
-                        applyCatalogFitmentStatus($main[0]);
-                    }
-                    $(loader).addClass('d-none');
-                    loading = false;
+                var requestData = $('#search_form').serializeArray();
+                requestData.push({ name: 'catalog_chunk', value: nextChunk });
+                requestData.push({ name: 'catalog_chunk_size', value: chunkSize });
 
-                    if (!remainingChunks.length) {
-                        if (window.catalogChunkObserver) {
-                            window.catalogChunkObserver.disconnect();
+                $.ajax({
+                    type: 'GET',
+                    url: $('#search_form').attr('action'),
+                    data: $.param(requestData),
+                    success: function (html) {
+                        var $payload = $(html).filter('.catalog-chunk-payload');
+                        if (!$payload.length) {
+                            $payload = $('<div>').html(html).find('.catalog-chunk-payload').first();
                         }
-                        $(sentinel).remove();
-                        $(payloadEl).remove();
+
+                        var addedCount = parseInt($payload.attr('data-rendered-count'), 10) || 0;
+                        if (addedCount > 0) {
+                            $main.append($payload.html());
+                            renderedCount += addedCount;
+                            nextChunk += 1;
+                            lazy();
+                            applyCatalogFitmentStatus($main[0]);
+                        }
+
+                        if (!addedCount || renderedCount >= totalItems) {
+                            if (window.catalogChunkObserver) {
+                                window.catalogChunkObserver.disconnect();
+                            }
+                            $(sentinel).remove();
+                            $(loader).remove();
+                        }
+                    },
+                    complete: function () {
+                        $(loader).addClass('d-none');
+                        loading = false;
+
+                        if (sentinelNeedsMore()) {
+                            setTimeout(function () {
+                                appendNextChunk();
+                            }, 60);
+                        }
                     }
-                }, 180);
+                });
             }
 
             window.catalogChunkObserver = new IntersectionObserver(function (entries) {

@@ -59,6 +59,7 @@ class CatalogController extends Controller
             $option_wise_item_ids[] = $attr_item_id->item_id;
         }
         $setting = Setting::first();
+        $perPage = 16;
 
         $sorting = $request->has('sorting') ?  ( !empty($request->sorting) ? $request->sorting : null ) : null;
         $new = $request->has('new') ?  ( !empty($request->new) ? 1 : null ) : null;
@@ -167,10 +168,10 @@ class CatalogController extends Controller
             $items = new \Illuminate\Pagination\LengthAwarePaginator(
                 $items->forPage(
                     \Illuminate\Pagination\Paginator::resolveCurrentPage(),
-                    $setting->view_product
+                    $perPage
                 ),
                 $items->count(),
-                $setting->view_product,
+                $perPage,
                 \Illuminate\Pagination\Paginator::resolveCurrentPage(),
                 [
                     'path'  => request()->url(),
@@ -178,7 +179,30 @@ class CatalogController extends Controller
                 ]
             );
         } else {
-            $items = $itemsQuery->paginate($setting->view_product)->appends($request->query());
+            $items = $itemsQuery->paginate($perPage)->appends($request->query());
+        }
+
+        if(Session::has('view_catalog')){
+            $checkType = Session::get('view_catalog');
+        }else{
+            Session::put('view_catalog','grid');
+            $checkType = Session::get('view_catalog');
+        }
+
+        if($request->view_check){
+            Session::put('view_catalog',$request->view_check);
+            $checkType = Session::get('view_catalog');
+        }
+
+        if ($request->filled('catalog_chunk')) {
+            $chunk = max(1, (int) $request->input('catalog_chunk', 1));
+            $chunkSize = max(1, (int) $request->input('catalog_chunk_size', 4));
+            $itemsChunk = $items->getCollection()->slice(($chunk - 1) * $chunkSize, $chunkSize)->values();
+
+            return view('front.catalog.chunk-items', [
+                'itemsChunk' => $itemsChunk,
+                'checkType' => $checkType,
+            ]);
         }
 
         $attrubutes_check =[];
@@ -200,19 +224,7 @@ class CatalogController extends Controller
       
         $blade = 'front.catalog.index';
 
-        if($request->view_check){
-            Session::put('view_catalog',$request->view_check);
-
-        }
-
-        if(Session::has('view_catalog')){
-            $checkType = Session::get('view_catalog');
-            $name_string_count = 55;
-        }else{
-            Session::put('view_catalog','grid');
-            $checkType = Session::get('view_catalog');
-            $name_string_count = 38;
-        }
+        $name_string_count = $checkType === 'list' ? 55 : 38;
 
 
         if($request->ajax()) $blade = 'front.catalog.catalog';
@@ -229,6 +241,7 @@ class CatalogController extends Controller
             'subcategory' => $subcategory,
             'childcategory' => $childcategory,
             'checkType'  => $checkType,
+            'view_product' => $perPage,
             'brands' => Brand::withCount('items')->whereStatus(1)->get(),
             'categories' => Category::whereStatus(1)->orderby('serial','asc')->withCount(['items' => function($query) {
                 $query->where('status',1);
