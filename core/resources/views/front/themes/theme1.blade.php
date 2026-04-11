@@ -163,7 +163,7 @@
                                                     {{ Str::limit($compaign_item->item->name, 35) }}
                                                 </a></h3>
                                             <div class="rating-stars">
-                                                {!! Helper::renderStarRating($compaign_item->item->reviews->avg('rating')) !!}
+                                                {!! Helper::renderStarRating($compaign_item->item->reviews_avg_rating) !!}
                                             </div>
                                             <h4 class="product-price">
                                                 @if ($compaign_item->item->previous_price != 0)
@@ -302,7 +302,7 @@
                                                     {{ Str::limit($popular_category_item->name, 35) }}
                                                 </a></h3>
                                             <div class="rating-stars">
-                                                {!! Helper::renderStarRating($popular_category_item->reviews->avg('rating')) !!}
+                                                {!! Helper::renderStarRating($popular_category_item->reviews_avg_rating) !!}
                                             </div>
                                             <h4 class="product-price">
                                                 @if ($popular_category_item->previous_price != 0)
@@ -402,7 +402,7 @@
                     <div class="col-lg-12" id="type_product_view">
 
                         <div class="features-slider  owl-carousel">
-                            @foreach ($products->orderBy('id', 'DESC')->get() as $item)
+                            @foreach ($featured_products as $item)
                                 @if ($item->is_type == 'feature')
                                     <div class="slider-item">
                                         <div class="product-card ">
@@ -439,7 +439,7 @@
                                                             {{ Str::limit($item->name, 35) }}
                                                         </a></h3>
                                                     <div class="rating-stars">
-                                                        {!! Helper::renderStarRating($item->reviews->avg('rating')) !!}
+                                                        {!! Helper::renderStarRating($item->reviews_avg_rating) !!}
                                                     </div>
                                                     <h4 class="product-price">
                                                         @if ($item->previous_price != 0)
@@ -476,7 +476,7 @@
                     <div class="col-lg-12">
                         <div class="main-content">
                             <div class="flash-deal-slider owl-carousel">
-                                @foreach ($products->orderBy('id', 'DESC')->get() as $item)
+                                @foreach ($flash_deal_products as $item)
                                     @if ($item->is_type == 'flash_deal' && $item->date != null)
                                         <div class="slider-item">
                                             <div class="product-card ">
@@ -517,7 +517,7 @@
                                                                 {{ Str::limit($item->name, 50) }}
                                                             </a></h3>
                                                         <div class="rating-stars">
-                                                            {!! Helper::renderStarRating($item->reviews->avg('rating')) !!}
+                                                            {!! Helper::renderStarRating($item->reviews_avg_rating) !!}
                                                         </div>
                                                         <h4 class="product-price">
                                                             @if ($item->previous_price != 0)
@@ -580,7 +580,7 @@
                                                                 {{ Str::limit($two_column_category_item->name, 40) }}
                                                             </a></h3>
                                                         <div class="rating-stars">
-                                                            {!! Helper::renderStarRating($two_column_category_item->reviews->avg('rating')) !!}
+                                                            {!! Helper::renderStarRating($two_column_category_item->reviews_avg_rating) !!}
                                                         </div>
                                                         <h4 class="product-price">
                                                             @if ($two_column_category_item->previous_price != 0)
@@ -705,7 +705,7 @@
                                             {{ Str::limit($feature_category_item->name, 35) }}
                                         </a></h3>
                                     <div class="rating-stars">
-                                        {!! Helper::renderStarRating($feature_category_item->reviews->avg('rating')) !!}
+                                        {!! Helper::renderStarRating($feature_category_item->reviews_avg_rating) !!}
                                     </div>
                                     <h4 class="product-price">
                                         @if ($feature_category_item->previous_price != 0)
