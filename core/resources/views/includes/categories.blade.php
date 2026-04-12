@@ -1,6 +1,6 @@
 
     @php
-        $categories = App\Models\Category::with('subcategory')->whereStatus(1)->orderby('serial','desc')->take(8)->get();
+        $categories = App\Models\Category::with('subcategory')->whereStatus(1)->orderby('id','desc')->take(8)->get();
 
         $resolveCategoryImageUrl = static function ($filename) {
             $filename = ltrim((string) $filename, '/');
