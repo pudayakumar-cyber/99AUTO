@@ -1,6 +1,12 @@
 
     @php
-        $categories = App\Models\Category::with('subcategory')->whereStatus(1)->orderby('serial','asc')->take(8)->get();
+        $categories = App\Models\Category::with('subcategory')
+            ->whereStatus(1)
+            ->whereNotNull('photo')
+            ->where('photo', '!=', '')
+            ->orderby('serial', 'asc')
+            ->take(8)
+            ->get();
     @endphp
 
 
