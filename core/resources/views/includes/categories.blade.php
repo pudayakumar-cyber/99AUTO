@@ -1,21 +1,10 @@
 
-    @php
-        $categories = App\Models\Category::with('subcategory')
-            ->whereStatus(1)
-            ->whereNotNull('photo')
-            ->where('photo', '!=', '')
-            ->orderby('serial', 'asc')
-            ->take(8)
-            ->get();
-    @endphp
-
-
     <div class="left-category-area">
         <div class="category-header">
             <h4><i class="icon-align-justify"></i> {{ __('Categories') }}</h4>
         </div>
         <div class="category-list">
-            @foreach ($categories as $key => $pcategory)
+            @foreach ($menu_categories as $key => $pcategory)
                 <div class="c-item">
                     <a class="d-block navi-link" href="{{route('front.catalog').'?category='.$pcategory->slug}}">
                         <img class="lazy" data-src="{{url('/core/public/storage/images/'.$pcategory->photo)}}">
