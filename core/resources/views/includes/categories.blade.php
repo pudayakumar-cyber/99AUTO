@@ -1,16 +1,6 @@
 
     @php
-        $categories = App\Models\Category::with('subcategory')->whereStatus(1)->orderby('id','desc')->take(8)->get();
-
-        $resolveCategoryImageUrl = static function ($filename) {
-            $filename = ltrim((string) $filename, '/');
-
-            if ($filename === '') {
-                return url('/core/public/storage/images/placeholder.png');
-            }
-
-            return url('/core/public/storage/images/' . $filename);
-        };
+        $categories = App\Models\Category::with('subcategory')->whereStatus(1)->orderby('serial','asc')->take(8)->get();
     @endphp
 
 
@@ -22,15 +12,7 @@
             @foreach ($categories as $key => $pcategory)
                 <div class="c-item">
                     <a class="d-block navi-link" href="{{route('front.catalog').'?category='.$pcategory->slug}}">
-                        <img
-                            class="lazy"
-                            src="{{ $resolveCategoryImageUrl($pcategory->photo) }}"
-                            data-src="{{ $resolveCategoryImageUrl($pcategory->photo) }}"
-                            alt="{{ $pcategory->name }}"
-                            loading="lazy"
-                            decoding="async"
-                            width="24"
-                            height="24">
+                        <img class="lazy" data-src="{{url('/core/public/storage/images/'.$pcategory->photo)}}">
                         <span class="text-gray-dark">{{$pcategory->name}}</span>
                         @if ($pcategory->subcategory->count() > 0)
                         <i class="icon-chevron-right"></i>
@@ -61,15 +43,7 @@
                 </div>
             @endforeach
         <a href="{{route('front.catalog')}}" class="d-block navi-link view-all-category">
-            <img
-                class="lazy"
-                src="{{ $resolveCategoryImageUrl('category.jpg') }}"
-                data-src="{{ $resolveCategoryImageUrl('category.jpg') }}"
-                alt="{{ __('All Categories') }}"
-                loading="lazy"
-                decoding="async"
-                width="24"
-                height="24">
+            <img class="lazy" data-src="{{ url('/core/public/storage/images/category.jpg') }}" alt="">
             <span class="text-gray-dark">{{ __('All Categories')}}</span>
         </a>
     </div>
