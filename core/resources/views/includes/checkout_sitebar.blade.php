@@ -20,13 +20,6 @@
 
         return url('/core/public/storage/images/' . $filename);
     };
-
-    $shippingPriceValue = 0;
-    if (is_array($shipping ?? null)) {
-        $shippingPriceValue = (float) ($shipping['price'] ?? 0);
-    } elseif (is_object($shipping ?? null)) {
-        $shippingPriceValue = (float) ($shipping->price ?? 0);
-    }
 @endphp
 
 <aside class="sidebar">
@@ -81,7 +74,7 @@
                 <tr class="d-none set__shipping_price_tr">
                     <td>{{ __('Shipping') }}:</td>
                     <td class="text-gray-dark set__shipping_price">
-                        {{ PriceHelper::setCurrencyPrice($shippingPriceValue) }}</td>
+                        {{ PriceHelper::setCurrencyPrice($shipping ? $shipping->price : 0) }}</td>
                 </tr>
             @endif
             <tr>

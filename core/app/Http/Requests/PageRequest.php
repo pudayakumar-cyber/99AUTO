@@ -36,7 +36,6 @@ class PageRequest extends FormRequest
             'title'  => 'required|max:255',
             'slug' => 'required|max:255|regex:/^[a-zA-Z0-9-]+$/', Rule::notIn($mains) , 'unique:pages,slug' . $id,
             'details'  => 'required',
-            'photo' => 'nullable|mimes:jpeg,jpg,png,webp,svg',
         ];
     }
 

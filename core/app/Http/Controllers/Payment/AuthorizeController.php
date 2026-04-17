@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Payment;
 
 use App\Helpers\EmailHelper;
-use App\Helpers\CheckoutShippingHelper;
 use App\Helpers\PriceHelper;
 use App\Helpers\SmsHelper;
 use App\Http\Controllers\Controller;
@@ -43,9 +42,8 @@ class AuthorizeController extends Controller
                 'bill_last_name' => 'required',
                 'bill_email' => 'required',
                 'bill_phone' => 'required',
-                'bill_address1' => 'required',
+                'bill_address' => 'required',
                 'bill_city' => 'required',
-                'bill_province' => 'required',
                 'bill_zip' => 'required',
             ]);
         }else{
@@ -111,7 +109,11 @@ class AuthorizeController extends Controller
             if (!PriceHelper::Digital()) {
                 $shipping = null;
             } else {
-                $shipping = CheckoutShippingHelper::orderShippingPayload($request['shipping_id']);
+                $shipping = ShippingService::findOrFail($request['shipping_id']);
+            }
+
+            if (!$shipping) {
+                $shipping = ShippingService::whereStatus(1)->where('id', '!=', 1)->first();
             }
             $discount = [];
             if (Session::has('coupon')) {
@@ -122,7 +124,7 @@ class AuthorizeController extends Controller
                 $shipping = null;
             }
 
-            $grand_total = ($cart_total + ($shipping ? $shipping['price'] : 0)) + $total_tax;
+            $grand_total = ($cart_total + ($shipping ? $shipping->price : 0)) + $total_tax;
             $grand_total = $grand_total - ($discount ? $discount['discount'] : 0);
 
             $grand_total += PriceHelper::StatePrce($request->state_id, $cart_total);
@@ -182,7 +184,7 @@ class AuthorizeController extends Controller
                     $tresponse = $response->getTransactionResponse();
 
                     if ($tresponse != null && $tresponse->getMessages() != null) {
-                        $orderData['state'] =  $request['state_id'] ? json_encode(State::findOrFail($request['state_id']), true) : null;
+                        $orderData['state'] =  $request['state_id'] ? json_encode(State::findOrFail($data['state_id']), true) : null;
                         $orderData['cart'] = json_encode($cart, true);
                         $orderData['discount'] = json_encode($discount, true);
                         $orderData['shipping'] = json_encode($shipping, true);

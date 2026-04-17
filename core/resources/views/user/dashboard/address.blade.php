@@ -67,15 +67,6 @@
                    </div>
                    <div class="col-md-6">
                       <div class="form-group">
-                         <label for="billing-province">{{__('Province')}} *</label>
-                         <input class="form-control" type="text" name="bill_province" id="billing-province" value="{{$user->bill_province}}">
-                         @error('bill_province')
-                         <p class="text-danger">{{$message}}</p>
-                         @endif
-                      </div>
-                   </div>
-                   <div class="col-md-6">
-                      <div class="form-group">
                          <label for="billing-company">{{__('Company')}}</label>
                          <input class="form-control" type="text" name="bill_company" id="billing-company" value="{{$user->bill_company}}">
                          @error('bill_company')
@@ -143,15 +134,6 @@
                          <p class="text-danger">{{$message}}</p>
                          @endif
                         </div>
-                   </div>
-                   <div class="col-md-6">
-                      <div class="form-group">
-                         <label for="shipping-province">{{__('Province')}} *</label>
-                         <input class="form-control" type="text" name="ship_province" id="shipping-province" value="{{$user->ship_province}}">
-                         @error('ship_province')
-                         <p class="text-danger">{{$message}}</p>
-                         @endif
-                      </div>
                    </div>
                    <div class="col-md-6">
                       <div class="form-group">

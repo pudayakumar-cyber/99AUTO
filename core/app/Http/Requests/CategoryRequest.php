@@ -32,10 +32,6 @@ class CategoryRequest extends FormRequest
             'photo'     => [$required,'mimes:jpeg,jpg,png,svg,webp'],
             'name'      => 'required|max:255',
             'meta_keywords'=> 'max:255',
-            'package_length' => 'nullable|numeric|min:0',
-            'package_width' => 'nullable|numeric|min:0',
-            'package_height' => 'nullable|numeric|min:0',
-            'package_weight' => 'nullable|numeric|min:0',
         ];
     }
 

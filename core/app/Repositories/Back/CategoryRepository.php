@@ -16,10 +16,6 @@ class CategoryRepository
     public function store($request)
     {
         $input = $request->all();
-        $input['package_length'] = $request->filled('package_length') ? $request->package_length : null;
-        $input['package_width'] = $request->filled('package_width') ? $request->package_width : null;
-        $input['package_height'] = $request->filled('package_height') ? $request->package_height : null;
-        $input['package_weight'] = $request->filled('package_weight') ? $request->package_weight : null;
 
         /*
         |--------------------------------
@@ -49,10 +45,6 @@ class CategoryRepository
     public function update($category, $request)
     {
         $input = $request->all();
-        $input['package_length'] = $request->filled('package_length') ? $request->package_length : null;
-        $input['package_width'] = $request->filled('package_width') ? $request->package_width : null;
-        $input['package_height'] = $request->filled('package_height') ? $request->package_height : null;
-        $input['package_weight'] = $request->filled('package_weight') ? $request->package_weight : null;
 
         if ($request->hasFile('photo')) {
 

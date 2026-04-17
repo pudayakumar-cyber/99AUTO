@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Payment;
 
 use App\Helpers\EmailHelper;
-use App\Helpers\CheckoutShippingHelper;
 use App\Models\Order;
 use App\Helpers\PriceHelper;
 use App\Helpers\SmsHelper;
@@ -37,9 +36,8 @@ class PaytabsCheckout
                 'bill_last_name' => 'required',
                 'bill_email' => 'required',
                 'bill_phone' => 'required',
-                'bill_address1' => 'required',
+                'bill_address' => 'required',
                 'bill_city' => 'required',
-                'bill_province' => 'required',
                 'bill_zip' => 'required',
             ]);
         }else{
@@ -74,14 +72,14 @@ class PaytabsCheckout
         if (!PriceHelper::Digital()) {
             $shipping = null;
         } else {
-            $shipping = CheckoutShippingHelper::orderShippingPayload($data['shipping_id']);
+            $shipping = ShippingService::findOrFail($data['shipping_id']);
         }
 
         $discount = [];
         if (Session::has('coupon')) {
             $discount = Session::get('coupon');
         }
-        $grand_total = ($cart_total + ($shipping ? $shipping['price'] : 0)) + $total_tax;
+        $grand_total = ($cart_total + ($shipping ? $shipping->price : 0)) + $total_tax;
         $grand_total = $grand_total - ($discount ? $discount['discount'] : 0);
         $grand_total += PriceHelper::StatePrce($data['state_id'], $cart_total);
         $total_amount = PriceHelper::setConvertPrice($grand_total);
@@ -213,7 +211,7 @@ class PaytabsCheckout
             if (!PriceHelper::Digital()) {
                 $shipping = null;
             } else {
-                $shipping = CheckoutShippingHelper::orderShippingPayload($order_input_data['shipping_id']);
+                $shipping = ShippingService::findOrFail($order_input_data['shipping_id']);
             }
             $discount = [];
             if (Session::has('coupon')) {
@@ -221,7 +219,7 @@ class PaytabsCheckout
             }
 
 
-            $grand_total = ($cart_total + ($shipping ? $shipping['price'] : 0)) + $total_tax;
+            $grand_total = ($cart_total + ($shipping ? $shipping->price : 0)) + $total_tax;
             $grand_total = $grand_total - ($discount ? $discount['discount'] : 0);
             $grand_total += PriceHelper::StatePrce($order_input_data['state_id'], $cart_total);
 

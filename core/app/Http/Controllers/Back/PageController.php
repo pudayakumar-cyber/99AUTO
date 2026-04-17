@@ -7,8 +7,6 @@ use App\{
     Http\Requests\PageRequest,
     Http\Controllers\Controller
 };
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 
 
@@ -55,21 +53,7 @@ class PageController extends Controller
      */
     public function store(PageRequest $request)
     {
-        $input = $request->all();
-
-        if ($request->hasFile('photo')) {
-            $file = $request->file('photo');
-            $photoName = 'PAGE_' . time() . Str::random(8) . '.' . $file->getClientOriginalExtension();
-
-            Storage::disk('public')->put(
-                'images/' . $photoName,
-                file_get_contents($file->getPathname())
-            );
-
-            $input['photo'] = $photoName;
-        }
-
-        Page::create($input);
+        Page::create($request->all());
         return redirect()->route('back.page.index')->withSuccess(__('New Page Added Successfully.'));
     }
 
@@ -107,25 +91,7 @@ class PageController extends Controller
      */
     public function update(PageRequest $request, Page $page)
     {
-        $input = $request->all();
-
-        if ($request->hasFile('photo')) {
-            if ($page->photo) {
-                Storage::disk('public')->delete('images/' . $page->photo);
-            }
-
-            $file = $request->file('photo');
-            $photoName = 'PAGE_' . time() . Str::random(8) . '.' . $file->getClientOriginalExtension();
-
-            Storage::disk('public')->put(
-                'images/' . $photoName,
-                file_get_contents($file->getPathname())
-            );
-
-            $input['photo'] = $photoName;
-        }
-
-        $page->update($input);
+        $page->update($request->all());
         return redirect()->route('back.page.index')->withSuccess(__('Page Updated Successfully.'));
     }
 
@@ -137,10 +103,6 @@ class PageController extends Controller
      */
     public function destroy(Page $page)
     {
-        if ($page->photo) {
-            Storage::disk('public')->delete('images/' . $page->photo);
-        }
-
         $page->delete();
         return redirect()->route('back.page.index')->withSuccess(__('Page Deleted Successfully.'));
     }

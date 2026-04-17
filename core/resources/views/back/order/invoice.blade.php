@@ -56,15 +56,6 @@
                                     @endif
                                     <br>
                                     <span class="text-muted">{{__('Payment Method :')}}</span>{{$order->payment_method }}<br>
-                                    @if ($order->shipping_method_name)
-                                    <span class="text-muted">{{__('Shipping Method :')}}</span>{{$order->shipping_method_name}}<br>
-                                    @endif
-                                    @if ($order->shipping_carrier)
-                                    <span class="text-muted">{{__('Carrier :')}}</span>{{$order->shipping_carrier}}<br>
-                                    @endif
-                                    @if ($order->tracking_number)
-                                    <span class="text-muted">{{__('Tracking Number :')}}</span>{{$order->tracking_number}}<br>
-                                    @endif
 
                                     <br>
                                     <br>

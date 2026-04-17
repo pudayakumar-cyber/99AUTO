@@ -95,16 +95,9 @@
                                             id="checkout-city" value="{{ isset($user) ? $user->ship_city : '' }}">
                                     </div>
                                 </div>
-                                <div class="col-sm-6">
-                                    <div class="form-group">
-                                        <label for="checkout-ship-province">{{ __('Province') }} *</label>
-                                        <input class="form-control {{ $errors->has('ship_province') ? 'requireInput' : '' }}" name="ship_province" type="text"
-                                            id="checkout-ship-province" value="{{ isset($user) ? $user->ship_province : '' }}">
-                                    </div>
-                                </div>
                             </div>
                             <div class="row">
-                                <div class="col-sm-6">
+                                <div class="col-sm-12">
                                     <div class="form-group">
                                         <label for="checkout-country">{{ __('Country') }}</label>
                                         <select class="form-control" name="ship_country"  id="billing-country">

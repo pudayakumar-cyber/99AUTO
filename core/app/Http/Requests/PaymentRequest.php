@@ -44,9 +44,8 @@ class PaymentRequest extends FormRequest
                 'bill_last_name' => 'required',
                 'bill_email' => 'required',
                 'bill_phone' => 'required',
-                'bill_address1' => 'required',
+                'bill_address' => 'required',
                 'bill_city' => 'required',
-                'bill_province' => 'required',
                 'bill_zip' => 'required',
             ];
         }else{
