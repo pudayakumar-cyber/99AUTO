@@ -1,10 +1,14 @@
 @foreach ($datas as $data)
     <tr>
         <td>
+            <img src="{{ $data->photo ? url('/core/public/storage/images/'.$data->photo) : url('/core/public/storage/images/placeholder.png') }}"
+                alt="Image Not Found" style="width: 70px; height: 70px; object-fit: cover; border-radius: 10px;">
+        </td>
+        <td>
             {{ $data->title }}
         </td>
         <td>
-            {{ Str::limit(strip_tags($data->content), 250, '...') }}
+            {{ Str::limit(strip_tags($data->details), 250, '...') }}
         </td>
         <td>
 
