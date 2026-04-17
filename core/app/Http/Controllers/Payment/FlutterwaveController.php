@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Payment;
 
 use App\Helpers\EmailHelper;
+use App\Helpers\CheckoutShippingHelper;
 use App\Helpers\PriceHelper;
 use App\Helpers\SmsHelper;
 use App\Http\Controllers\Controller;
@@ -49,8 +50,9 @@ class FlutterwaveController extends Controller
                 'bill_last_name' => 'required',
                 'bill_email' => 'required',
                 'bill_phone' => 'required',
-                'bill_address' => 'required',
+                'bill_address1' => 'required',
                 'bill_city' => 'required',
+                'bill_province' => 'required',
                 'bill_zip' => 'required',
             ]);
         }else{
@@ -95,7 +97,7 @@ class FlutterwaveController extends Controller
         if (!PriceHelper::Digital()) {
             $shipping = null;
         } else {
-            $shipping = ShippingService::findOrFail($request['shipping_id']);
+            $shipping = CheckoutShippingHelper::orderShippingPayload($request['shipping_id']);
         }
         $discount = [];
         if (Session::has('coupon')) {
@@ -105,7 +107,7 @@ class FlutterwaveController extends Controller
             $shipping = null;
         }
 
-        $grand_total = ($cart_total + ($shipping ? $shipping->price : 0)) + $total_tax;
+        $grand_total = ($cart_total + ($shipping ? $shipping['price'] : 0)) + $total_tax;
         $grand_total = $grand_total - ($discount ? $discount['discount'] : 0);
         $grand_total += PriceHelper::StatePrce($request->state_id, $cart_total);
         $total_amount = PriceHelper::setConvertPrice($grand_total);
@@ -225,14 +227,14 @@ class FlutterwaveController extends Controller
                         if (!PriceHelper::Digital()) {
                             $shipping = null;
                         } else {
-                            $shipping = ShippingService::findOrFail($requestData['shipping_id']);
+                            $shipping = CheckoutShippingHelper::orderShippingPayload($requestData['shipping_id']);
                         }
                         $discount = [];
                         if (Session::has('coupon')) {
                             $discount = Session::get('coupon');
                         }
 
-                        $grand_total = ($cart_total + ($shipping ? $shipping->price : 0)) + $total_tax;
+                        $grand_total = ($cart_total + ($shipping ? $shipping['price'] : 0)) + $total_tax;
                         $grand_total = $grand_total - ($discount ? $discount['discount'] : 0);
                         $total_amount = PriceHelper::setConvertPrice($grand_total);
                         $orderData['state'] =  $requestData['state_id'] ? json_encode(State::findOrFail($requestData['state_id']), true) : null;

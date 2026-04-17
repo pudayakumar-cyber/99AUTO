@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Payment;
 
 use App\Helpers\EmailHelper;
+use App\Helpers\CheckoutShippingHelper;
 use App\Helpers\PriceHelper;
 use App\Helpers\SmsHelper;
 use Illuminate\Http\Request;
@@ -39,8 +40,9 @@ class PaytmController extends Controller
                 'bill_last_name' => 'required',
                 'bill_email' => 'required',
                 'bill_phone' => 'required',
-                'bill_address' => 'required',
+                'bill_address1' => 'required',
                 'bill_city' => 'required',
+                'bill_province' => 'required',
                 'bill_zip' => 'required',
             ]);
         }else{
@@ -88,7 +90,7 @@ class PaytmController extends Controller
         if (!PriceHelper::Digital()) {
             $shipping = null;
         }else{
-            $shipping = ShippingService::findOrFail($request['shipping_id']);
+            $shipping = CheckoutShippingHelper::orderShippingPayload($request['shipping_id']);
         }
         $discount = [];
         if(Session::has('coupon')){
@@ -99,7 +101,7 @@ class PaytmController extends Controller
             $shipping = null;
         }
         
-        $grand_total = ($cart_total + ($shipping?$shipping->price:0)) + $total_tax;
+        $grand_total = ($cart_total + ($shipping ? $shipping['price'] : 0)) + $total_tax;
         $grand_total = $grand_total - ($discount ? $discount['discount'] : 0);
         $grand_total += PriceHelper::StatePrce($request->state_id,$cart_total);
         $total_amount = PriceHelper::setConvertPrice($grand_total);
@@ -457,25 +459,13 @@ class PaytmController extends Controller
                         $total_tax += $item::taxCalculate($item);
                     }
                 }
-                $shipping = [];
-                if(ShippingService::whereStatus(1)->whereId(1)->whereIsCondition(1)->exists()){
-                    $shipping = ShippingService::whereStatus(1)->whereId(1)->whereIsCondition(1)->first();
-                    if($cart_total >= $shipping->minimum_price){
-                        $shipping = $shipping;
-                    }else{
-                        $shipping = [];
-                    }
-                }
-        
-                if(!$shipping){
-                    $shipping = ShippingService::whereStatus(1)->where('id','!=',1)->first(); 
-                }
+                $shipping = json_decode($order->shipping, true);
                 $discount = [];
                 if(Session::has('coupon')){
                     $discount = Session::get('coupon');
                 }
                 
-                $grand_total = ($cart_total + ($shipping?$shipping->price:0)) + $total_tax;
+                $grand_total = ($cart_total + ($shipping ? $shipping['price'] : 0)) + $total_tax;
                 $grand_total = $grand_total - ($discount ? $discount['discount'] : 0);
                 $total_amount = PriceHelper::setConvertPrice($grand_total);
                 

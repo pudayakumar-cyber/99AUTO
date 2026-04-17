@@ -37,6 +37,8 @@ Route::group(['middleware' => ['adminlocalize', 'demo']], function () {
             Route::delete('/order/delete/{id}', 'Back\OrderController@delete')->name('back.order.delete');
             Route::get('/order/edit/{id}', 'Back\OrderController@edit')->name('back.order.edit');
             Route::post('/order/update/{id}', 'Back\OrderController@update')->name('back.order.update');
+            Route::post('/order/shipment/create/{id}', 'Back\OrderController@createShipment')->name('back.order.shipment.create');
+            Route::get('/order/shipment/label/{id}', 'Back\OrderController@shipmentLabel')->name('back.order.shipment.label');
             Route::get('/order/print/{id}', 'Back\OrderController@printOrder')->name('back.order.print');
             Route::get('/order/invoice/{id}', 'Back\OrderController@invoice')->name('back.order.invoice');
             Route::get('/order/status/{id}/{field}/{value}', 'Back\OrderController@status')->name('back.order.status');
@@ -448,6 +450,7 @@ Route::group(['middleware' => 'maintainance'], function () {
         Route::get('/checkout/review/payment', 'Front\CheckoutController@payment')->name('front.checkout.payment');
         Route::get('/checkout/state/setup', 'Front\CheckoutController@stateSetUp')->name('front.state.setup');
         Route::get('/checkout/shipping/setup', 'Front\CheckoutController@shippingSetUp')->name('front.shipping.setup');
+        Route::post('/checkout/shipping/options', 'Front\CheckoutController@shippingOptions')->name('front.checkout.shipping.options');
         Route::post('/checkout-submit', 'Front\CheckoutController@checkout')->name('front.checkout.submit');
         Route::get('/checkout/success', 'Front\CheckoutController@paymentSuccess')->name('front.checkout.success');
         Route::get('/checkout/cancle', 'Front\CheckoutController@paymentCancle')->name('front.checkout.cancle');

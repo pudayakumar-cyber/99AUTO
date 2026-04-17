@@ -2,6 +2,7 @@
 
 namespace App\Traits;
 
+use App\Helpers\CheckoutShippingHelper;
 use App\{
     Models\Setting,
     Models\PromoCode,
@@ -68,11 +69,11 @@ trait StripeElementsCheckout
         if (!PriceHelper::Digital()) {
             $shipping = null;
         } else {
-            $shipping = ShippingService::findOrFail($request->shipping_id);
+            $shipping = CheckoutShippingHelper::orderShippingPayload($request->shipping_id);
         }
 
         $orderData['state'] = $request->state_id ? json_encode(State::findOrFail($request->state_id), true) : null;
-        $grand_total = ($cart_total + ($shipping ? $shipping->price : 0)) + $total_tax;
+        $grand_total = ($cart_total + ($shipping ? $shipping['price'] : 0)) + $total_tax;
         $grand_total = $grand_total - ($discount ? $discount['discount'] : 0);
         $grand_total += PriceHelper::StatePrce($request->state_id, $cart_total);
         $total_amount = PriceHelper::setConvertPrice($grand_total);
@@ -185,7 +186,7 @@ trait StripeElementsCheckout
             if (!PriceHelper::Digital()) {
                 $shipping = null;
             } else {
-                $shipping = ShippingService::findOrFail($order_input_data['shipping_id']);
+                $shipping = CheckoutShippingHelper::orderShippingPayload($order_input_data['shipping_id']);
             }
 
             $discount = [];
@@ -193,7 +194,7 @@ trait StripeElementsCheckout
                 $discount = Session::get('coupon');
             }
 
-            $grand_total = ($cart_total + ($shipping ? $shipping->price : 0)) + $total_tax;
+            $grand_total = ($cart_total + ($shipping ? $shipping['price'] : 0)) + $total_tax;
             $grand_total = $grand_total - ($discount ? $discount['discount'] : 0);
             $grand_total += PriceHelper::StatePrce($order_input_data['state_id'], $cart_total);
             $total_amount = PriceHelper::setConvertPrice($grand_total);

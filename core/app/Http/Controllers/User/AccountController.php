@@ -83,6 +83,7 @@ class AccountController extends Controller
             'bill_address2' => 'nullable|max:100',
             'bill_zip'      => 'nullable|max:100',
             'bill_city'      => 'required|max:100',
+            'bill_province'  => 'required|max:100',
             'bill_company'   => 'nullable|max:100',
             'bill_country'   => 'required|max:100',
         ]);
@@ -100,6 +101,7 @@ class AccountController extends Controller
             'ship_address2' => 'nullable|max:100',
             'ship_zip'      => 'nullable|max:100',
             'ship_city'      => 'required|max:100',
+            'ship_province'  => 'required|max:100',
             'ship_company'   => 'nullable|max:100',
             'ship_country'   => 'required|max:100',
         ]);
