@@ -25,8 +25,9 @@
 
 					<thead>
 						<tr>
+                            <th width="10%">{{ __('Image') }}</th>
 							<th width="20%">{{ __('Title') }}</th>
-                            <th width="45%">{{ __('Details') }}</th>
+                            <th width="35%">{{ __('Details') }}</th>
                             <th width="15%">{{ __('Display On') }}</th>
 							<th width="15%">{{ __('Actions') }}</th>
 						</tr>

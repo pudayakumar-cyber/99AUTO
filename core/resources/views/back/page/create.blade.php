@@ -45,6 +45,18 @@
 									</div>
 
 									<div class="form-group">
+										<label for="photo">{{ __('Featured Image') }}</label>
+										<br>
+										<img class="admin-img mb-2" src="{{ url('/core/public/storage/images/placeholder.png') }}"
+											alt="No Image Found">
+										<label class="file d-block">
+											<input type="file" accept="image/*" class="upload-photo" name="photo" id="photo">
+											<span class="file-custom text-left">{{ __('Upload Image...') }}</span>
+										</label>
+										<small class="text-muted d-block mt-1">{{ __('Recommended for company pages and other CMS content sections.') }}</small>
+									</div>
+
+									<div class="form-group">
 										<label for="details">{{ __('Details') }} *</label>
 										<textarea name="details" id="details" class="form-control text-editor" rows="5"
 											placeholder="{{ __('Enter Details') }}"
