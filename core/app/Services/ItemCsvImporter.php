@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Helpers\ImageHelper;
 use App\Models\ProductUpload;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -23,7 +22,7 @@ use Illuminate\Support\Str;
  * - Brand, Product Category OR Category Group OR Category OR Suggested Categories
  *   (first segment before comma or &gt;)
  * - Images (pipe/comma/newline list) OR Image 1 URL … Image 14 URL (merged; duplicates removed)
- * - ADJUSTED PRICE OR Scraped Price
+ * - ADJUSTED PRICE OR Scraped Price (also updated on duplicate SKU / transit matches when present)
  *
  * Content (storefront):
  * - Description / Product Description — main HTML (`details`)
@@ -135,6 +134,7 @@ class ItemCsvImporter
         if ($existingItemId !== null) {
             $this->fillExistingItemMediaIfMissing($existingItemId, $data);
             $this->syncProductPartNumberOnExistingItem($existingItemId, $data);
+            $this->syncPriceOnExistingItem($existingItemId, $data);
             // Same SKU/Transit SKU rows should extend fitment, not be dropped.
             if ($this->mergeFitmentIntoExistingItem($existingItemId, $data)) {
                 return [false, false];
@@ -595,6 +595,28 @@ class ItemCsvImporter
         ]);
     }
 
+    /**
+     * When a row matches an existing item, persist CSV price onto item prices
+     * when ADJUSTED PRICE or Scraped Price is present.
+     *
+     * @param  array<string,string>  $data  normalized lowercase keys
+     */
+    private function syncPriceOnExistingItem(int $itemId, array $data): void
+    {
+        $rawPrice = $this->firstValue($data, ['adjusted price', 'scraped price']);
+        if (trim($rawPrice) === '') {
+            return;
+        }
+
+        $price = $this->parsePrice($rawPrice);
+
+        DB::table('items')->where('id', $itemId)->update([
+            'previous_price' => $price,
+            'discount_price' => $price,
+            'updated_at' => now(),
+        ]);
+    }
+
     private function fillExistingItemMediaIfMissing(int $itemId, array $data): void
     {
         $item = DB::table('items')->where('id', $itemId)->first(['photo', 'thumbnail']);
@@ -613,10 +635,9 @@ class ItemCsvImporter
             ->orderBy('id')
             ->value('photo');
         if (! empty($existingGalleryPhoto)) {
-            $thumbnail = $this->generateThumbnailFromStoredImage($existingGalleryPhoto);
             DB::table('items')->where('id', $itemId)->update([
                 'photo' => $existingGalleryPhoto,
-                'thumbnail' => $thumbnail ?: $existingGalleryPhoto,
+                'thumbnail' => $existingGalleryPhoto,
                 'updated_at' => now(),
             ]);
 
@@ -645,10 +666,9 @@ class ItemCsvImporter
             return;
         }
 
-        $thumbnail = $this->generateThumbnailFromStoredImage($mainPhoto);
         DB::table('items')->where('id', $itemId)->update([
             'photo' => $mainPhoto,
-            'thumbnail' => $thumbnail ?: $mainPhoto,
+            'thumbnail' => $mainPhoto,
             'updated_at' => now(),
         ]);
 
@@ -788,31 +808,6 @@ class ItemCsvImporter
             File::put($servedDir.'/'.$fileName, $body);
 
             return $fileName;
-        } catch (\Throwable) {
-            return null;
-        }
-    }
-
-    private function generateThumbnailFromStoredImage(string $photoName): ?string
-    {
-        try {
-            $sourcePath = public_path('storage/images/'.$photoName);
-            if (! File::exists($sourcePath)) {
-                return null;
-            }
-
-            $thumbnailName = 'TH_'.time().'_'.Str::random(8).'.jpg';
-            $thumbnailBody = ImageHelper::optimizedThumbnailContents($sourcePath);
-
-            Storage::disk('public')->put('images/'.$thumbnailName, $thumbnailBody);
-
-            $servedDir = public_path('storage/images');
-            if (! File::isDirectory($servedDir)) {
-                File::makeDirectory($servedDir, 0755, true);
-            }
-            File::put($servedDir.'/'.$thumbnailName, $thumbnailBody);
-
-            return $thumbnailName;
         } catch (\Throwable) {
             return null;
         }

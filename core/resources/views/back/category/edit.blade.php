@@ -88,6 +88,43 @@
 											placeholder="{{ __('Enter Serial Number') }}" value="{{ $category->serial }}">
 									</div>
 
+									<div class="card mb-4">
+										<div class="card-body">
+											<h5 class="mb-3">{{ __('Default Shipping Package') }}</h5>
+											<p class="text-muted mb-3">{{ __('These category-level estimates are used for eShipper checkout rates for products in this category.') }}</p>
+											<div class="row">
+												<div class="col-md-3">
+													<div class="form-group">
+														<label for="package_length">{{ __('Length (in)') }}</label>
+														<input type="number" step="0.01" min="0" name="package_length" class="form-control" id="package_length"
+															placeholder="{{ __('e.g. 6') }}" value="{{ old('package_length', $category->package_length) }}">
+													</div>
+												</div>
+												<div class="col-md-3">
+													<div class="form-group">
+														<label for="package_width">{{ __('Width (in)') }}</label>
+														<input type="number" step="0.01" min="0" name="package_width" class="form-control" id="package_width"
+															placeholder="{{ __('e.g. 4') }}" value="{{ old('package_width', $category->package_width) }}">
+													</div>
+												</div>
+												<div class="col-md-3">
+													<div class="form-group">
+														<label for="package_height">{{ __('Height (in)') }}</label>
+														<input type="number" step="0.01" min="0" name="package_height" class="form-control" id="package_height"
+															placeholder="{{ __('e.g. 4') }}" value="{{ old('package_height', $category->package_height) }}">
+													</div>
+												</div>
+												<div class="col-md-3">
+													<div class="form-group">
+														<label for="package_weight">{{ __('Weight (lb)') }}</label>
+														<input type="number" step="0.01" min="0" name="package_weight" class="form-control" id="package_weight"
+															placeholder="{{ __('e.g. 3') }}" value="{{ old('package_weight', $category->package_weight) }}">
+													</div>
+												</div>
+											</div>
+										</div>
+									</div>
+
 									<div class="form-group">
 										<button type="submit"
 											class="btn btn-secondary ">{{ __('Submit') }}</button>

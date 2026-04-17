@@ -4,10 +4,6 @@
 
     <section class="card widget widget-featured-posts widget-order-summary p-4">
         <h3 class="widget-title">{{ __('Order Summary') }}</h3>
-        @php
-            $free_shipping = DB::table('shipping_services')->whereStatus(1)->whereIsCondition(1)->first();
-        @endphp
-
         <!-- @if ($free_shipping)
             @if ($free_shipping->minimum_price >= $cart_total)
                 <p class="free-shippin-aa"><em>{{ __('Free Shipping After Order') }}
@@ -66,27 +62,16 @@
         <div class="row">
             <div class="col-sm-12 mb-3">
                 @if (PriceHelper::CheckDigital() == true)
-                    @php
-                        $free_shipping = DB::table('shipping_services')->whereStatus(1)->whereIsCondition(1)->first();
-                    @endphp
-
                     <select name="shipping_id" class="form-control" id="shipping_id_select" required>
                         <option value="" selected disabled>{{ __('Select Shipping Method') }}*</option>
-                        @foreach (DB::table('shipping_services')->whereStatus(1)->get() as $shipping)
-                            @if ($shipping->id == 1 && isset($free_shipping) && $free_shipping->minimum_price <= $cart_total)
-                                <option value="{{ $shipping->id }}" data-href="{{ route('front.shipping.setup') }}">
-                                    {{ $shipping->title }}
-                                </option>
-                            @else
-                                @if ($shipping->id != 1)
-                                    <option value="{{ $shipping->id }}"
-                                        data-href="{{ route('front.shipping.setup') }}">{{ $shipping->title }}
-                                        ({{ PriceHelper::setCurrencyPrice($shipping->price) }})
-                                    </option>
-                                @endif
-                            @endif
+                        @foreach (($shippingOptions ?? []) as $shipping)
+                            <option value="{{ $shipping['id'] }}" data-href="{{ route('front.shipping.setup') }}">
+                                {{ $shipping['title'] }} ({{ PriceHelper::setCurrencyPrice($shipping['price']) }})
+                            </option>
                         @endforeach
                     </select>
+                    <small class="text-muted d-block shipping_options_message">{{ $shippingOptionsMessage ?? __('Enter your full address to load shipping options.') }}</small>
+                    <small class="text-danger d-block shipping_options_error">{{ $shippingOptionsError ?? '' }}</small>
                     @error('shipping_id')
                         <p class="text-danger shipping_message">{{ $message }}</p>
                     @enderror
@@ -170,6 +155,46 @@
 
 @section('script')
     <script>
+        function renderShippingOptions(options) {
+            let select = $('#shipping_id_select');
+            let current = select.val();
+            select.find('option:not(:first)').remove();
+
+            options.forEach(function(option) {
+                select.append(
+                    $('<option>')
+                        .val(option.id)
+                        .attr('data-href', '{{ route('front.shipping.setup') }}')
+                        .text(option.title + ' ({{ PriceHelper::setCurrencySign() }}' + Number(option.price).toFixed(2) + ')')
+                );
+            });
+
+            if (current && options.find(function(option) { return option.id === current; })) {
+                select.val(current).trigger('change');
+            }
+        }
+
+        function loadSingleCheckoutShippingOptions() {
+            let form = $('#checkoutBilling');
+            if (!form.length) {
+                return;
+            }
+
+            $.ajax({
+                type: 'POST',
+                url: '{{ route('front.checkout.shipping.options') }}',
+                data: form.serialize(),
+                success: function(response) {
+                    renderShippingOptions(response.options || []);
+                    $('.shipping_options_message').text(response.message || '');
+                    $('.shipping_options_error').text(response.error || '');
+                },
+                error: function() {
+                    $('.shipping_options_error').text('{{ __('Unable to load shipping options right now.') }}');
+                }
+            });
+        }
+
         // Show the modal on #single_checkout_payment change
         $(document).on("click", "#single_checkout_payment", function() {
             let keyword = $('.payment_gateway').val();
@@ -212,6 +237,14 @@
                 $('.single_checkout_payment').removeAttr('id');
                 $('.single_checkout_payment').attr('disabled', true);
             }
+        });
+
+        $(document).on('change blur', '#checkoutBilling input, #checkoutBilling select', function() {
+            loadSingleCheckoutShippingOptions();
+        });
+
+        $(document).ready(function() {
+            loadSingleCheckoutShippingOptions();
         });
     </script>
 @endsection

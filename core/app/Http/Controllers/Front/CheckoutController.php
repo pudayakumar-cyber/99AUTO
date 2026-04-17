@@ -16,6 +16,7 @@ use App\{
     Traits\BankCheckout,
 };
 use App\Helpers\PriceHelper;
+use App\Helpers\CheckoutShippingHelper;
 use App\Helpers\SmsHelper;
 use App\Models\Currency;
 use App\Models\Item;
@@ -107,6 +108,9 @@ class CheckoutController extends Controller
         $data['shipping'] = $shipping;
         $data['tax'] = $total_tax;
         $data['payments'] = PaymentSetting::whereStatus(1)->get();
+        $data['shippingOptions'] = [];
+        $data['shippingOptionsMessage'] = __('Enter your full address to load shipping options.');
+        $data['shippingOptionsError'] = null;
 
         return view('front.checkout.index', $data);
     }
@@ -185,6 +189,7 @@ class CheckoutController extends Controller
             'bill_phone' => 'required',
             'bill_address1' => 'required',
             'bill_city' => 'required',
+            'bill_province' => 'required',
             'bill_zip' => 'required',
         ]);
 
@@ -202,6 +207,7 @@ class CheckoutController extends Controller
                     "ship_address2" => $request->bill_address2,
                     "ship_zip" => $request->bill_zip,
                     "ship_city" => $request->bill_city,
+                    "ship_province" => $request->bill_province,
                     "ship_country" => $request->bill_country,
                 ];
             } else {
@@ -291,6 +297,7 @@ class CheckoutController extends Controller
             'ship_address1' => 'required',
             'ship_zip' => 'required',
             'ship_city' => 'required',
+            'ship_province' => 'required',
         ]);
 
         Session::put('shipping_address', $request->all());
@@ -355,7 +362,32 @@ class CheckoutController extends Controller
         $data['shipping'] = $shipping;
         $data['tax'] = $total_tax;
         $data['payments'] = PaymentSetting::whereStatus(1)->get();
+        $rateState = CheckoutShippingHelper::loadCheckoutOptions(Session::get('shipping_address'), $cart);
+        $data['shippingOptions'] = $rateState['options'];
+        $data['shippingOptionsMessage'] = $rateState['message'];
+        $data['shippingOptionsError'] = $rateState['error'];
         return view('front.checkout.payment', $data);
+    }
+
+    public function shippingOptions(Request $request)
+    {
+        $payload = [
+            'ship_first_name' => $request->bill_first_name,
+            'ship_last_name' => $request->bill_last_name,
+            'ship_email' => $request->bill_email,
+            'ship_phone' => $request->bill_phone,
+            'ship_company' => $request->bill_company,
+            'ship_address1' => $request->bill_address1,
+            'ship_address2' => $request->bill_address2,
+            'ship_zip' => $request->bill_zip,
+            'ship_city' => $request->bill_city,
+            'ship_province' => $request->bill_province,
+            'ship_country' => $request->bill_country,
+        ];
+
+        $rateState = CheckoutShippingHelper::loadCheckoutOptions($payload, Session::get('cart', []));
+
+        return response()->json($rateState);
     }
 
     public function checkout(PaymentRequest $request)
@@ -734,16 +766,13 @@ class CheckoutController extends Controller
             }
         }
 
-        $shipping = [];
-        if ($shipping_id) {
-            $shipping = ShippingService::findOrFail($shipping_id);
-        }
+        $shippingPrice = CheckoutShippingHelper::selectedPrice($shipping_id);
         $discount = [];
         if (Session::has('coupon')) {
             $discount = Session::get('coupon');
         }
 
-        $grand_total = ($cart_total + ($shipping ? $shipping->price : 0)) + $total_tax;
+        $grand_total = ($cart_total + $shippingPrice) + $total_tax;
         $grand_total = $grand_total - ($discount ? $discount['discount'] : 0);
 
         $state_price = 0;
@@ -800,14 +829,14 @@ class CheckoutController extends Controller
             }
         }
 
-        $shipping = ShippingService::findOrFail($shipping_id);
+        $shippingPrice = CheckoutShippingHelper::selectedPrice($shipping_id);
 
         $discount = [];
         if (Session::has('coupon')) {
             $discount = Session::get('coupon');
         }
 
-        $grand_total = ($cart_total + ($shipping ? $shipping->price : 0)) + $total_tax;
+        $grand_total = ($cart_total + $shippingPrice) + $total_tax;
         $grand_total = $grand_total - ($discount ? $discount['discount'] : 0);
 
         $state_price = 0;
@@ -834,7 +863,7 @@ class CheckoutController extends Controller
         $total_amount = $grand_total + $state_price;
 
         $data['state_price'] = PriceHelper::setCurrencyPrice($state_price);
-        $data['shipping_price'] = PriceHelper::setCurrencyPrice($shipping->price);
+        $data['shipping_price'] = PriceHelper::setCurrencyPrice($shippingPrice);
         $data['grand_total'] = PriceHelper::setCurrencyPrice($total_amount);
 
         return response()->json($data);

@@ -316,6 +316,30 @@
                         </div>
                     </div>
                     <div class="form-group">
+                        <label for="package_length">{{ __('Package Length (in)') }}</label>
+                        <input type="number" step="0.01" min="0" id="package_length" name="package_length"
+                            class="form-control" placeholder="{{ __('Package Length (in)') }}"
+                            value="{{ old('package_length', $item->package_length) }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="package_width">{{ __('Package Width (in)') }}</label>
+                        <input type="number" step="0.01" min="0" id="package_width" name="package_width"
+                            class="form-control" placeholder="{{ __('Package Width (in)') }}"
+                            value="{{ old('package_width', $item->package_width) }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="package_height">{{ __('Package Height (in)') }}</label>
+                        <input type="number" step="0.01" min="0" id="package_height" name="package_height"
+                            class="form-control" placeholder="{{ __('Package Height (in)') }}"
+                            value="{{ old('package_height', $item->package_height) }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="package_weight">{{ __('Package Weight (lb)') }}</label>
+                        <input type="number" step="0.01" min="0" id="package_weight" name="package_weight"
+                            class="form-control" placeholder="{{ __('Package Weight (lb)') }}"
+                            value="{{ old('package_weight', $item->package_weight) }}">
+                    </div>
+                    <div class="form-group">
                         <label for="tax_id">{{ __('Select Tax') }} *</label>
                         <select name="tax_id" id="tax_id" class="form-control">
                             <option value="">{{__('Select One')}}</option>
