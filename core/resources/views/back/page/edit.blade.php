@@ -47,6 +47,19 @@
                                                 placeholder="{{ __('Enter Slug') }}" value="{{ $page->slug }}" required>
                                         </div>
 
+                                        <div class="form-group">
+                                            <label for="photo">{{ __('Featured Image') }}</label>
+                                            <br>
+                                            <img class="admin-img mb-2"
+                                                src="{{ $page->photo ? url('/core/public/storage/images/'.$page->photo) : url('/core/public/storage/images/placeholder.png') }}"
+                                                alt="No Image Found">
+                                            <label class="file d-block">
+                                                <input type="file" accept="image/*" class="upload-photo" name="photo" id="photo">
+                                                <span class="file-custom text-left">{{ __('Upload Image...') }}</span>
+                                            </label>
+                                            <small class="text-muted d-block mt-1">{{ __('This image will appear on the frontend page below the main heading.') }}</small>
+                                        </div>
+
        
                                         <div class="form-group">
                                             <label for="details">{{ __('Details') }} *</label>
