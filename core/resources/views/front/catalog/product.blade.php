@@ -10,6 +10,8 @@
         $item->product_part_number ?: $item->prod_number ?: null,
         $item->name,
     ])->filter(fn ($v) => trim((string) $v) !== '')->implode(' - ');
+    $pixelValue = (float) PriceHelper::setConvertPrice($item->discount_price ?? $item->previous_price ?? 0);
+    $pixelCurrency = PriceHelper::setCurrencyName();
 
     $resolveProductImageUrl = function (?string $rawPath): string {
         $rawPath = trim((string) $rawPath);
@@ -89,8 +91,8 @@
             content_ids: [{!! json_encode((string)($item->id ?? $item->prod_number ?? '')) !!}],
             content_name: {!! json_encode($item->name ?? '') !!},
             content_category: {!! json_encode(optional($item->category)->name ?? '') !!},
-            value: {{ (float) ($item->discount_price ?? $item->previous_price ?? 0) }},
-            currency: 'CAD'
+            value: {{ $pixelValue }},
+            currency: @json($pixelCurrency)
           });
 
         } else {
@@ -346,8 +348,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                             content_ids: [@json((string)($item->id ?? $item->prod_number ?? ''))],
                                             content_name: @json($item->name ?? ''),
                                             content_category: @json(optional($item->category)->name ?? ''),
-                                            value: {{ (float) ($item->discount_price ?? $item->previous_price ?? 0) }},
-                                            currency: 'CAD',
+                                            value: {{ $pixelValue }},
+                                            currency: @json($pixelCurrency),
                                             num_items: qty
                                             });
                                         });
