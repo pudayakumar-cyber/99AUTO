@@ -138,21 +138,12 @@ class PriceHelper
 
     public static function grandCurrencyPrice($item)
     {
-        $option_price = 0;
-        if (count($item->attributes) > 0) {
-            foreach ($item->attributes as $attr) {
-                if (isset($attr->options[0])) {
-                    $option_price += $attr->options[0]->price;
-                }
-            }
-        }
-
         if (Session::has('currency')) {
             $curr = Currency::findOrFail(Session::get('currency'));
         } else {
             $curr = Currency::where('is_default', 1)->first();
         }
-        $price = $item->discount_price + $option_price;
+        $price = $item->discount_price;
 
         $setting = Setting::first();
 
@@ -168,23 +159,12 @@ class PriceHelper
 
     public static function grandPrice($item)
     {
-        $option_price = 0;
-        if (count($item->attributes) > 0) {
-            foreach ($item->attributes as $attr) {
-                if (isset($attr->options[0])) {
-                    $option_price += PriceHelper::convertPrice($attr->options[0]->price);
-                }
-
-            }
-
-        }
-
         if (Session::has('currency')) {
             $curr = Currency::findOrFail(Session::get('currency'));
         } else {
             $curr = Currency::where('is_default', 1)->first();
         }
-        $price = ($item->discount_price + $option_price);
+        $price = $item->discount_price;
 
         return $price;
 
