@@ -651,8 +651,23 @@ class FrontendController extends Controller
         if (Setting::first()->is_faq == 0) {
             return back();
         }
-        $fcategories =  Fcategory::whereStatus(1)->withCount('faqs')->latest('id')->get();
-        return view('front.faq.index', ['fcategories' => $fcategories]);
+        $category = Fcategory::whereStatus(1)
+            ->whereSlug('frequently-asked-questions')
+            ->with('faqs')
+            ->first();
+
+        if (!$category) {
+            $category = Fcategory::whereStatus(1)
+                ->with('faqs')
+                ->latest('id')
+                ->first();
+        }
+
+        if (!$category) {
+            return view('front.faq.index', ['fcategories' => collect()]);
+        }
+
+        return redirect()->route('front.faq.details', $category->slug);
     }
 
     public function show($slug)
