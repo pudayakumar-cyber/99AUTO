@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
-use App\Helpers\ImageHelper;
 use App\Models\ProductUpload;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -16,14 +16,14 @@ use Illuminate\Support\Str;
  * Column headers are matched case-insensitively after trim (UTF-8 BOM stripped).
  *
  * Core (common export / admin):
- * - Title OR Product Name (required if no SKU codes)
+ * - Title OR Product Name (required for new inserts; optional when updating by Transit SKU or Product Part Number)
  * - PROD NUMBER OR Internal SKU OR Transit SKU (used for `sku` / `prod_number`; duplicate rows skipped by these codes)
- * - Product Part Number → `product_part_number` (also updated on duplicate SKU / transit matches when present)
+ * - Product Part Number → `product_part_number` (matches existing items; also updated on duplicate SKU / transit matches when present)
  * - MOOG OR Interchange Part Number (stored in `moog` when MOOG empty)
  * - Brand, Product Category OR Category Group OR Category OR Suggested Categories
  *   (first segment before comma or &gt;)
  * - Images (pipe/comma/newline list) OR Image 1 URL … Image 14 URL (merged; duplicates removed)
- * - ADJUSTED PRICE OR Scraped Price
+ * - ADJUSTED PRICE OR Scraped Price (also updated on duplicate SKU / transit matches when present)
  *
  * Content (storefront):
  * - Description / Product Description — main HTML (`details`)
@@ -127,7 +127,11 @@ class ItemCsvImporter
 
         $data = $this->normalizeRowKeys($combined);
         $title = trim($this->firstValue($data, ['title', 'product name']));
-        if ($title === '') {
+        $transit = trim((string) ($data['transit sku'] ?? ''));
+        $productPartNumber = trim($this->firstValue($data, ['product part number']));
+        $canMatchExistingWithoutTitle = $transit !== '' || $productPartNumber !== '';
+
+        if ($title === '' && ! $canMatchExistingWithoutTitle) {
             return [false, true];
         }
 
@@ -135,11 +139,16 @@ class ItemCsvImporter
         if ($existingItemId !== null) {
             $this->fillExistingItemMediaIfMissing($existingItemId, $data);
             $this->syncProductPartNumberOnExistingItem($existingItemId, $data);
+            $this->syncPriceOnExistingItem($existingItemId, $data);
             // Same SKU/Transit SKU rows should extend fitment, not be dropped.
             if ($this->mergeFitmentIntoExistingItem($existingItemId, $data)) {
                 return [false, false];
             }
 
+            return [false, true];
+        }
+
+        if ($title === '') {
             return [false, true];
         }
 
@@ -155,10 +164,19 @@ class ItemCsvImporter
     {
         $internal = $this->firstValue($data, ['internal sku', 'prod number']);
         $transit = trim((string) ($data['transit sku'] ?? ''));
+        $productPartNumber = trim($this->firstValue($data, ['product part number']));
         $codes = array_values(array_unique(array_filter(
             [$internal, $transit],
             static fn (string $c): bool => trim($c) !== ''
         )));
+
+        Log::info('ItemCsvImporter findExistingItemId codes', [
+            'title' => $title,
+            'internal_sku' => $internal,
+            'transit_sku' => $transit,
+            'product_part_number' => $productPartNumber,
+            'codes' => $codes,
+        ]);
 
         foreach ($codes as $code) {
             $id = DB::table('items')
@@ -171,7 +189,16 @@ class ItemCsvImporter
             }
         }
 
-        if ($codes === []) {
+        if ($productPartNumber !== '') {
+            $id = DB::table('items')->where('product_part_number', $productPartNumber)->value('id');
+            if ($id) {
+                return (int) $id;
+            }
+        }
+
+        // When Transit SKU or Product Part Number is present, do not fall back to name (avoids wrong item on partial rows).
+        $ignoreNameMatch = $transit !== '' || $productPartNumber !== '';
+        if (! $ignoreNameMatch && $codes === [] && $title !== '') {
             $id = DB::table('items')->where('name', $title)->value('id');
             if ($id) {
                 return (int) $id;
@@ -295,7 +322,7 @@ class ItemCsvImporter
 
     /**
      * Skip import when any SKU code already exists on `items.sku` or `items.prod_number`,
-     * or when no codes are provided and the product name already exists.
+     * when `product_part_number` matches, or when no identifiers block name match and the product name already exists.
      *
      * @param  array<string,string>  $data  normalized lowercase keys
      */
@@ -595,6 +622,28 @@ class ItemCsvImporter
         ]);
     }
 
+    /**
+     * When a row matches an existing item, persist CSV price onto item prices
+     * when ADJUSTED PRICE or Scraped Price is present.
+     *
+     * @param  array<string,string>  $data  normalized lowercase keys
+     */
+    private function syncPriceOnExistingItem(int $itemId, array $data): void
+    {
+        $rawPrice = $this->firstValue($data, ['adjusted price', 'scraped price']);
+        if (trim($rawPrice) === '') {
+            return;
+        }
+
+        $price = $this->parsePrice($rawPrice);
+
+        DB::table('items')->where('id', $itemId)->update([
+            'previous_price' => $price,
+            'discount_price' => $price,
+            'updated_at' => now(),
+        ]);
+    }
+
     private function fillExistingItemMediaIfMissing(int $itemId, array $data): void
     {
         $item = DB::table('items')->where('id', $itemId)->first(['photo', 'thumbnail']);
@@ -613,10 +662,9 @@ class ItemCsvImporter
             ->orderBy('id')
             ->value('photo');
         if (! empty($existingGalleryPhoto)) {
-            $thumbnail = $this->generateThumbnailFromStoredImage($existingGalleryPhoto);
             DB::table('items')->where('id', $itemId)->update([
                 'photo' => $existingGalleryPhoto,
-                'thumbnail' => $thumbnail ?: $existingGalleryPhoto,
+                'thumbnail' => $existingGalleryPhoto,
                 'updated_at' => now(),
             ]);
 
@@ -645,10 +693,9 @@ class ItemCsvImporter
             return;
         }
 
-        $thumbnail = $this->generateThumbnailFromStoredImage($mainPhoto);
         DB::table('items')->where('id', $itemId)->update([
             'photo' => $mainPhoto,
-            'thumbnail' => $thumbnail ?: $mainPhoto,
+            'thumbnail' => $mainPhoto,
             'updated_at' => now(),
         ]);
 
@@ -788,31 +835,6 @@ class ItemCsvImporter
             File::put($servedDir.'/'.$fileName, $body);
 
             return $fileName;
-        } catch (\Throwable) {
-            return null;
-        }
-    }
-
-    private function generateThumbnailFromStoredImage(string $photoName): ?string
-    {
-        try {
-            $sourcePath = public_path('storage/images/'.$photoName);
-            if (! File::exists($sourcePath)) {
-                return null;
-            }
-
-            $thumbnailName = 'TH_'.time().'_'.Str::random(8).'.jpg';
-            $thumbnailBody = ImageHelper::optimizedThumbnailContents($sourcePath);
-
-            Storage::disk('public')->put('images/'.$thumbnailName, $thumbnailBody);
-
-            $servedDir = public_path('storage/images');
-            if (! File::isDirectory($servedDir)) {
-                File::makeDirectory($servedDir, 0755, true);
-            }
-            File::put($servedDir.'/'.$thumbnailName, $thumbnailBody);
-
-            return $thumbnailName;
         } catch (\Throwable) {
             return null;
         }
