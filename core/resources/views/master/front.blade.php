@@ -66,6 +66,17 @@
     @endif
     <style>
         {{ $setting->custom_css }}
+        .product-card {
+            cursor: pointer;
+        }
+
+        .product-card .product-button-group,
+        .product-card .product-button-group *,
+        .product-card a,
+        .product-card button {
+            cursor: pointer;
+        }
+
         .whatsapp-float {
             position: fixed;
             bottom: 20px;
