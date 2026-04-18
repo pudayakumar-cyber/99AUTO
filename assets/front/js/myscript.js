@@ -770,6 +770,25 @@ $(function ($) {
             });
         }
 
+        function initProductCardNavigation() {
+            var interactiveSelector = 'a, button, input, select, textarea, label, [role="button"], .product-button-group, .wishlist_store, .product_compare';
+
+            $(document)
+                .off('click.productCardNavigation')
+                .on('click.productCardNavigation', '.product-card', function (event) {
+                    if ($(event.target).closest(interactiveSelector).length) {
+                        return;
+                    }
+
+                    var productLink = $(this).find('.product-title a[href]').first().attr('href');
+                    if (!productLink) {
+                        return;
+                    }
+
+                    window.location.href = productLink;
+                });
+        }
+
         function initCatalogProgressiveLoading() {
             var $main = $('#main_div.catalog-progressive');
             var sentinel = document.getElementById('catalog_chunk_sentinel');
@@ -871,6 +890,8 @@ $(function ($) {
                 appendNextChunk();
             }
         }
+
+        initProductCardNavigation();
 
         window.initCatalogProgressiveLoading = initCatalogProgressiveLoading;
 
