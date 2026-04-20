@@ -827,8 +827,8 @@
                                     <a class="text-center"
                                         href="{{ route('front.catalog') . '?brand=' . $brand->slug }}">
                                         @if ($brandPhotoUrl)
-                                            <img class="d-block hi-50 lazy"
-                                                data-src="{{ $brandPhotoUrl }}"
+                                            <img class="d-block hi-50"
+                                                src="{{ $brandPhotoUrl }}"
                                                 alt="{{ $brand->name }}" title="{{ $brand->name }}">
                                         @else
                                             <span class="brand-name-fallback">{{ $brand->name }}</span>
