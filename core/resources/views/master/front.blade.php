@@ -260,6 +260,19 @@
                 object-fit: contain;
             }
 
+            .brand-name-fallback {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 54px;
+                color: #222;
+                font-size: 14px;
+                font-weight: 700;
+                line-height: 1.25;
+                text-align: center;
+                text-decoration: none;
+            }
+
 
             .search-box-wrap {
                 flex: 1 1 auto;
@@ -268,6 +281,30 @@
             }
 
             /* width:auto on desktop — 100% here was forcing full-row width and overlapping toolbar */
+            .site-header .topbar .container > .row > .col-lg-12 > .d-flex {
+                align-items: center;
+            }
+
+            .site-header .search-box-wrap {
+                align-items: center;
+            }
+
+            .site-header .search-box-wrap .search-box-inner,
+            .site-header .search-box-wrap .search-box,
+            .site-header .header-keyword-search,
+            #header_search_form.input-group {
+                width: 100%;
+            }
+
+            .site-header .search-box-wrap .search-box {
+                align-items: center;
+                gap: 0;
+            }
+
+            .site-header .header-keyword-search .input-group {
+                height: 38px;
+            }
+
             .vehicle-search {
                 display: flex;
                 align-items: center;

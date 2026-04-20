@@ -213,7 +213,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <span class="product-badge bg-secondary border-default text-body">{{ __('out of stock') }}</span>
                     @endif
 
-                    @if ($item->previous_price && $item->previous_price != 0)
+                    @if (PriceHelper::showPreviousPrice($item))
                         <div class="product-badge bg-goldenrod  ppp-t"> -{{ PriceHelper::DiscountPercentage($item) }}</div>
                     @endif
 
@@ -265,7 +265,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         @endif
 
                         <span class="h3 d-block price-area">
-                            @if ($item->previous_price != 0)
+                            @if (PriceHelper::showPreviousPrice($item))
                                 <small
                                     class="d-inline-block"><del>{{ PriceHelper::setPreviousPrice($item->previous_price) }}</del></small>
                             @endif
@@ -801,12 +801,12 @@ document.addEventListener('DOMContentLoaded', function () {
                                     ">
                                             {{ __('out of stock') }}</div>
                                     @endif
-                                    @if ($related->previous_price && $related->previous_price != 0)
+                                    @if (PriceHelper::showPreviousPrice($related))
                                         <div class="product-badge product-badge2 bg-info">
                                             -{{ PriceHelper::DiscountPercentage($related) }}</div>
                                     @endif
 
-                                    @if ($related->previous_price && $related->previous_price != 0)
+                                    @if (PriceHelper::showPreviousPrice($related))
                                         <div class="product-badge product-badge2 bg-info">
                                             -{{ PriceHelper::DiscountPercentage($related) }}</div>
                                     @endif
@@ -833,7 +833,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                                 {{ Str::limit($related->name, 35) }}
                                             </a></h3>
                                         <h4 class="product-price">
-                                            @if ($related->previous_price != 0)
+                                            @if (PriceHelper::showPreviousPrice($related))
                                                 <del>{{ PriceHelper::setPreviousPrice($related->previous_price) }}</del>
                                             @endif
                                             {{ PriceHelper::grandCurrencyPrice($related) }}
