@@ -801,13 +801,23 @@
 
                                 $pathOnly = parse_url($photo, PHP_URL_PATH) ?? $photo;
                                 if (preg_match('~/core/public/storage/images/([^/?#]+)~i', (string) $pathOnly, $m)) {
-                                    return url('/core/public/storage/images/' . $m[1]);
+                                    $filename = $m[1];
+                                    return is_file(public_path('storage/images/' . $filename))
+                                        ? url('/core/public/storage/images/' . $filename)
+                                        : null;
                                 }
                                 if (preg_match('~/storage/images/([^/?#]+)~i', (string) $pathOnly, $m)) {
-                                    return url('/core/public/storage/images/' . $m[1]);
+                                    $filename = $m[1];
+                                    return is_file(public_path('storage/images/' . $filename))
+                                        ? url('/core/public/storage/images/' . $filename)
+                                        : null;
                                 }
 
-                                return url('/core/public/storage/images/' . ltrim($photo, '/'));
+                                $filename = basename((string) $pathOnly);
+
+                                return $filename !== '' && is_file(public_path('storage/images/' . $filename))
+                                    ? url('/core/public/storage/images/' . $filename)
+                                    : null;
                             };
                         @endphp
                         <div class="brand-slider owl-carousel">
@@ -819,9 +829,7 @@
                                         @if ($brandPhotoUrl)
                                             <img class="d-block hi-50 lazy"
                                                 data-src="{{ $brandPhotoUrl }}"
-                                                alt="{{ $brand->name }}" title="{{ $brand->name }}"
-                                                onerror="this.classList.add('d-none'); this.nextElementSibling.classList.remove('d-none');">
-                                            <span class="brand-name-fallback d-none">{{ $brand->name }}</span>
+                                                alt="{{ $brand->name }}" title="{{ $brand->name }}">
                                         @else
                                             <span class="brand-name-fallback">{{ $brand->name }}</span>
                                         @endif
@@ -836,9 +844,7 @@
                                     href="{{ route('front.catalog') . '?brand=' . $brand->slug }}">
                                     @if ($brandPhotoUrl)
                                         <img src="{{ $brandPhotoUrl }}"
-                                            alt="{{ $brand->name }}" title="{{ $brand->name }}"
-                                            onerror="this.classList.add('d-none'); this.nextElementSibling.classList.remove('d-none');">
-                                        <span class="brand-name-fallback d-none">{{ $brand->name }}</span>
+                                            alt="{{ $brand->name }}" title="{{ $brand->name }}">
                                     @else
                                         <span class="brand-name-fallback">{{ $brand->name }}</span>
                                     @endif
