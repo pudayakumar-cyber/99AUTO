@@ -7824,10 +7824,17 @@ video {
   line-height: 35px;
   text-align: center;
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .footer-social-links a span {
   position: relative;
   z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 .footer-social-links a:first-child {
   margin-left: 0;

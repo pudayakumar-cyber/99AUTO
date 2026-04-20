@@ -339,11 +339,22 @@ class PriceHelper
 
     public static function DiscountPercentage($item)
     {
-        if ($item->previous_price && $item->previous_price != 0) {
+        if (self::showPreviousPrice($item)) {
             $discount_price = $item->previous_price - $item->discount_price;
-            $percentage = round($discount_price / $item->previous_price * 100);
+            $percentage = abs(round($discount_price / $item->previous_price * 100));
             return $percentage . '%';
         }
+    }
+
+    public static function showPreviousPrice($item)
+    {
+        if (!$item) {
+            return false;
+        }
+
+        return (float) ($item->previous_price ?? 0) > 0
+            && (float) ($item->discount_price ?? 0) > 0
+            && (float) $item->previous_price < (float) $item->discount_price;
     }
 
     public static function GetItemId($cart_id)

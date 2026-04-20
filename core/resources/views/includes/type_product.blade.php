@@ -8,7 +8,7 @@
                     <div class="product-badge bg-secondary border-default text-body
                     ">{{__('out of stock')}}</div>
                 @endif
-                @if($item->previous_price && $item->previous_price !=0)
+                @if(PriceHelper::showPreviousPrice($item))
                 <div class="product-badge product-badge2 bg-info"> -{{PriceHelper::DiscountPercentage($item)}}</div>
                 @endif
                 <img class="lazy" data-src="{{asset('core/public/storage/images/'.$item->thumbnail)}}" alt="{{ $item->name }}">
@@ -27,7 +27,7 @@
                         {!! Helper::renderStarRating($item->reviews_avg_rating) !!}
                     </div>
                     <h4 class="product-price">
-                        @if ($item->previous_price !=0)
+                        @if (PriceHelper::showPreviousPrice($item))
                         <del>{{PriceHelper::setPreviousPrice($item->previous_price)}}</del>
                         @endif
                         {{PriceHelper::grandCurrencyPrice($item)}}

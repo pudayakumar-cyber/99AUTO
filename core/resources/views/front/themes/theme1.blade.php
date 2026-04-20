@@ -788,24 +788,60 @@
                 </div>
                 <div class="row">
                     <div class="col-lg-12">
+                        @php
+                            $resolveBrandPhotoUrl = function ($photo) {
+                                $photo = trim((string) $photo);
+                                if ($photo === '' || strtolower($photo) === 'null') {
+                                    return null;
+                                }
+
+                                if (filter_var($photo, FILTER_VALIDATE_URL)) {
+                                    return $photo;
+                                }
+
+                                $pathOnly = parse_url($photo, PHP_URL_PATH) ?? $photo;
+                                if (preg_match('~/core/public/storage/images/([^/?#]+)~i', (string) $pathOnly, $m)) {
+                                    return url('/core/public/storage/images/' . $m[1]);
+                                }
+                                if (preg_match('~/storage/images/([^/?#]+)~i', (string) $pathOnly, $m)) {
+                                    return url('/core/public/storage/images/' . $m[1]);
+                                }
+
+                                return url('/core/public/storage/images/' . ltrim($photo, '/'));
+                            };
+                        @endphp
                         <div class="brand-slider owl-carousel">
                             @foreach ($brands as $brand)
+                                @php($brandPhotoUrl = $resolveBrandPhotoUrl($brand->photo))
                                 <div class="slider-item">
                                     <a class="text-center"
                                         href="{{ route('front.catalog') . '?brand=' . $brand->slug }}">
-                                        <img class="d-block hi-50 lazy"
-                                            data-src="{{ url('/core/public/storage/images/' . $brand->photo) }}"
-                                            alt="{{ $brand->name }}" title="{{ $brand->name }}">
+                                        @if ($brandPhotoUrl)
+                                            <img class="d-block hi-50 lazy"
+                                                data-src="{{ $brandPhotoUrl }}"
+                                                alt="{{ $brand->name }}" title="{{ $brand->name }}"
+                                                onerror="this.classList.add('d-none'); this.nextElementSibling.classList.remove('d-none');">
+                                            <span class="brand-name-fallback d-none">{{ $brand->name }}</span>
+                                        @else
+                                            <span class="brand-name-fallback">{{ $brand->name }}</span>
+                                        @endif
                                     </a>
                                 </div>
                             @endforeach
                         </div>
 <div class="all-brands-grid">
                             @foreach ($brands as $brand)
+                                @php($brandPhotoUrl = $resolveBrandPhotoUrl($brand->photo))
                                 <a class="brand-grid-item"
                                     href="{{ route('front.catalog') . '?brand=' . $brand->slug }}">
-                                    <img src="{{ url('/core/public/storage/images/' . $brand->photo) }}"
-                                        alt="{{ $brand->name }}" title="{{ $brand->name }}">
+                                    @if ($brandPhotoUrl)
+                                        <img src="{{ $brandPhotoUrl }}"
+                                            alt="{{ $brand->name }}" title="{{ $brand->name }}"
+                                            onerror="this.classList.add('d-none'); this.nextElementSibling.classList.remove('d-none');">
+                                        <span class="brand-name-fallback d-none">{{ $brand->name }}</span>
+                                    @else
+                                        <span class="brand-name-fallback">{{ $brand->name }}</span>
+                                    @endif
                                 </a>
                             @endforeach
                         </div>
