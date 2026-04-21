@@ -942,11 +942,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
             var fitmentRows = getFitmentRows();
 
-            function enablePurchaseActions() {
+            function togglePurchaseActions(allowPurchase) {
                 [addToCartBtn, buyNowBtn].forEach(function (btn) {
                     if (!btn) return;
-                    btn.disabled = false;
-                    btn.classList.remove('disabled');
+                    btn.disabled = !allowPurchase;
+                    btn.classList.toggle('disabled', !allowPurchase);
                 });
             }
 
@@ -962,7 +962,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         fitmentStatusTop.textContent = '';
                         fitmentStatusTop.classList.remove('is-fit');
                     }
-                    enablePurchaseActions();
+                    togglePurchaseActions(true);
                     return;
                 }
                 currentFitMatched = !!isMatch;
@@ -975,7 +975,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         fitmentStatusTop.classList.add('is-fit');
                         fitmentStatusTop.style.display = 'block';
                     }
-                    enablePurchaseActions();
+                    togglePurchaseActions(true);
                 } else {
                     var notFitText = @json(__('This part does NOT fit :vehicle')).replace(':vehicle', label);
                     fitmentStatus.innerHTML = '<i class="fas fa-times-circle" aria-hidden="true"></i>' + notFitText;
@@ -985,7 +985,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         fitmentStatusTop.classList.remove('is-fit');
                         fitmentStatusTop.style.display = 'block';
                     }
-                    enablePurchaseActions();
+                    togglePurchaseActions(false);
                 }
                 fitmentStatus.style.display = 'block';
             }
