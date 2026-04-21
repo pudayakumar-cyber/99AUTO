@@ -119,7 +119,14 @@
         : 'front.catalog.partials.list-item';
     $initialItems = $items->getCollection()->take($chunkSize);
     $remainingItemsCount = max(0, $items->count() - $initialItems->count());
+    $catalogShowingFrom = method_exists($items, 'firstItem') ? ($items->firstItem() ?? 0) : ($items->count() ? 1 : 0);
+    $catalogShowingTo = method_exists($items, 'lastItem') ? ($items->lastItem() ?? 0) : $items->count();
+    $catalogShowingTotal = method_exists($items, 'total') ? $items->total() : $items->count();
+    $catalogShowingText = $catalogShowingTotal > 0
+        ? $catalogShowingFrom . ' - ' . $catalogShowingTo . ' ' . __('of') . ' ' . $catalogShowingTotal . ' ' . __('items')
+        : '0 ' . __('items');
 @endphp
+<div id="catalog_count_meta" class="d-none" data-showing-text="{{ $catalogShowingText }}"></div>
 <div class="row g-3 catalog-progressive" id="main_div" data-chunk-size="{{ $chunkSize }}" data-total-items="{{ $items->count() }}">
     @if($items->count() > 0)
         @foreach ($initialItems as $item)
