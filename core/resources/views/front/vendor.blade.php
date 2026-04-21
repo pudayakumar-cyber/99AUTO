@@ -8,14 +8,6 @@
 @endsection
 
 @section('content')
-@php
-    $catalogShowingFrom = method_exists($items, 'firstItem') ? ($items->firstItem() ?? 0) : ($items->count() ? 1 : 0);
-    $catalogShowingTo = method_exists($items, 'lastItem') ? ($items->lastItem() ?? 0) : $items->count();
-    $catalogShowingTotal = method_exists($items, 'total') ? $items->total() : $items->count();
-    $catalogShowingText = $catalogShowingTotal > 0
-        ? $catalogShowingFrom . ' - ' . $catalogShowingTo . ' ' . __('of') . ' ' . $catalogShowingTotal . ' ' . __('items')
-        : '0 ' . __('items');
-@endphp
     <section class="store-hero-area">
         <div class="container">
             <div class="row">
@@ -83,7 +75,7 @@
                                 <option value="">{{__('All Products')}}</option>
                                 <option value="low_to_high" {{request()->input('low_to_high') ? 'selected' : ''}}>{{__('Low - High Price')}}</option>
                                 <option value="high_to_low" {{request()->input('high_to_low') ? 'selected' : ''}}>{{__('High - Low Price')}}</option>
-                                </select><span class="text-muted">{{__('Showing')}}:</span><span id="catalog_showing_count">{{ $catalogShowingText }}</span>
+                                </select><span class="text-muted">{{__('Showing')}}:</span><span>1 - {{$setting->view_product}} {{__('items')}}</span>
                             </div>
                         </div>
                     </div>

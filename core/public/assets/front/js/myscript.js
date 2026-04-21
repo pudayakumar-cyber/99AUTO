@@ -879,15 +879,6 @@ $(function ($) {
             $("#search_button").click();
         });
 
-        function updateCatalogShowingCount() {
-            let meta = $('#catalog_count_meta');
-            let target = $('#catalog_showing_count');
-            if (!meta.length || !target.length) {
-                return;
-            }
-            target.text(meta.attr('data-showing-text') || '');
-        }
-
         $(document).on('submit', '#search_form', function (e) {
             e.preventDefault();
 
@@ -909,7 +900,6 @@ $(function ($) {
                 success: function (data) {
                     window.scrollTo(0, 0);
                     $('#list_view_ajax').html(data);
-                    updateCatalogShowingCount();
                     lazy();
                 }
             });
