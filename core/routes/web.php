@@ -194,6 +194,8 @@ Route::group(['middleware' => ['adminlocalize', 'demo']], function () {
             Route::POST('/feeds/generate', 'Back\ProductFeedController@generate')->name('back.feeds.generate');
             Route::get('/feeds/progress/{id}', 'Back\ProductFeedController@progress')->name('back.feeds.progress');
             Route::get('/feeds/download/{id}', 'Back\ProductFeedController@download')->name('back.feeds.download');
+            Route::get('/feeds/product-urls', 'Back\ProductFeedController@downloadProductUrls')->name('back.feeds.product_urls');
+            Route::get('/feeds/product-sitemap', 'Back\ProductFeedController@downloadProductSitemap')->name('back.feeds.product_sitemap');
             Route::delete('/feeds/delete/{id}', 'Back\ProductFeedController@delete')->name('back.feeds.delete');
         });
 
