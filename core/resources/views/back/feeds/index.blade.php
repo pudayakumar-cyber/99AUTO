@@ -13,6 +13,12 @@
                 </h3>
 
                 <div>
+                    <a href="{{ route('back.feeds.product_urls') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-link"></i> {{ __('Download Product URLs') }}
+                    </a>
+                    <a href="{{ route('back.feeds.product_sitemap') }}" class="btn btn-info btn-sm">
+                        <i class="fas fa-sitemap"></i> {{ __('Download Product Sitemap') }}
+                    </a>
                     <button id="generateFeedBtn" class="btn btn-success btn-sm">
                         <i class="fas fa-file-csv"></i> {{ __('Generate Product Feed') }}
                     </button>

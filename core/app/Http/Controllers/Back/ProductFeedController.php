@@ -11,6 +11,7 @@ use App\{
 };
 use Illuminate\Http\Request;
 use App\Jobs\GenerateProductFeedJob;
+use App\Models\Item;
 use Illuminate\Support\Facades\Storage;
 
 class ProductFeedController extends Controller
@@ -61,6 +62,86 @@ class ProductFeedController extends Controller
         }
 
         return response()->download($filePath);
+    }
+
+    public function downloadProductUrls(Request $request)
+    {
+        $fileName = 'product_urls_' . now()->format('Ymd_His') . '.csv';
+        $baseUrl = rtrim($request->getSchemeAndHttpHost(), '/');
+
+        return response()->streamDownload(function () use ($baseUrl) {
+            $handle = fopen('php://output', 'w');
+
+            fputcsv($handle, [
+                'id',
+                'sku',
+                'prod_number',
+                'brand',
+                'name',
+                'slug',
+                'product_url',
+                'stock',
+                'updated_at',
+            ]);
+
+            Item::with('brand')
+                ->where('status', 1)
+                ->whereNotNull('slug')
+                ->where('slug', '!=', '')
+                ->orderBy('id')
+                ->chunk(1000, function ($items) use ($handle, $baseUrl) {
+                    foreach ($items as $item) {
+                        fputcsv($handle, [
+                            $item->id,
+                            $item->sku,
+                            $item->prod_number,
+                            optional($item->brand)->name,
+                            $item->name,
+                            $item->slug,
+                            $baseUrl . '/product/' . ltrim($item->slug, '/'),
+                            $item->stock,
+                            optional($item->updated_at)->toDateTimeString(),
+                        ]);
+                    }
+                });
+
+            fclose($handle);
+        }, $fileName, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    public function downloadProductSitemap(Request $request)
+    {
+        $fileName = 'product_sitemap_' . now()->format('Ymd_His') . '.xml';
+        $baseUrl = rtrim($request->getSchemeAndHttpHost(), '/');
+
+        return response()->streamDownload(function () use ($baseUrl) {
+            echo '<?xml version="1.0" encoding="UTF-8"?>' . PHP_EOL;
+            echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . PHP_EOL;
+
+            Item::where('status', 1)
+                ->whereNotNull('slug')
+                ->where('slug', '!=', '')
+                ->orderBy('id')
+                ->chunk(1000, function ($items) use ($baseUrl) {
+                    foreach ($items as $item) {
+                        $productUrl = htmlspecialchars($baseUrl . '/product/' . ltrim($item->slug, '/'), ENT_XML1, 'UTF-8');
+                        $lastMod = optional($item->updated_at)->toAtomString();
+
+                        echo "  <url>" . PHP_EOL;
+                        echo "    <loc>{$productUrl}</loc>" . PHP_EOL;
+                        if ($lastMod) {
+                            echo "    <lastmod>{$lastMod}</lastmod>" . PHP_EOL;
+                        }
+                        echo "  </url>" . PHP_EOL;
+                    }
+                });
+
+            echo '</urlset>' . PHP_EOL;
+        }, $fileName, [
+            'Content-Type' => 'application/xml; charset=UTF-8',
+        ]);
     }
 
     public function delete($id)
