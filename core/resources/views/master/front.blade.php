@@ -1068,7 +1068,11 @@ body_theme4 @endif
                     <!-- Customer Info-->
                     <div class="widget widget-links widget-light-skin">
                         <h3 class="widget-title">{{ __('Usefull Links') }}</h3>
+                          
                         <ul>
+                            <li>
+                                <a class="" href="{{ route('front.catalog') }}">{{ __('Catalog') }}</a>
+                            </li>
                             @if ($setting->is_faq == 1)
                                 <li>
                                     <a class="" href="{{ route('front.faq') }}">{{ __('Faq') }}</a>
