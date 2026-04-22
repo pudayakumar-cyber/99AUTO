@@ -33,7 +33,9 @@ class CheckoutShippingHelper
         $summary = self::cartSummary($cart);
         $service = app(EShipperService::class);
 
-        if ($summary['subtotal'] >= (float) config('services.eshipper.free_shipping_threshold', 150)) {
+        $freeShippingThreshold = (float) config('services.eshipper.free_shipping_threshold', 150);
+
+        if ($freeShippingThreshold > 0 && $summary['subtotal'] >= $freeShippingThreshold) {
             $options = [
                 self::makeOption('free_shipping', 'Free Shipping', 0, [
                     'source' => 'free_shipping',
