@@ -400,26 +400,20 @@ class OrderController extends Controller
                 continue;
             }
 
-            $category = $item->category;
+            $packageData = $this->packageDataForItem($item);
 
-            if (
-                !$category ||
-                !$category->package_length ||
-                !$category->package_width ||
-                !$category->package_height ||
-                !$category->package_weight
-            ) {
-                $warnings[] = __('Category defaults are missing package dimensions or weight for product ":name".', ['name' => $item->name]);
+            if (!$packageData) {
+                $warnings[] = __('Package dimensions or weight are missing for product ":name". Add item package data or category defaults.', ['name' => $item->name]);
                 continue;
             }
 
             for ($i = 0; $i < (int) ($line['qty'] ?? 0); $i++) {
                 $packages[] = [
                     'description' => $item->name,
-                    'length' => (float) $category->package_length,
-                    'width' => (float) $category->package_width,
-                    'height' => (float) $category->package_height,
-                    'weight' => (float) $category->package_weight,
+                    'length' => $packageData['length'],
+                    'width' => $packageData['width'],
+                    'height' => $packageData['height'],
+                    'weight' => $packageData['weight'],
                 ];
             }
         }
@@ -542,6 +536,37 @@ class OrderController extends Controller
     protected function normalizePostalCode($postalCode)
     {
         return strtoupper(str_replace(' ', '', trim((string) $postalCode)));
+    }
+
+    protected function packageDataForItem(Item $item)
+    {
+        $source = $item;
+
+        if (
+            !$source->package_length ||
+            !$source->package_width ||
+            !$source->package_height ||
+            !$source->package_weight
+        ) {
+            $source = $item->category;
+        }
+
+        if (
+            !$source ||
+            !$source->package_length ||
+            !$source->package_width ||
+            !$source->package_height ||
+            !$source->package_weight
+        ) {
+            return null;
+        }
+
+        return [
+            'length' => (float) $source->package_length,
+            'width' => (float) $source->package_width,
+            'height' => (float) $source->package_height,
+            'weight' => (float) $source->package_weight,
+        ];
     }
 
     protected function extractShipmentId(array $shipmentMeta)

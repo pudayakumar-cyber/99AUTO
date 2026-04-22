@@ -81,12 +81,13 @@ class CheckoutShippingHelper
         }
 
         if (!$service->isEnabled()) {
-            Session::forget(self::SESSION_KEY);
+            $options = self::legacyShippingOptions($summary['subtotal']);
+            self::storeOptions($options);
 
             return [
-                'options' => [],
-                'message' => null,
-                'error' => __('Shipping integration is not enabled yet.'),
+                'options' => $options,
+                'message' => __('Standard store shipping rates are being used because live carrier rates are not enabled.'),
+                'error' => empty($options) ? __('No shipping services are currently available.') : null,
             ];
         }
 
@@ -145,12 +146,13 @@ class CheckoutShippingHelper
                 'message' => $e->getMessage(),
             ]);
 
-            Session::forget(self::SESSION_KEY);
+            $options = self::legacyShippingOptions($summary['subtotal']);
+            self::storeOptions($options);
 
             return [
-                'options' => [],
-                'message' => null,
-                'error' => __('Shipping rates are temporarily unavailable. Please try again in a moment.'),
+                'options' => $options,
+                'message' => empty($options) ? null : __('Standard store shipping rates are being used because carrier rates are temporarily unavailable.'),
+                'error' => empty($options) ? __('Shipping rates are temporarily unavailable. Please try again in a moment.') : null,
             ];
         }
     }
@@ -251,26 +253,20 @@ class CheckoutShippingHelper
                 continue;
             }
 
-            $category = $item->category;
+            $packageData = self::packageDataForItem($item);
 
-            if (
-                !$category ||
-                !$category->package_length ||
-                !$category->package_width ||
-                !$category->package_height ||
-                !$category->package_weight
-            ) {
+            if (!$packageData) {
                 $hasMissingPackageData = true;
                 continue;
             }
 
             for ($i = 0; $i < (int) ($line['qty'] ?? 0); $i++) {
                 $packages[] = [
-                    'length' => (float) $category->package_length,
-                    'width' => (float) $category->package_width,
-                    'height' => (float) $category->package_height,
-                    'weight' => (float) $category->package_weight,
-                    'description' => $item->name . ' (' . ($category->name ?: 'Category') . ')',
+                    'length' => $packageData['length'],
+                    'width' => $packageData['width'],
+                    'height' => $packageData['height'],
+                    'weight' => $packageData['weight'],
+                    'description' => $item->name . ' (' . ($item->category->name ?: 'Category') . ')',
                 ];
             }
         }
@@ -370,6 +366,63 @@ class CheckoutShippingHelper
         }
 
         Session::put(self::SESSION_KEY, $indexed);
+    }
+
+    protected static function legacyShippingOptions($subtotal)
+    {
+        return ShippingService::whereStatus(1)
+            ->orderBy('id')
+            ->get()
+            ->filter(function ($shipping) use ($subtotal) {
+                if ((int) $shipping->id !== 1) {
+                    return true;
+                }
+
+                if (!$shipping->is_condition) {
+                    return true;
+                }
+
+                return (float) $shipping->minimum_price <= (float) $subtotal;
+            })
+            ->map(function ($shipping) {
+                return self::makeOption((string) $shipping->id, $shipping->title, (float) $shipping->price, [
+                    'source' => 'legacy',
+                    'provider' => 'internal',
+                ]);
+            })
+            ->values()
+            ->all();
+    }
+
+    protected static function packageDataForItem($item)
+    {
+        $source = $item;
+
+        if (
+            !$source->package_length ||
+            !$source->package_width ||
+            !$source->package_height ||
+            !$source->package_weight
+        ) {
+            $source = $item->category;
+        }
+
+        if (
+            !$source ||
+            !$source->package_length ||
+            !$source->package_width ||
+            !$source->package_height ||
+            !$source->package_weight
+        ) {
+            return null;
+        }
+
+        return [
+            'length' => (float) $source->package_length,
+            'width' => (float) $source->package_width,
+            'height' => (float) $source->package_height,
+            'weight' => (float) $source->package_weight,
+        ];
     }
 
     protected static function makeOption($id, $title, $price, $meta = [])
