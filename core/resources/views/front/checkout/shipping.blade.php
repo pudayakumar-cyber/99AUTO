@@ -102,7 +102,7 @@
                                         <label for="checkout-country">{{ __('Country') }}</label>
                                         <select class="form-control" name="ship_country"  id="billing-country">
                                             <option selected>{{ __('Choose Country') }}</option>
-                                            @foreach (DB::table('countries')->whereIn('name', ['United States', 'Canada'])->orderByRaw("FIELD(name, 'United States', 'Canada')")->get() as $country)
+                                            @foreach ($checkout_countries as $country)
                                                 <option value="{{ $country->name }}"
                                                     {{ isset($user) && $user->ship_country == $country->name ? 'selected' : '' }}>
                                                     {{ $country->name }}</option>
