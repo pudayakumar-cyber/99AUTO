@@ -153,11 +153,21 @@ class CatalogController extends Controller
         ->orderby('id','desc');
 
         if ($year || $make || $model) {
-            $matchedFitmentIds = $this->getFitmentMatchedItemIds($itemsQuery, $request, $year, $make, $model);
-
-            $items = empty($matchedFitmentIds)
-                ? $itemsQuery->whereRaw('1 = 0')->paginate($perPage)->appends($request->query())
-                : $itemsQuery->whereIn('id', $matchedFitmentIds)->paginate($perPage)->appends($request->query());
+            $items = $itemsQuery->get();
+            $items = $this->filterItemsByFitment($items, $year, $make, $model);
+            $items = new \Illuminate\Pagination\LengthAwarePaginator(
+                $items->forPage(
+                    \Illuminate\Pagination\Paginator::resolveCurrentPage(),
+                    $perPage
+                ),
+                $items->count(),
+                $perPage,
+                \Illuminate\Pagination\Paginator::resolveCurrentPage(),
+                [
+                    'path'  => request()->url(),
+                    'query' => request()->query(),
+                ]
+            );
         } else {
             $items = $itemsQuery->paginate($perPage)->appends($request->query());
         }
@@ -380,47 +390,6 @@ class CatalogController extends Controller
             ->trim()
             ->lower()
             ->toString();
-    }
-
-    private function getFitmentMatchedItemIds($itemsQuery, Request $request, $year, $make, $model): array
-    {
-        return Cache::remember($this->fitmentCacheKey($request), 600, function () use ($itemsQuery, $year, $make, $model) {
-            $candidateQuery = clone $itemsQuery;
-            $candidateQuery->setEagerLoads([]);
-            $this->applyFitmentKeywordPrefilter($candidateQuery, $year, $make, $model);
-
-            return $this->filterItemsByFitment(
-                $candidateQuery->select('id', 'details')->get(),
-                $year,
-                $make,
-                $model
-            )->pluck('id')->all();
-        });
-    }
-
-    private function fitmentCacheKey(Request $request): string
-    {
-        $params = $request->except(['page', 'catalog_chunk', 'catalog_chunk_size', 'view_check']);
-        ksort($params);
-
-        return 'catalog_fitment_ids_' . md5(json_encode($params));
-    }
-
-    private function applyFitmentKeywordPrefilter($query, $year, $make, $model): void
-    {
-        foreach ([$year, $make, $model] as $value) {
-            $value = trim((string) $value);
-            if ($value === '') {
-                continue;
-            }
-
-            $query->where('details', 'like', '%' . $this->escapeLike($value) . '%');
-        }
-    }
-
-    private function escapeLike(string $value): string
-    {
-        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value);
     }
 
 }
