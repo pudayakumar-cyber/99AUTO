@@ -153,7 +153,6 @@ class CatalogController extends Controller
         ->orderby('id','desc');
 
         if ($year || $make || $model) {
-            $this->applyFitmentKeywordPrefilter($itemsQuery, $year, $make, $model);
             $items = $itemsQuery->get();
             $items = $this->filterItemsByFitment($items, $year, $make, $model);
             $items = new \Illuminate\Pagination\LengthAwarePaginator(
@@ -391,23 +390,6 @@ class CatalogController extends Controller
             ->trim()
             ->lower()
             ->toString();
-    }
-
-    private function applyFitmentKeywordPrefilter($query, $year, $make, $model): void
-    {
-        foreach ([$year, $make, $model] as $value) {
-            $value = trim((string) $value);
-            if ($value === '') {
-                continue;
-            }
-
-            $query->where('details', 'like', '%' . $this->escapeLike($value) . '%');
-        }
-    }
-
-    private function escapeLike(string $value): string
-    {
-        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value);
     }
 
 }
