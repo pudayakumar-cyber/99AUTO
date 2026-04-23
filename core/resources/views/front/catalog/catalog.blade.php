@@ -113,7 +113,8 @@
     }
 </style>
 @php
-    $chunkSize = max(1, $items->count());
+    $hasVehicleFilter = request()->filled('year') || request()->filled('make') || request()->filled('model');
+    $chunkSize = $hasVehicleFilter ? max(1, $items->count()) : min(4, max(1, $items->count()));
     $itemPartial = $checkType != 'list'
         ? 'front.catalog.partials.grid-item'
         : 'front.catalog.partials.list-item';
