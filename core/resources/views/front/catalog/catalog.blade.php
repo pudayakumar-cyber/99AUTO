@@ -113,7 +113,7 @@
     }
 </style>
 @php
-    $chunkSize = min(4, max(1, $items->count()));
+    $chunkSize = max(1, $items->count());
     $itemPartial = $checkType != 'list'
         ? 'front.catalog.partials.grid-item'
         : 'front.catalog.partials.list-item';
