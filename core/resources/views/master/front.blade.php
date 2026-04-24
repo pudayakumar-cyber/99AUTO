@@ -520,10 +520,16 @@
                 align-items: center;
                 justify-content: center;
                 gap: 6px;
+                min-width: 88px;
+                padding: 0 10px;
             }
 
             .toolbar-item.mobile-shop-link .text-label {
                 display: inline-block;
+            }
+
+            .mobile-primary-nav {
+                display: none;
             }
 
 
@@ -587,6 +593,65 @@
                     justify-content: space-between;
                     white-space: normal;
                     height: auto;
+                }
+
+                .site-header .toolbar .toolbar-item.mobile-shop-link {
+                    width: auto;
+                    min-width: 88px;
+                }
+
+                .site-header .toolbar .toolbar-item.mobile-shop-link .toolbar-link {
+                    display: inline-flex;
+                    min-width: 88px;
+                    padding: 0 10px;
+                }
+
+                .site-header .toolbar .toolbar-item.mobile-shop-link .text-label,
+                .site-header .toolbar .toolbar-item.mobile-shop-link > a > div > .text-label {
+                    display: inline-block;
+                }
+
+                .mobile-primary-nav {
+                    display: block;
+                    padding: 10px 0 0;
+                    background: #fff;
+                    border-top: 1px solid #ececec;
+                }
+
+                .mobile-primary-nav .container {
+                    overflow-x: auto;
+                    -webkit-overflow-scrolling: touch;
+                }
+
+                .mobile-primary-nav-links {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    min-width: max-content;
+                    padding-bottom: 6px;
+                }
+
+                .mobile-primary-nav-link {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    min-height: 36px;
+                    padding: 0 14px;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 999px;
+                    background: #fff;
+                    color: #111827;
+                    font-size: 13px;
+                    font-weight: 600;
+                    line-height: 1;
+                    text-decoration: none;
+                    white-space: nowrap;
+                }
+
+                .mobile-primary-nav-link.is-active {
+                    border-color: {{ $setting->primary_color }};
+                    background: rgba(220, 33, 39, 0.08);
+                    color: {{ $setting->primary_color }};
                 }
 
                 .toolbar-item.mobile-shop-link .toolbar-link {
@@ -980,6 +1045,47 @@ body_theme4 @endif
                             @include('master.inc.site-menu')
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mobile-primary-nav visible-on-mobile">
+            <div class="container">
+                <div class="mobile-primary-nav-links">
+                    <a href="{{ route('front.index') }}"
+                        class="mobile-primary-nav-link {{ request()->routeIs('front.index') ? 'is-active' : '' }}">
+                        {{ __('Home') }}
+                    </a>
+                    @if ($setting->is_shop == 1)
+                        <a href="{{ route('front.catalog') }}"
+                            class="mobile-primary-nav-link {{ request()->routeIs('front.catalog*') ? 'is-active' : '' }}">
+                            {{ __('Shop') }}
+                        </a>
+                    @endif
+                    @if ($setting->is_campaign == 1)
+                        <a href="{{ route('front.campaign') }}"
+                            class="mobile-primary-nav-link {{ request()->routeIs('front.campaign') ? 'is-active' : '' }}">
+                            {{ __('Campaign') }}
+                        </a>
+                    @endif
+                    @if ($setting->is_brands == 1)
+                        <a href="{{ route('front.brand') }}"
+                            class="mobile-primary-nav-link {{ request()->routeIs('front.brand') ? 'is-active' : '' }}">
+                            {{ __('Brand') }}
+                        </a>
+                    @endif
+                    <a href="#"
+                        class="mobile-primary-nav-link mobile-menu-toggle"
+                        role="button"
+                        aria-label="{{ __('Open pages and categories menu') }}">
+                        {{ __('Pages') }}
+                    </a>
+                    @if ($setting->is_contact == 1)
+                        <a href="{{ route('front.contact') }}"
+                            class="mobile-primary-nav-link {{ request()->routeIs('front.contact') ? 'is-active' : '' }}">
+                            {{ __('Contact') }}
+                        </a>
+                    @endif
                 </div>
             </div>
         </div>
