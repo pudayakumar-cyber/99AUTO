@@ -515,6 +515,17 @@
                 text-decoration: underline;
             }
 
+            .toolbar-item.mobile-shop-link .toolbar-link {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+            }
+
+            .toolbar-item.mobile-shop-link .text-label {
+                display: inline-block;
+            }
+
 
 
 
@@ -576,6 +587,11 @@
                     justify-content: space-between;
                     white-space: normal;
                     height: auto;
+                }
+
+                .toolbar-item.mobile-shop-link .toolbar-link {
+                    min-width: 88px;
+                    padding: 0 10px;
                 }
             }
 
@@ -795,6 +811,13 @@ body_theme4 @endif
                                         <div>
                                             <i class="icon-search" aria-hidden="true"></i>
                                         </div>
+                                    </a>
+                                </div>
+                                <div class="toolbar-item visible-on-mobile mobile-shop-link">
+                                    <a href="{{ route('front.catalog') }}" class="toolbar-link"
+                                        aria-label="{{ __('Browse products') }}">
+                                        <div><i class="icon-bag" aria-hidden="true"></i><span
+                                                class="text-label">{{ __('Shop') }}</span></div>
                                     </a>
                                 </div>
                                 <div class="toolbar-item visible-on-mobile mobile-menu-toggle"><a href="#" role="button" aria-label="{{ __('Open menu') }}">

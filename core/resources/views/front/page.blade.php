@@ -116,12 +116,52 @@
 
     .managed-page-body ul,
     .managed-page-body ol {
-        margin: 0 0 22px;
-        padding-left: 24px;
+        margin: 0 0 24px;
+        padding-left: 0;
+        list-style: none;
     }
 
-    .managed-page-body li {
-        margin-bottom: 8px;
+    .managed-page-body ul li,
+    .managed-page-body ol li {
+        position: relative;
+        min-height: 28px;
+        margin-bottom: 12px;
+        padding-left: 40px;
+    }
+
+    .managed-page-body ul li::before {
+        content: '';
+        position: absolute;
+        top: 12px;
+        left: 0;
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: #dc2626;
+        box-shadow: 0 0 0 6px rgba(220, 38, 38, 0.12);
+    }
+
+    .managed-page-body ol {
+        counter-reset: managed-page-item;
+    }
+
+    .managed-page-body ol li::before {
+        counter-increment: managed-page-item;
+        content: counter(managed-page-item);
+        position: absolute;
+        top: 1px;
+        left: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 999px;
+        background: rgba(220, 38, 38, 0.12);
+        color: #dc2626;
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1;
     }
 
     .managed-page-body strong,
@@ -147,6 +187,11 @@
         .managed-page-title {
             font-size: 32px;
             margin-bottom: 20px;
+        }
+
+        .managed-page-body ul li,
+        .managed-page-body ol li {
+            padding-left: 36px;
         }
 
         .managed-page-body h1,
