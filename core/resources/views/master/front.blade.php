@@ -548,6 +548,8 @@
                 .site-header .search-box-wrap {
                     width: 100%;
                     padding-top: 0;
+                    flex-wrap: wrap;
+                    row-gap: 8px;
                 }
 
                 /* Keep car + keyword on one row (responsive.css handles layout) */
@@ -555,11 +557,59 @@
                     flex-direction: row;
                     align-items: stretch;
                     gap: 8px;
+                    width: 100%;
                 }
 
                 .site-header .vehicle-picker-trigger {
                     width: auto;
                     min-width: 44px;
+                }
+
+                .site-header .search-box-wrap .search-box-inner,
+                .site-header .header-keyword-search {
+                    flex: 1 1 0;
+                    min-width: 0;
+                }
+
+                #header_search_form.input-group {
+                    display: flex;
+                    align-items: center;
+                    min-width: 0;
+                    overflow: hidden;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 4px;
+                    background: #fff;
+                }
+
+                #header_search_form.input-group .input-group-btn {
+                    position: static;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex: 0 0 40px;
+                    width: 40px;
+                    height: 38px;
+                    margin: 0;
+                    transform: none;
+                    border-right: 1px solid #e5e7eb;
+                }
+
+                #header_search_form.input-group .input-group-btn button {
+                    width: 100%;
+                    height: 100%;
+                    margin: 0;
+                    font-size: 18px;
+                }
+
+                #header_search_form.input-group .form-control,
+                #header_search_form.input-group .input-group-btn ~ .form-control {
+                    flex: 1 1 auto;
+                    min-width: 0;
+                    height: 38px;
+                    padding: 0 12px;
+                    border: 0;
+                    font-size: 14px;
+                    box-shadow: none;
                 }
 
                 .vehicle-picker-backdrop {
@@ -593,6 +643,7 @@
                     justify-content: space-between;
                     white-space: normal;
                     height: auto;
+                    order: 3;
                 }
 
                 .site-header .toolbar .toolbar-item.mobile-shop-link {
@@ -927,6 +978,10 @@ body_theme4 @endif
                                 </div>
                             </div>
 
+                            @php
+                                $mobileMenuLinks = json_decode(optional($menus)->menus ?? '[]', true) ?: [];
+                            @endphp
+
                             <!-- Mobile Menu-->
                             <div class="mobile-menu">
                                 <!-- Slideable (Mobile) Menu-->
@@ -956,64 +1011,41 @@ body_theme4 @endif
                                         aria-labelledby="mmenu-tab">
                                         <nav class="slideable-menu">
                                             <ul>
-                                                <li class="{{ request()->routeIs('front.index') ? 'active' : '' }}"><a
-                                                        href="{{ route('front.index') }}"><i
-                                                            class="icon-chevron-right"></i>{{ __('Home') }}</a>
-                                                </li>
-                                                @if ($setting->is_shop == 1)
-                                                    <li
-                                                        class="{{ request()->routeIs('front.catalog*') ? 'active' : '' }}">
-                                                        <a href="{{ route('front.catalog') }}"><i
-                                                                class="icon-chevron-right"></i>{{ __('Shop') }}</a>
-                                                    </li>
-                                                @endif
-                                                @if ($setting->is_campaign == 1)
-                                                    <li
-                                                        class="{{ request()->routeIs('front.campaign') ? 'active' : '' }}">
-                                                        <a href="{{ route('front.campaign') }}"><i
-                                                                class="icon-chevron-right"></i>{{ __('Campaign') }}</a>
-                                                    </li>
-                                                @endif
-                                                @if ($setting->is_brands == 1)
-                                                    <li
-                                                        class="{{ request()->routeIs('front.brand') ? 'active' : '' }}">
-                                                        <a href="{{ route('front.brand') }}"><i
-                                                                class="icon-chevron-right"></i>{{ __('Brand') }}</a>
-                                                    </li>
-                                                @endif
-
-                                                @if ($setting->is_blog == 1)
-                                                    <li
-                                                        class="{{ request()->routeIs('front.blog*') ? 'active' : '' }}">
-                                                        <a href="{{ route('front.blog') }}"><i
-                                                                class="icon-chevron-right"></i>{{ __('Blog') }}</a>
-                                                    </li>
-                                                @endif
-                                                <li class="t-h-dropdown">
-                                                    <a class="" href="#"><i
-                                                            class="icon-chevron-right"></i>{{ __('Pages') }} <i
-                                                            class="icon-chevron-down"></i></a>
-                                                    <div class="t-h-dropdown-menu">
-                                                        @if ($setting->is_faq == 1)
-                                                            <a class="{{ request()->routeIs('front.faq*') ? 'active' : '' }}"
-                                                                href="{{ route('front.faq') }}"><i
-                                                                    class="icon-chevron-right pr-2"></i>{{ __('Faq') }}</a>
-                                                        @endif
-                                                        @foreach ($header_pages as $page)
-                                                            <a class="{{ request()->url() == route('front.page', $page->slug) ? 'active' : '' }} "
-                                                                href="{{ route('front.page', $page->slug) }}"><i
-                                                                    class="icon-chevron-right pr-2"></i>{{ $page->title }}</a>
-                                                        @endforeach
-                                                    </div>
-                                                </li>
-
-                                                @if ($setting->is_contact == 1)
-                                                    <li
-                                                        class="{{ request()->routeIs('front.contact') ? 'active' : '' }}">
-                                                        <a href="{{ route('front.contact') }}"><i
-                                                                class="icon-chevron-right"></i>{{ __('Contact') }}</a>
-                                                    </li>
-                                                @endif
+                                                @foreach ($mobileMenuLinks as $link)
+                                                    @php
+                                                        $mobileHref = Helper::getHref($link);
+                                                        $mobileLinkTarget = $link['target'] ?? '_self';
+                                                        $mobileIsActive = $mobileHref === url()->current();
+                                                    @endphp
+                                                    @if (!array_key_exists('children', $link))
+                                                        <li class="{{ $mobileIsActive ? 'active' : '' }}">
+                                                            <a href="{{ $link['href'] == null ? $mobileHref : $link['href'] }}"
+                                                                target="{{ $mobileLinkTarget }}">
+                                                                <i class="icon-chevron-right"></i>{{ $link['text'] }}
+                                                            </a>
+                                                        </li>
+                                                    @else
+                                                        <li class="t-h-dropdown">
+                                                            <a href="{{ $mobileHref ?: '#' }}" target="{{ $mobileLinkTarget }}">
+                                                                <i class="icon-chevron-right"></i>{{ $link['text'] }} <i
+                                                                    class="icon-chevron-down"></i>
+                                                            </a>
+                                                            <div class="t-h-dropdown-menu">
+                                                                @foreach ($link['children'] as $childLink)
+                                                                    @php
+                                                                        $childHref = Helper::getHref($childLink);
+                                                                        $childTarget = $childLink['target'] ?? '_self';
+                                                                    @endphp
+                                                                    <a class="{{ $childHref === url()->current() ? 'active' : '' }}"
+                                                                        href="{{ $childHref }}"
+                                                                        target="{{ $childTarget }}">
+                                                                        <i class="icon-chevron-right pr-2"></i>{{ $childLink['text'] }}
+                                                                    </a>
+                                                                @endforeach
+                                                            </div>
+                                                        </li>
+                                                    @endif
+                                                @endforeach
                                             </ul>
                                         </nav>
                                     </div>
@@ -1052,40 +1084,27 @@ body_theme4 @endif
         <div class="mobile-primary-nav visible-on-mobile">
             <div class="container">
                 <div class="mobile-primary-nav-links">
-                    <a href="{{ route('front.index') }}"
-                        class="mobile-primary-nav-link {{ request()->routeIs('front.index') ? 'is-active' : '' }}">
-                        {{ __('Home') }}
-                    </a>
-                    @if ($setting->is_shop == 1)
-                        <a href="{{ route('front.catalog') }}"
-                            class="mobile-primary-nav-link {{ request()->routeIs('front.catalog*') ? 'is-active' : '' }}">
-                            {{ __('Shop') }}
-                        </a>
-                    @endif
-                    @if ($setting->is_campaign == 1)
-                        <a href="{{ route('front.campaign') }}"
-                            class="mobile-primary-nav-link {{ request()->routeIs('front.campaign') ? 'is-active' : '' }}">
-                            {{ __('Campaign') }}
-                        </a>
-                    @endif
-                    @if ($setting->is_brands == 1)
-                        <a href="{{ route('front.brand') }}"
-                            class="mobile-primary-nav-link {{ request()->routeIs('front.brand') ? 'is-active' : '' }}">
-                            {{ __('Brand') }}
-                        </a>
-                    @endif
-                    <a href="#"
-                        class="mobile-primary-nav-link mobile-menu-toggle"
-                        role="button"
-                        aria-label="{{ __('Open pages and categories menu') }}">
-                        {{ __('Pages') }}
-                    </a>
-                    @if ($setting->is_contact == 1)
-                        <a href="{{ route('front.contact') }}"
-                            class="mobile-primary-nav-link {{ request()->routeIs('front.contact') ? 'is-active' : '' }}">
-                            {{ __('Contact') }}
-                        </a>
-                    @endif
+                    @foreach ($mobileMenuLinks as $link)
+                        @php
+                            $mobilePrimaryHref = Helper::getHref($link);
+                            $mobilePrimaryTarget = $link['target'] ?? '_self';
+                            $mobilePrimaryActive = $mobilePrimaryHref === url()->current();
+                        @endphp
+                        @if (!array_key_exists('children', $link))
+                            <a href="{{ $link['href'] == null ? $mobilePrimaryHref : $link['href'] }}"
+                                target="{{ $mobilePrimaryTarget }}"
+                                class="mobile-primary-nav-link {{ $mobilePrimaryActive ? 'is-active' : '' }}">
+                                {{ $link['text'] }}
+                            </a>
+                        @else
+                            <a href="#"
+                                class="mobile-primary-nav-link mobile-menu-toggle"
+                                role="button"
+                                aria-label="{{ __('Open :menu menu', ['menu' => $link['text']]) }}">
+                                {{ $link['text'] }}
+                            </a>
+                        @endif
+                    @endforeach
                 </div>
             </div>
         </div>
