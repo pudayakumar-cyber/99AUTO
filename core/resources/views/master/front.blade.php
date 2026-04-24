@@ -760,11 +760,12 @@ body_theme4 @endif
                                             <input type="hidden" name="category" value=""
                                                 id="search__category">
                                             <span class="input-group-btn">
-                                                <button type="submit"><i class="icon-search"></i></button>
+                                                <button type="submit" aria-label="{{ __('Search products') }}"><i class="icon-search" aria-hidden="true"></i></button>
                                             </span>
                                             <input class="form-control" type="text"
                                                 data-target="{{ route('front.search.suggest') }}"
                                                 id="__product__search" name="search"
+                                                aria-label="{{ __('Search by brand, category or product') }}"
                                                 placeholder="{{ __('Search by brand, category or product') }}">
                                             <div class="serch-result d-none">
                                                 {{-- search result --}}
@@ -781,7 +782,8 @@ body_theme4 @endif
                                 <!-- 🔽 Vehicle summary appears HERE -->
                                 <div id="vehicleSummary" class="vehicle-summary" style="display:none;">
                                     <span class="vehicle-text"></span>
-                                    <button type="button" id="clearVehicleSummary" class="vehicle-clear">
+                                    <button type="button" id="clearVehicleSummary" class="vehicle-clear"
+                                        aria-label="{{ __('Clear selected vehicle') }}">
                                         ✕
                                     </button>
                                 </div>
@@ -789,14 +791,14 @@ body_theme4 @endif
                             <!-- Toolbar-->
                             <div class="toolbar d-flex">
 
-                                <div class="toolbar-item close-m-serch visible-on-mobile"><a href="#">
+                                <div class="toolbar-item close-m-serch visible-on-mobile"><a href="#" role="button" aria-label="{{ __('Open search') }}">
                                         <div>
-                                            <i class="icon-search"></i>
+                                            <i class="icon-search" aria-hidden="true"></i>
                                         </div>
                                     </a>
                                 </div>
-                                <div class="toolbar-item visible-on-mobile mobile-menu-toggle"><a href="#">
-                                        <div><i class="icon-menu"></i><span
+                                <div class="toolbar-item visible-on-mobile mobile-menu-toggle"><a href="#" role="button" aria-label="{{ __('Open menu') }}">
+                                        <div><i class="icon-menu" aria-hidden="true"></i><span
                                                 class="text-label">{{ __('Menu') }}</span></div>
                                     </a>
                                 </div>
@@ -843,8 +845,8 @@ body_theme4 @endif
                                 <div class="mm-heading-area">
                                     <h4>{{ __('Navigation') }}</h4>
                                     <div class="toolbar-item visible-on-mobile mobile-menu-toggle mm-t-two">
-                                        <a href="#">
-                                            <div> <i class="icon-x"></i></div>
+                                        <a href="#" role="button" aria-label="{{ __('Close menu') }}">
+                                            <div> <i class="icon-x" aria-hidden="true"></i></div>
                                         </a>
                                     </div>
                                 </div>
@@ -1002,7 +1004,7 @@ body_theme4 @endif
         @if ($setting->announcement_type == 'newletter')
             <div class="announcement-with-content">
                 <div class="left-area">
-                    <img src="{{ asset('storage/images/' . $setting->announcement) }}" alt="">
+                    <img src="{{ asset('storage/images/' . $setting->announcement) }}" alt="{{ $setting->announcement_title ?: __('Announcement') }}">
                 </div>
                 <div class="right-area">
                     <h3 class="">{{ $setting->announcement_title }}</h3>
@@ -1011,6 +1013,7 @@ body_theme4 @endif
                         @csrf
                         <div class="input-group">
                             <input class="form-control" type="email" name="email"
+                                aria-label="{{ __('Newsletter email address') }}"
                                 placeholder="{{ __('Your e-mail') }}">
                             <span class="input-group-addon"><i class="icon-mail"></i></span>
                         </div>
@@ -1026,7 +1029,7 @@ body_theme4 @endif
             </div>
         @else
             <a href="{{ $setting->announcement_link }}">
-                <img src="{{ asset('storage/images/' . $setting->announcement) }}" alt="">
+                <img src="{{ asset('storage/images/' . $setting->announcement) }}" alt="{{ $setting->announcement_title ?: __('Announcement') }}">
             </a>
         @endif
 
@@ -1095,6 +1098,7 @@ body_theme4 @endif
                             <div class="col-sm-12">
                                 <div class="input-group">
                                     <input class="form-control" type="email" name="email"
+                                        aria-label="{{ __('Newsletter email address') }}"
                                         placeholder="{{ __('Your e-mail') }}">
                                     <span class="input-group-addon"><i class="icon-mail"></i></span>
                                 </div>
@@ -1116,7 +1120,8 @@ body_theme4 @endif
                             </div>
                         </form>
                         <div class="pt-3"><img class="d-block gateway_image"
-                                src="{{ $setting->footer_gateway_img ? url('/core/public/storage/images/' . ltrim((string) $setting->footer_gateway_img, '/')) : asset('system/resources/assets/images/placeholder.png') }}">
+                                src="{{ $setting->footer_gateway_img ? url('/core/public/storage/images/' . ltrim((string) $setting->footer_gateway_img, '/')) : asset('system/resources/assets/images/placeholder.png') }}"
+                                alt="{{ __('Accepted payment methods') }}">
                         </div>
                     </section>
                 </div>
@@ -1127,8 +1132,8 @@ body_theme4 @endif
     </footer>
 
     <!-- Back To Top Button-->
-    <a class="scroll-to-top-btn" href="#">
-        <i class="icon-chevron-up"></i>
+    <a class="scroll-to-top-btn" href="#" aria-label="{{ __('Scroll back to top') }}">
+        <i class="icon-chevron-up" aria-hidden="true"></i>
     </a>
     <!-- Backdrop-->
     <div class="site-backdrop"></div>
@@ -1329,8 +1334,8 @@ body_theme4 @endif
     </div>
 
     <!-- Floating WhatsApp Icon -->
-    <a href="#" class="whatsapp-float" id="wa-trigger">
-        <i class="fab fa-whatsapp"></i>
+    <a href="#" class="whatsapp-float" id="wa-trigger" aria-label="{{ __('Open WhatsApp support chat') }}">
+        <i class="fab fa-whatsapp" aria-hidden="true"></i>
     </a>
 <script>
     document.addEventListener("DOMContentLoaded", function () {

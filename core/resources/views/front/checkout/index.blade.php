@@ -103,7 +103,7 @@
                                         <div class="col-sm-6">
                                             <div class="form-group">
                                                 <label for="checkout-phone">{{ __('Phone Number') }}*</label>
-                                                <input class="form-control {{ $errors->has('bill_phone') ? 'requireInput' : '' }}" name="bill_phone" type="text"
+                                                <input class="form-control {{ $errors->has('bill_phone') ? 'requireInput' : '' }}" name="bill_phone" type="tel"
                                                     id="checkout-phone" 
                                                     value="{{ isset($user) ? $user->phone : '' }}">
                                             </div>
@@ -137,7 +137,7 @@
                                             </div>
                                             <div class="col-sm-6">
                                                 <div class="form-group">
-                                                    <label for="checkout-country">{{ __('Country') }}</label>
+                                                    <label for="billing-country">{{ __('Country') }}</label>
                                                     <select class="form-control"  name="bill_country"
                                                         id="billing-country">
                                                         <option selected>{{ __('Choose Country') }}</option>
