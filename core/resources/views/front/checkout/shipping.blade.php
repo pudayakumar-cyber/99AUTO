@@ -65,7 +65,7 @@
                                 <div class="col-sm-6">
                                     <div class="form-group">
                                         <label for="checkout-phone">{{ __('Phone Number') }}*</label>
-                                        <input class="form-control {{ $errors->has('ship_phone') ? 'requireInput' : '' }}" name="ship_phone" type="text" id="checkout-phone"
+                                        <input class="form-control {{ $errors->has('ship_phone') ? 'requireInput' : '' }}" name="ship_phone" type="tel" id="checkout-phone"
                                             value="{{ isset($user) ? $user->phone : '' }}">
                                     </div>
                                 </div>
@@ -99,8 +99,8 @@
                             <div class="row">
                                 <div class="col-sm-12">
                                     <div class="form-group">
-                                        <label for="checkout-country">{{ __('Country') }}</label>
-                                        <select class="form-control" name="ship_country"  id="billing-country">
+                                        <label for="shipping-country">{{ __('Country') }}</label>
+                                        <select class="form-control" name="ship_country"  id="shipping-country">
                                             <option selected>{{ __('Choose Country') }}</option>
                                             @foreach ($checkout_countries as $country)
                                                 <option value="{{ $country->name }}"
