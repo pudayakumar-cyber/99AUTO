@@ -108,7 +108,7 @@
                                             <select class="form-control {{ $errors->has('bill_country') ? 'requireInput' : '' }}"  name="bill_country"
                                                 id="billing-country">
                                                 <option selected>{{ __('Choose Country') }}</option>
-@foreach (DB::table('countries')->whereIn('name', ['United States', 'Canada'])->orderByRaw("FIELD(name, 'United States', 'Canada')")->get() as $country)
+@foreach ($checkout_countries as $country)
                                                    <option value="{{ $country->name }}"
                                                         {{ isset($user) && $user->bill_country == $country->name ? 'selected' : '' }}>
                                                         {{ $country->name }}</option>

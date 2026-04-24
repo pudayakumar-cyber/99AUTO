@@ -29,10 +29,6 @@
 
     <section class="card widget widget-featured-posts widget-order-summary p-4">
         <h3 class="widget-title">{{ __('Order Summary') }}</h3>
-        @php
-            $free_shipping = DB::table('shipping_services')->whereStatus(1)->whereIsCondition(1)->first();
-        @endphp
-
         <!-- @if ($free_shipping)
             @if ($free_shipping->minimum_price >= $cart_total)
                 <p class="free-shippin-aa"><em>{{ __('Free Shipping After Order') }}
@@ -53,7 +49,7 @@
                 </tr>
             @endif
 
-            @if (DB::table('states')->count() > 0)
+            @if ($checkout_states->count() > 0)
                 <tr class="{{ Auth::check() && Auth::user()->state_id ? '' : 'd-none' }} set__state_price_tr">
                     <td>{{ __('State tax') }}:</td>
                     <td class="text-gray-dark set__state_price">

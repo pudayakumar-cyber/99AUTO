@@ -72,6 +72,25 @@ class AppServiceProvider extends ServiceProvider
                 ->first();
         });
 
+        $checkoutCountries = Cache::remember('checkout_countries', 3600, function () {
+            return DB::table('countries')
+                ->whereIn('name', ['United States', 'Canada'])
+                ->orderByRaw("FIELD(name, 'United States', 'Canada')")
+                ->get();
+        });
+
+        $checkoutStates = Cache::remember('checkout_states', 3600, function () {
+            return DB::table('states')->whereStatus(1)->get();
+        });
+
+        $checkoutShippingServices = Cache::remember('checkout_shipping_services', 3600, function () {
+            return DB::table('shipping_services')->whereStatus(1)->get();
+        });
+
+        $checkoutPaymentGateways = Cache::remember('checkout_payment_gateways', 3600, function () {
+            return DB::table('payment_settings')->whereStatus(1)->get();
+        });
+
         View::share([
             'setting' => $setting,
             'extra_settings' => $extraSettings,
@@ -84,6 +103,10 @@ class AppServiceProvider extends ServiceProvider
             'header_pages' => $headerPages,
             'footer_pages' => $footerPages,
             'free_shipping' => $freeShipping,
+            'checkout_countries' => $checkoutCountries,
+            'checkout_states' => $checkoutStates,
+            'checkout_shipping_services' => $checkoutShippingServices,
+            'checkout_payment_gateways' => $checkoutPaymentGateways,
         ]);
 
         if (!session()->has('popup')) {
