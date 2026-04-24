@@ -44,6 +44,64 @@
     @keyframes catalogPageSpin {
         to { transform: rotate(360deg); }
     }
+
+    @media (max-width: 767.98px) {
+        .shop-top-filter-wrapper .row {
+            row-gap: 14px;
+        }
+
+        .shop-top-filter-wrapper .gd-text-sm-center .sptfl {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+        }
+
+        .shop-top-filter-wrapper .quickFilter,
+        .shop-top-filter-wrapper .shop-sorting {
+            width: 100%;
+            max-width: 280px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .shop-top-filter-wrapper .quickFilter .quickFilter-title {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 0;
+            width: 100%;
+            margin: 0;
+        }
+
+        .shop-top-filter-wrapper .shop-sorting {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-top: 0;
+        }
+
+        .shop-top-filter-wrapper .shop-sorting label,
+        .shop-top-filter-wrapper .shop-sorting .text-muted,
+        .shop-top-filter-wrapper #catalog_showing_count {
+            display: block;
+            margin: 0;
+        }
+
+        .shop-top-filter-wrapper .shop-sorting .form-control {
+            width: 100%;
+            max-width: 280px;
+        }
+
+        .shop-top-filter-wrapper .shop-view {
+            display: flex;
+            justify-content: center;
+            float: none;
+            margin-top: 0;
+        }
+    }
 </style>
 @endsection
 
