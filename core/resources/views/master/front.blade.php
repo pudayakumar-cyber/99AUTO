@@ -550,12 +550,13 @@
                     padding-top: 0;
                     flex-wrap: wrap;
                     row-gap: 8px;
+                    align-items: center;
                 }
 
                 /* Keep car + keyword on one row (responsive.css handles layout) */
                 .site-header .search-box-wrap .search-box {
                     flex-direction: row;
-                    align-items: stretch;
+                    align-items: center;
                     gap: 8px;
                     width: 100%;
                 }
@@ -565,51 +566,18 @@
                     min-width: 44px;
                 }
 
-                .site-header .search-box-wrap .search-box-inner,
+                .site-header .search-box-wrap .search-box-inner {
+                    flex: 1 1 auto;
+                    min-width: 0;
+                }
+
                 .site-header .header-keyword-search {
-                    flex: 1 1 0;
+                    flex: 1 1 auto;
                     min-width: 0;
                 }
 
                 #header_search_form.input-group {
-                    display: flex;
-                    align-items: center;
                     min-width: 0;
-                    overflow: hidden;
-                    border: 1px solid #e5e7eb;
-                    border-radius: 4px;
-                    background: #fff;
-                }
-
-                #header_search_form.input-group .input-group-btn {
-                    position: static;
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                    flex: 0 0 40px;
-                    width: 40px;
-                    height: 38px;
-                    margin: 0;
-                    transform: none;
-                    border-right: 1px solid #e5e7eb;
-                }
-
-                #header_search_form.input-group .input-group-btn button {
-                    width: 100%;
-                    height: 100%;
-                    margin: 0;
-                    font-size: 18px;
-                }
-
-                #header_search_form.input-group .form-control,
-                #header_search_form.input-group .input-group-btn ~ .form-control {
-                    flex: 1 1 auto;
-                    min-width: 0;
-                    height: 38px;
-                    padding: 0 12px;
-                    border: 0;
-                    font-size: 14px;
-                    box-shadow: none;
                 }
 
                 .vehicle-picker-backdrop {
