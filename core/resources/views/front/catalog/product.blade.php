@@ -107,7 +107,7 @@
             opacity: 0.65;
         }
         input.form-control{
-            margin-top: 5px;
+            margin-top: 7px;
         }
         .pa-highlight-card {
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
