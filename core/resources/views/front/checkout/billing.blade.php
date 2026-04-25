@@ -67,7 +67,7 @@
                                 <div class="col-sm-6">
                                     <div class="form-group">
                                         <label for="checkout-phone">{{ __('Phone Number') }}*</label>
-                                        <input class="form-control {{ $errors->has('bill_phone') ? 'requireInput' : '' }}" name="bill_phone" type="text" id="checkout-phone"
+                                        <input class="form-control {{ $errors->has('bill_phone') ? 'requireInput' : '' }}" name="bill_phone" type="tel" id="checkout-phone"
                                              value="{{ isset($user) ? $user->phone : '' }}">
                                     </div>
                                 </div>
@@ -104,11 +104,11 @@
                                 <div class="row">
                                     <div class="col-sm-12">
                                         <div class="form-group">
-                                            <label for="checkout-country">{{ __('Country') }}</label>
+                                            <label for="billing-country">{{ __('Country') }}</label>
                                             <select class="form-control {{ $errors->has('bill_country') ? 'requireInput' : '' }}"  name="bill_country"
                                                 id="billing-country">
                                                 <option selected>{{ __('Choose Country') }}</option>
-@foreach (DB::table('countries')->whereIn('name', ['United States', 'Canada'])->orderByRaw("FIELD(name, 'United States', 'Canada')")->get() as $country)
+@foreach ($checkout_countries as $country)
                                                    <option value="{{ $country->name }}"
                                                         {{ isset($user) && $user->bill_country == $country->name ? 'selected' : '' }}>
                                                         {{ $country->name }}</option>

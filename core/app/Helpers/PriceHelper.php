@@ -13,17 +13,53 @@ use Illuminate\Support\Facades\Session;
 
 class PriceHelper
 {
+    protected static $defaultCurrency = null;
+    protected static $selectedCurrencies = [];
+    protected static $setting = null;
+
+    protected static function getSetting()
+    {
+        if (self::$setting === null) {
+            self::$setting = Setting::first();
+        }
+
+        return self::$setting;
+    }
+
+    protected static function getDefaultCurrency()
+    {
+        if (self::$defaultCurrency === null) {
+            self::$defaultCurrency = Currency::where('is_default', 1)->first();
+        }
+
+        return self::$defaultCurrency;
+    }
+
+    protected static function getActiveCurrency()
+    {
+        $currencyId = Session::get('currency');
+
+        if ($currencyId) {
+            if (!array_key_exists($currencyId, self::$selectedCurrencies)) {
+                self::$selectedCurrencies[$currencyId] = Currency::findOrFail($currencyId);
+            }
+
+            return self::$selectedCurrencies[$currencyId];
+        }
+
+        return self::getDefaultCurrency();
+    }
 
     public static function setPrice($price)
     {
-        $curr = Currency::where('is_default', 1)->first();
+        $curr = self::getDefaultCurrency();
         return round($price * $curr->value, 2);
     }
 
     public static function adminCurrencyPrice($price)
     {
-        $curr = Currency::where('is_default', 1)->first();
-        $setting = Setting::first();
+        $curr = self::getDefaultCurrency();
+        $setting = self::getSetting();
         $price = self::testPrice($price * $curr->value, 2);
         if ($setting->currency_direction == 1) {
             return $curr->sign . $price;
@@ -34,26 +70,21 @@ class PriceHelper
 
     public static function adminCurrency()
     {
-        $curr = Currency::where('is_default', 1)->first();
+        $curr = self::getDefaultCurrency();
         return $curr->sign;
     }
 
     public static function storePrice($price)
     {
-        $curr = Currency::where('is_default', 1)->first();
+        $curr = self::getDefaultCurrency();
         return round($price * $curr->value, 2);
     }
 
     public static function setCurrencyPrice($price)
     {
 
-        if (Session::has('currency')) {
-            $curr = Currency::findOrFail(Session::get('currency'));
-        } else {
-            $curr = Currency::where('is_default', 1)->first();
-        }
-
-        $setting = Setting::first();
+        $curr = self::getActiveCurrency();
+        $setting = self::getSetting();
         $price = self::testPrice(round($price * $curr->value, 2));
 
         if ($setting->currency_direction == 1) {
@@ -66,13 +97,9 @@ class PriceHelper
     public static function setPreviousPrice($price)
     {
 
-        if (Session::has('currency')) {
-            $curr = Currency::findOrFail(Session::get('currency'));
-        } else {
-            $curr = Currency::where('is_default', 1)->first();
-        }
+        $curr = self::getActiveCurrency();
         if ($price != 0) {
-            $setting = Setting::first();
+            $setting = self::getSetting();
             $price = self::testPrice($price * $curr->value, 2);
             if ($setting->currency_direction == 1) {
                 return $curr->sign . $price;
@@ -88,51 +115,31 @@ class PriceHelper
 
     public static function setConvertPrice($price)
     {
-        if (Session::has('currency')) {
-            $curr = Currency::findOrFail(Session::get('currency'));
-        } else {
-            $curr = Currency::where('is_default', 1)->first();
-        }
+        $curr = self::getActiveCurrency();
         return round($price * $curr->value, 2);
     }
 
     public static function convertPrice($price)
     {
-        if (Session::has('currency')) {
-            $curr = Currency::findOrFail(Session::get('currency'));
-        } else {
-            $curr = Currency::where('is_default', 1)->first();
-        }
+        $curr = self::getActiveCurrency();
         return round($price / $curr->value, 2);
     }
 
     public static function setCurrencySign()
     {
-        if (Session::has('currency')) {
-            $curr = Currency::findOrFail(Session::get('currency'));
-        } else {
-            $curr = Currency::where('is_default', 1)->first();
-        }
+        $curr = self::getActiveCurrency();
         return $curr->sign;
     }
 
     public static function setCurrencyValue()
     {
-        if (Session::has('currency')) {
-            $curr = Currency::findOrFail(Session::get('currency'));
-        } else {
-            $curr = Currency::where('is_default', 1)->first();
-        }
+        $curr = self::getActiveCurrency();
         return $curr->value;
     }
 
     public static function setCurrencyName()
     {
-        if (Session::has('currency')) {
-            $curr = Currency::findOrFail(Session::get('currency'));
-        } else {
-            $curr = Currency::where('is_default', 1)->first();
-        }
+        $curr = self::getActiveCurrency();
         return $curr->name;
     }
 
@@ -147,14 +154,10 @@ class PriceHelper
             }
         }
 
-        if (Session::has('currency')) {
-            $curr = Currency::findOrFail(Session::get('currency'));
-        } else {
-            $curr = Currency::where('is_default', 1)->first();
-        }
+        $curr = self::getActiveCurrency();
         $price = $item->discount_price + $option_price;
 
-        $setting = Setting::first();
+        $setting = self::getSetting();
 
         $price = self::testPrice(round($price * $curr->value, 2));
 
@@ -179,11 +182,7 @@ class PriceHelper
 
         }
 
-        if (Session::has('currency')) {
-            $curr = Currency::findOrFail(Session::get('currency'));
-        } else {
-            $curr = Currency::where('is_default', 1)->first();
-        }
+        $curr = self::getActiveCurrency();
         $price = ($item->discount_price + $option_price);
 
         return $price;
@@ -275,7 +274,7 @@ class PriceHelper
 
         $grand_total = ($cart_total + ($shipping ? $shipping['price'] : 0)) + $total_tax;
         $grand_total = $grand_total - ($discount ? $discount['discount'] : 0);
-        $curr = Currency::where('is_default', 1)->first();
+        $curr = self::getDefaultCurrency();
         $total_amount = round($grand_total * $curr->value, 2);
 
         return $total_amount;
@@ -290,11 +289,7 @@ class PriceHelper
             $total += $itemTotal;
         }
     
-        if (Session::has('currency')) {
-            $curr = Currency::findOrFail(Session::get('currency'));
-        } else {
-            $curr = Currency::where('is_default', 1)->first();
-        }
+        $curr = self::getActiveCurrency();
     
         if ($trns) {
             if ($trns == 2) {
@@ -335,11 +330,7 @@ class PriceHelper
     public static function Transaction($order_id, $txn_id, $user_email, $amount)
     {
 
-        if (Session::has('currency')) {
-            $curr = Currency::findOrFail(Session::get('currency'));
-        } else {
-            $curr = Currency::where('is_default', 1)->first();
-        }
+        $curr = self::getActiveCurrency();
 
         $transaction = new Transaction();
         $transaction->order_id = $order_id;
@@ -439,7 +430,7 @@ class PriceHelper
     public static function testPrice($price)
     {
 
-        $setting = Setting::first();
+        $setting = self::getSetting();
 
         if ($setting->is_decimal == 1) {
             if (is_numeric($price) || floor($price) != $price) {
@@ -482,7 +473,7 @@ class PriceHelper
 
     public static function checkCheckout($request)
     {
-        $setting = Setting::first();
+        $setting = self::getSetting();
         if ($setting->is_single_checkout == 0) {
             return true;
         }

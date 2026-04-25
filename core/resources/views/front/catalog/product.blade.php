@@ -106,6 +106,19 @@
         .pa-vehicle-fitment .pa-ymm-bar select:disabled {
             opacity: 0.65;
         }
+        span.input-group-btn {
+            margin-top: 5px !important;
+        }
+
+        @media (min-width: 768px) {
+            span.input-group-btn {
+                margin-top: 10px !important;
+            }
+        }
+        
+        input.form-control{
+            margin-top: 7px;
+        }
         .pa-highlight-card {
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
         }
@@ -152,6 +165,8 @@
         .pa-fitment-status-top {
             margin: 0.35rem 0 0.85rem;
         }
+
+       
     </style>
 @endsection
 
@@ -859,8 +874,6 @@ document.addEventListener('DOMContentLoaded', function () {
             var hint = document.getElementById('product_ymm_hint');
             var fitmentStatus = document.getElementById('product_fitment_status');
             var fitmentStatusTop = document.getElementById('product_fitment_status_top');
-            var addToCartBtn = document.getElementById('add_to_cart');
-            var buyNowBtn = document.getElementById('but_to_cart');
             if (!py || !pm || !pmodel || !shopLink) return;
 
             var yearsUrl = @json(route('vehicle.years'));
@@ -942,14 +955,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
             var fitmentRows = getFitmentRows();
 
-            function togglePurchaseActions(allowPurchase) {
-                [addToCartBtn, buyNowBtn].forEach(function (btn) {
-                    if (!btn) return;
-                    btn.disabled = !allowPurchase;
-                    btn.classList.toggle('disabled', !allowPurchase);
-                });
-            }
-
             function setFitmentStatus(isMatch, label, hasSelection) {
                 if (!fitmentStatus) return;
                 if (!hasSelection) {
@@ -962,7 +967,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         fitmentStatusTop.textContent = '';
                         fitmentStatusTop.classList.remove('is-fit');
                     }
-                    togglePurchaseActions(true);
                     return;
                 }
                 currentFitMatched = !!isMatch;
@@ -975,7 +979,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         fitmentStatusTop.classList.add('is-fit');
                         fitmentStatusTop.style.display = 'block';
                     }
-                    togglePurchaseActions(true);
                 } else {
                     var notFitText = @json(__('This part does NOT fit :vehicle')).replace(':vehicle', label);
                     fitmentStatus.innerHTML = '<i class="fas fa-times-circle" aria-hidden="true"></i>' + notFitText;
@@ -985,7 +988,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         fitmentStatusTop.classList.remove('is-fit');
                         fitmentStatusTop.style.display = 'block';
                     }
-                    togglePurchaseActions(false);
                 }
                 fitmentStatus.style.display = 'block';
             }
@@ -1099,10 +1101,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
             shopLink.addEventListener('click', function (e) {
                 if (shopLink.classList.contains('disabled') || !currentCatalogUrl || currentCatalogUrl === '#') {
-                    e.preventDefault();
-                    return;
-                }
-                if (fitmentRows.length && currentFitMatched === false) {
                     e.preventDefault();
                     return;
                 }

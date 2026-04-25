@@ -545,6 +545,23 @@
                 text-decoration: underline;
             }
 
+            .toolbar-item.mobile-shop-link .toolbar-link {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                min-width: 88px;
+                padding: 0 10px;
+            }
+
+            .toolbar-item.mobile-shop-link .text-label {
+                display: inline-block;
+            }
+
+            .mobile-primary-nav {
+                display: none;
+            }
+
 
 
 
@@ -654,6 +671,68 @@
                     width: auto;
                     max-width: none;
                     bottom: 156px;
+                .site-header .toolbar .toolbar-item.mobile-shop-link {
+                    width: auto;
+                    min-width: 88px;
+                }
+
+                .site-header .toolbar .toolbar-item.mobile-shop-link .toolbar-link {
+                    display: inline-flex;
+                    min-width: 88px;
+                    padding: 0 10px;
+                }
+
+                .site-header .toolbar .toolbar-item.mobile-shop-link .text-label,
+                .site-header .toolbar .toolbar-item.mobile-shop-link > a > div > .text-label {
+                    display: inline-block;
+                }
+
+                .mobile-primary-nav {
+                    display: block;
+                    padding: 10px 0 0;
+                    background: #fff;
+                    border-top: 1px solid #ececec;
+                }
+
+                .mobile-primary-nav .container {
+                    overflow-x: auto;
+                    -webkit-overflow-scrolling: touch;
+                }
+
+                .mobile-primary-nav-links {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    min-width: max-content;
+                    padding-bottom: 6px;
+                }
+
+                .mobile-primary-nav-link {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    min-height: 36px;
+                    padding: 0 14px;
+                    border: 1px solid #e5e7eb;
+                    border-radius: 999px;
+                    background: #fff;
+                    color: #111827;
+                    font-size: 13px;
+                    font-weight: 600;
+                    line-height: 1;
+                    text-decoration: none;
+                    white-space: nowrap;
+                }
+
+                .mobile-primary-nav-link.is-active {
+                    border-color: {{ $setting->primary_color }};
+                    background: rgba(220, 33, 39, 0.08);
+                    color: {{ $setting->primary_color }};
+                }
+
+                .toolbar-item.mobile-shop-link .toolbar-link {
+                    min-width: 88px;
+                    padding: 0 10px;
                 }
             }
 
@@ -838,11 +917,12 @@ body_theme4 @endif
                                             <input type="hidden" name="category" value=""
                                                 id="search__category">
                                             <span class="input-group-btn">
-                                                <button type="submit"><i class="icon-search"></i></button>
+                                                <button type="submit" aria-label="{{ __('Search products') }}"><i class="icon-search" aria-hidden="true"></i></button>
                                             </span>
                                             <input class="form-control" type="text"
                                                 data-target="{{ route('front.search.suggest') }}"
                                                 id="__product__search" name="search"
+                                                aria-label="{{ __('Search by brand, category or product') }}"
                                                 placeholder="{{ __('Search by brand, category or product') }}">
                                             <div class="serch-result d-none">
                                                 {{-- search result --}}
@@ -859,7 +939,8 @@ body_theme4 @endif
                                 <!-- 🔽 Vehicle summary appears HERE -->
                                 <div id="vehicleSummary" class="vehicle-summary" style="display:none;">
                                     <span class="vehicle-text"></span>
-                                    <button type="button" id="clearVehicleSummary" class="vehicle-clear">
+                                    <button type="button" id="clearVehicleSummary" class="vehicle-clear"
+                                        aria-label="{{ __('Clear selected vehicle') }}">
                                         ✕
                                     </button>
                                 </div>
@@ -867,14 +948,21 @@ body_theme4 @endif
                             <!-- Toolbar-->
                             <div class="toolbar d-flex">
 
-                                <div class="toolbar-item close-m-serch visible-on-mobile"><a href="#">
+                                <div class="toolbar-item close-m-serch visible-on-mobile"><a href="#" role="button" aria-label="{{ __('Open search') }}">
                                         <div>
-                                            <i class="icon-search"></i>
+                                            <i class="icon-search" aria-hidden="true"></i>
                                         </div>
                                     </a>
                                 </div>
-                                <div class="toolbar-item visible-on-mobile mobile-menu-toggle"><a href="#">
-                                        <div><i class="icon-menu"></i><span
+                                <div class="toolbar-item visible-on-mobile mobile-shop-link">
+                                    <a href="{{ route('front.catalog') }}" class="toolbar-link"
+                                        aria-label="{{ __('Browse products') }}">
+                                        <div><i class="icon-bag" aria-hidden="true"></i><span
+                                                class="text-label">{{ __('Shop') }}</span></div>
+                                    </a>
+                                </div>
+                                <div class="toolbar-item visible-on-mobile mobile-menu-toggle"><a href="#" role="button" aria-label="{{ __('Open menu') }}">
+                                        <div><i class="icon-menu" aria-hidden="true"></i><span
                                                 class="text-label">{{ __('Menu') }}</span></div>
                                     </a>
                                 </div>
@@ -915,14 +1003,18 @@ body_theme4 @endif
                                 </div>
                             </div>
 
+                            @php
+                                $mobileMenuLinks = json_decode(optional($menus)->menus ?? '[]', true) ?: [];
+                            @endphp
+
                             <!-- Mobile Menu-->
                             <div class="mobile-menu">
                                 <!-- Slideable (Mobile) Menu-->
                                 <div class="mm-heading-area">
                                     <h4>{{ __('Navigation') }}</h4>
                                     <div class="toolbar-item visible-on-mobile mobile-menu-toggle mm-t-two">
-                                        <a href="#">
-                                            <div> <i class="icon-x"></i></div>
+                                        <a href="#" role="button" aria-label="{{ __('Close menu') }}">
+                                            <div> <i class="icon-x" aria-hidden="true"></i></div>
                                         </a>
                                     </div>
                                 </div>
@@ -944,64 +1036,41 @@ body_theme4 @endif
                                         aria-labelledby="mmenu-tab">
                                         <nav class="slideable-menu">
                                             <ul>
-                                                <li class="{{ request()->routeIs('front.index') ? 'active' : '' }}"><a
-                                                        href="{{ route('front.index') }}"><i
-                                                            class="icon-chevron-right"></i>{{ __('Home') }}</a>
-                                                </li>
-                                                @if ($setting->is_shop == 1)
-                                                    <li
-                                                        class="{{ request()->routeIs('front.catalog*') ? 'active' : '' }}">
-                                                        <a href="{{ route('front.catalog') }}"><i
-                                                                class="icon-chevron-right"></i>{{ __('Shop') }}</a>
-                                                    </li>
-                                                @endif
-                                                @if ($setting->is_campaign == 1)
-                                                    <li
-                                                        class="{{ request()->routeIs('front.campaign') ? 'active' : '' }}">
-                                                        <a href="{{ route('front.campaign') }}"><i
-                                                                class="icon-chevron-right"></i>{{ __('Campaign') }}</a>
-                                                    </li>
-                                                @endif
-                                                @if ($setting->is_brands == 1)
-                                                    <li
-                                                        class="{{ request()->routeIs('front.brand') ? 'active' : '' }}">
-                                                        <a href="{{ route('front.brand') }}"><i
-                                                                class="icon-chevron-right"></i>{{ __('Brand') }}</a>
-                                                    </li>
-                                                @endif
-
-                                                @if ($setting->is_blog == 1)
-                                                    <li
-                                                        class="{{ request()->routeIs('front.blog*') ? 'active' : '' }}">
-                                                        <a href="{{ route('front.blog') }}"><i
-                                                                class="icon-chevron-right"></i>{{ __('Blog') }}</a>
-                                                    </li>
-                                                @endif
-                                                <li class="t-h-dropdown">
-                                                    <a class="" href="#"><i
-                                                            class="icon-chevron-right"></i>{{ __('Pages') }} <i
-                                                            class="icon-chevron-down"></i></a>
-                                                    <div class="t-h-dropdown-menu">
-                                                        @if ($setting->is_faq == 1)
-                                                            <a class="{{ request()->routeIs('front.faq*') ? 'active' : '' }}"
-                                                                href="{{ route('front.faq') }}"><i
-                                                                    class="icon-chevron-right pr-2"></i>{{ __('Faq') }}</a>
-                                                        @endif
-                                                        @foreach ($header_pages as $page)
-                                                            <a class="{{ request()->url() == route('front.page', $page->slug) ? 'active' : '' }} "
-                                                                href="{{ route('front.page', $page->slug) }}"><i
-                                                                    class="icon-chevron-right pr-2"></i>{{ $page->title }}</a>
-                                                        @endforeach
-                                                    </div>
-                                                </li>
-
-                                                @if ($setting->is_contact == 1)
-                                                    <li
-                                                        class="{{ request()->routeIs('front.contact') ? 'active' : '' }}">
-                                                        <a href="{{ route('front.contact') }}"><i
-                                                                class="icon-chevron-right"></i>{{ __('Contact') }}</a>
-                                                    </li>
-                                                @endif
+                                                @foreach ($mobileMenuLinks as $link)
+                                                    @php
+                                                        $mobileHref = Helper::getHref($link);
+                                                        $mobileLinkTarget = $link['target'] ?? '_self';
+                                                        $mobileIsActive = $mobileHref === url()->current();
+                                                    @endphp
+                                                    @if (!array_key_exists('children', $link))
+                                                        <li class="{{ $mobileIsActive ? 'active' : '' }}">
+                                                            <a href="{{ $link['href'] == null ? $mobileHref : $link['href'] }}"
+                                                                target="{{ $mobileLinkTarget }}">
+                                                                <i class="icon-chevron-right"></i>{{ $link['text'] }}
+                                                            </a>
+                                                        </li>
+                                                    @else
+                                                        <li class="t-h-dropdown">
+                                                            <a href="{{ $mobileHref ?: '#' }}" target="{{ $mobileLinkTarget }}">
+                                                                <i class="icon-chevron-right"></i>{{ $link['text'] }} <i
+                                                                    class="icon-chevron-down"></i>
+                                                            </a>
+                                                            <div class="t-h-dropdown-menu">
+                                                                @foreach ($link['children'] as $childLink)
+                                                                    @php
+                                                                        $childHref = Helper::getHref($childLink);
+                                                                        $childTarget = $childLink['target'] ?? '_self';
+                                                                    @endphp
+                                                                    <a class="{{ $childHref === url()->current() ? 'active' : '' }}"
+                                                                        href="{{ $childHref }}"
+                                                                        target="{{ $childTarget }}">
+                                                                        <i class="icon-chevron-right pr-2"></i>{{ $childLink['text'] }}
+                                                                    </a>
+                                                                @endforeach
+                                                            </div>
+                                                        </li>
+                                                    @endif
+                                                @endforeach
                                             </ul>
                                         </nav>
                                     </div>
@@ -1033,6 +1102,34 @@ body_theme4 @endif
                             @include('master.inc.site-menu')
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mobile-primary-nav visible-on-mobile">
+            <div class="container">
+                <div class="mobile-primary-nav-links">
+                    @foreach ($mobileMenuLinks as $link)
+                        @php
+                            $mobilePrimaryHref = Helper::getHref($link);
+                            $mobilePrimaryTarget = $link['target'] ?? '_self';
+                            $mobilePrimaryActive = $mobilePrimaryHref === url()->current();
+                        @endphp
+                        @if (!array_key_exists('children', $link))
+                            <a href="{{ $link['href'] == null ? $mobilePrimaryHref : $link['href'] }}"
+                                target="{{ $mobilePrimaryTarget }}"
+                                class="mobile-primary-nav-link {{ $mobilePrimaryActive ? 'is-active' : '' }}">
+                                {{ $link['text'] }}
+                            </a>
+                        @else
+                            <a href="#"
+                                class="mobile-primary-nav-link mobile-menu-toggle"
+                                role="button"
+                                aria-label="{{ __('Open :menu menu', ['menu' => $link['text']]) }}">
+                                {{ $link['text'] }}
+                            </a>
+                        @endif
+                    @endforeach
                 </div>
             </div>
         </div>
@@ -1080,7 +1177,7 @@ body_theme4 @endif
         @if ($setting->announcement_type == 'newletter')
             <div class="announcement-with-content">
                 <div class="left-area">
-                    <img src="{{ asset('storage/images/' . $setting->announcement) }}" alt="">
+                    <img src="{{ asset('storage/images/' . $setting->announcement) }}" alt="{{ $setting->announcement_title ?: __('Announcement') }}">
                 </div>
                 <div class="right-area">
                     <h3 class="">{{ $setting->announcement_title }}</h3>
@@ -1089,6 +1186,7 @@ body_theme4 @endif
                         @csrf
                         <div class="input-group">
                             <input class="form-control" type="email" name="email"
+                                aria-label="{{ __('Newsletter email address') }}"
                                 placeholder="{{ __('Your e-mail') }}">
                             <span class="input-group-addon"><i class="icon-mail"></i></span>
                         </div>
@@ -1104,7 +1202,7 @@ body_theme4 @endif
             </div>
         @else
             <a href="{{ $setting->announcement_link }}">
-                <img src="{{ asset('storage/images/' . $setting->announcement) }}" alt="">
+                <img src="{{ asset('storage/images/' . $setting->announcement) }}" alt="{{ $setting->announcement_title ?: __('Announcement') }}">
             </a>
         @endif
 
@@ -1173,6 +1271,7 @@ body_theme4 @endif
                             <div class="col-sm-12">
                                 <div class="input-group">
                                     <input class="form-control" type="email" name="email"
+                                        aria-label="{{ __('Newsletter email address') }}"
                                         placeholder="{{ __('Your e-mail') }}">
                                     <span class="input-group-addon"><i class="icon-mail"></i></span>
                                 </div>
@@ -1194,7 +1293,8 @@ body_theme4 @endif
                             </div>
                         </form>
                         <div class="pt-3"><img class="d-block gateway_image"
-                                src="{{ $setting->footer_gateway_img ? url('/core/public/storage/images/' . ltrim((string) $setting->footer_gateway_img, '/')) : asset('system/resources/assets/images/placeholder.png') }}">
+                                src="{{ $setting->footer_gateway_img ? url('/core/public/storage/images/' . ltrim((string) $setting->footer_gateway_img, '/')) : asset('system/resources/assets/images/placeholder.png') }}"
+                                alt="{{ __('Accepted payment methods') }}">
                         </div>
                     </section>
                 </div>
@@ -1205,8 +1305,8 @@ body_theme4 @endif
     </footer>
 
     <!-- Back To Top Button-->
-    <a class="scroll-to-top-btn" href="#">
-        <i class="icon-chevron-up"></i>
+    <a class="scroll-to-top-btn" href="#" aria-label="{{ __('Scroll back to top') }}">
+        <i class="icon-chevron-up" aria-hidden="true"></i>
     </a>
     <!-- Backdrop-->
     <div class="site-backdrop"></div>
@@ -1272,14 +1372,25 @@ body_theme4 @endif
                 });
             };
 
-            (function(d, s, id) {
-                var js, fjs = d.getElementsByTagName(s)[0];
-                if (d.getElementById(id)) return;
-                js = d.createElement(s);
-                js.id = id;
-                js.src = 'https://connect.facebook.net/en_US/sdk/xfbml.customerchat.js';
-                fjs.parentNode.insertBefore(js, fjs);
-            }(document, 'script', 'facebook-jssdk'));
+            window.addEventListener('load', function() {
+                var loadMessenger = function() {
+                    if (document.getElementById('facebook-jssdk')) {
+                        return;
+                    }
+
+                    var js = document.createElement('script');
+                    js.id = 'facebook-jssdk';
+                    js.src = 'https://connect.facebook.net/en_US/sdk/xfbml.customerchat.js';
+                    js.async = true;
+                    document.body.appendChild(js);
+                };
+
+                if ('requestIdleCallback' in window) {
+                    requestIdleCallback(loadMessenger, { timeout: 3000 });
+                } else {
+                    setTimeout(loadMessenger, 2000);
+                }
+            });
         </script>
     @endif
 
@@ -1396,8 +1507,8 @@ body_theme4 @endif
     </div>
 
     <!-- Floating WhatsApp Icon -->
-    <a href="#" class="whatsapp-float" id="wa-trigger">
-        <i class="fab fa-whatsapp"></i>
+    <a href="#" class="whatsapp-float" id="wa-trigger" aria-label="{{ __('Open WhatsApp support chat') }}">
+        <i class="fab fa-whatsapp" aria-hidden="true"></i>
     </a>
 <script>
     document.addEventListener("DOMContentLoaded", function () {

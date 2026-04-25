@@ -76,13 +76,9 @@
                                  @if (PriceHelper::CheckDigital() == true)
                                     
                             
-                                    @php
-                                        $free_shipping = DB::table('shipping_services')->whereStatus(1)->whereIsCondition(1)->first();
-                                    @endphp
-
                                     <select name="shipping_id" class="form-control" id="shipping_id_select" required>
                                         <option value="" selected disabled>{{ __('Select Shipping Method') }}</option>
-                                        @foreach (DB::table('shipping_services')->whereStatus(1)->get() as $shipping)
+                                        @foreach ($checkout_shipping_services as $shipping)
                                             @if ($shipping->id == 1 && isset($free_shipping) &&  $free_shipping->minimum_price <= $cart_total)
                                                 <option value="{{ $shipping->id }}"
                                                     data-href="{{ route('front.shipping.setup') }}">{{ $shipping->title }}
@@ -109,10 +105,10 @@
                                 @if (PriceHelper::CheckDigital() == true)
                                     
                                 
-                                @if (DB::table('states')->whereStatus(1)->count() > 0)
+                                @if ($checkout_states->count() > 0)
                                     <select name="state_id" class="form-control" id="state_id_select" required>
                                         <option value="" selected disabled>{{ __('Select Shipping State') }}</option>
-                                        @foreach (DB::table('states')->whereStatus(1)->get() as $state)
+                                        @foreach ($checkout_states as $state)
                                             <option value="{{ $state->id }}"
                                                 data-href="{{ route('front.state.setup') }}"
                                                 {{ Auth::check() && Auth::user()->state_id == $state->id ? 'selected' : '' }}>
@@ -138,10 +134,7 @@
                         <div class="row mt-4">
                             <div class="col-12">
                                 <div class="payment-methods">
-                                    @php
-                                        $gateways = DB::table('payment_settings')->whereStatus(1)->get();
-                                    @endphp
-                                    @foreach ($gateways as $gateway)
+                                    @foreach ($checkout_payment_gateways as $gateway)
                                         @if (PriceHelper::CheckDigitalPaymentGateway())
                                             @if ($gateway->unique_keyword != 'cod')
                                                 <div class="single-payment-method">
