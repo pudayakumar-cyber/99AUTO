@@ -106,8 +106,14 @@
         .pa-vehicle-fitment .pa-ymm-bar select:disabled {
             opacity: 0.65;
         }
-        span.input-group-btn{
-            margin-top: 10px!important;
+        span.input-group-btn {
+            margin-top: 5px !important;
+        }
+
+        @media (min-width: 768px) {
+            span.input-group-btn {
+                margin-top: 10px !important;
+            }
         }
         
         input.form-control{
@@ -160,11 +166,7 @@
             margin: 0.35rem 0 0.85rem;
         }
 
-        @media (min-width: 768px) {
-            span.input-group-btn{
-                margin-top: 5px!important;
-            }
-        }
+       
     </style>
 @endsection
 
