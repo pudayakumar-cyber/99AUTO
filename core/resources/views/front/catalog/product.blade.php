@@ -162,7 +162,7 @@
 
         @media (min-width: 768px) {
             span.input-group-btn{
-                margin-top: 5px;
+                margin-top: 5px!important;
             }
         }
     </style>
