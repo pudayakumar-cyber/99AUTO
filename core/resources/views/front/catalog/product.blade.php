@@ -106,6 +106,9 @@
         .pa-vehicle-fitment .pa-ymm-bar select:disabled {
             opacity: 0.65;
         }
+        span.input-group-btn{
+            margin-top: 10px;
+        }
         input.form-control{
             margin-top: 7px;
         }
@@ -154,6 +157,12 @@
         }
         .pa-fitment-status-top {
             margin: 0.35rem 0 0.85rem;
+        }
+
+        @media (min-width: 768px) {
+            span.input-group-btn{
+                margin-top: 5px;
+            }
         }
     </style>
 @endsection
