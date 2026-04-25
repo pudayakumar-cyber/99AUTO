@@ -40,6 +40,63 @@
         .catalog-page-loader-text {
             font-size: 0.88rem;
         }
+
+        .shop-top-filter-wrapper {
+            padding: 12px;
+        }
+
+        .shop-top-filter-wrapper .row {
+            --bs-gutter-y: 10px;
+        }
+
+        .shop-top-filter-wrapper .gd-text-sm-center .sptfl {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 10px;
+            align-items: start;
+        }
+
+        .shop-top-filter-wrapper .quickFilter,
+        .shop-top-filter-wrapper .shop-sorting {
+            width: 100%;
+        }
+
+        .quickFilter .quickFilter-title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 40px;
+            margin-right: 0;
+            line-height: 1;
+        }
+
+        .shop-top-filter-wrapper .shop-sorting {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 6px;
+            margin-top: 0;
+            text-align: left;
+        }
+
+        .shop-top-filter-wrapper .shop-sorting .form-control {
+            width: 100%;
+            max-width: none;
+            height: 40px;
+        }
+
+        .shop-top-filter-wrapper .shop-sorting label,
+        .shop-top-filter-wrapper .shop-sorting .text-muted,
+        .shop-top-filter-wrapper #catalog_showing_count {
+            font-size: 13px;
+            line-height: 1.35;
+        }
+
+        .shop-top-filter-wrapper .shop-view {
+            display: flex;
+            justify-content: center;
+            margin-top: 2px;
+        }
     }
     @keyframes catalogPageSpin {
         to { transform: rotate(360deg); }
