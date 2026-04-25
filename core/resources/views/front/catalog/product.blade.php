@@ -862,8 +862,6 @@ document.addEventListener('DOMContentLoaded', function () {
             var hint = document.getElementById('product_ymm_hint');
             var fitmentStatus = document.getElementById('product_fitment_status');
             var fitmentStatusTop = document.getElementById('product_fitment_status_top');
-            var addToCartBtn = document.getElementById('add_to_cart');
-            var buyNowBtn = document.getElementById('but_to_cart');
             if (!py || !pm || !pmodel || !shopLink) return;
 
             var yearsUrl = @json(route('vehicle.years'));
@@ -945,14 +943,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
             var fitmentRows = getFitmentRows();
 
-            function togglePurchaseActions(allowPurchase) {
-                [addToCartBtn, buyNowBtn].forEach(function (btn) {
-                    if (!btn) return;
-                    btn.disabled = !allowPurchase;
-                    btn.classList.toggle('disabled', !allowPurchase);
-                });
-            }
-
             function setFitmentStatus(isMatch, label, hasSelection) {
                 if (!fitmentStatus) return;
                 if (!hasSelection) {
@@ -965,7 +955,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         fitmentStatusTop.textContent = '';
                         fitmentStatusTop.classList.remove('is-fit');
                     }
-                    togglePurchaseActions(true);
                     return;
                 }
                 currentFitMatched = !!isMatch;
@@ -978,7 +967,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         fitmentStatusTop.classList.add('is-fit');
                         fitmentStatusTop.style.display = 'block';
                     }
-                    togglePurchaseActions(true);
                 } else {
                     var notFitText = @json(__('This part does NOT fit :vehicle')).replace(':vehicle', label);
                     fitmentStatus.innerHTML = '<i class="fas fa-times-circle" aria-hidden="true"></i>' + notFitText;
@@ -988,7 +976,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         fitmentStatusTop.classList.remove('is-fit');
                         fitmentStatusTop.style.display = 'block';
                     }
-                    togglePurchaseActions(false);
                 }
                 fitmentStatus.style.display = 'block';
             }
@@ -1102,10 +1089,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
             shopLink.addEventListener('click', function (e) {
                 if (shopLink.classList.contains('disabled') || !currentCatalogUrl || currentCatalogUrl === '#') {
-                    e.preventDefault();
-                    return;
-                }
-                if (fitmentRows.length && currentFitMatched === false) {
                     e.preventDefault();
                     return;
                 }
