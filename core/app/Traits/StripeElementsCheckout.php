@@ -146,7 +146,7 @@ trait StripeElementsCheckout
             // Retrieve the payment intent
             $paymentIntent = \Stripe\PaymentIntent::retrieve($paymentIntentId);
 
-            if ($paymentIntent->status !== 'succeeded') {
+            if (!in_array($paymentIntent->status, ['succeeded', 'processing', 'requires_capture'])) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Payment not completed'
