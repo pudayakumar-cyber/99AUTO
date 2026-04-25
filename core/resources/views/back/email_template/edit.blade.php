@@ -50,6 +50,14 @@
                                     <td>{transaction_number}</td>
                                     <td>{{ __('Order Transaction Number') }}</td>
                                 </tr>
+                                <tr>
+                                    <td>{order_number}</td>
+                                    <td>{{ __('Alias of transaction number for order emails') }}</td>
+                                </tr>
+                                <tr>
+                                    <td>{order_total}</td>
+                                    <td>{{ __('Alias of order cost for order emails') }}</td>
+                                </tr>
                                 </tbody>
                             </table>
                             </div>
