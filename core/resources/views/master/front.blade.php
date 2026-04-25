@@ -155,6 +155,36 @@
             color: #fff;
         }
 
+        .cookie-consent {
+            left: 16px;
+            right: 16px;
+            bottom: 16px;
+            width: auto;
+            padding: 12px 20px;
+            border-radius: 14px;
+            z-index: 1100;
+        }
+
+        .cookie-container,
+        .cookie-consent .items-center {
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        body {
+            padding-bottom: 96px;
+        }
+
+        .whatsapp-float {
+            bottom: 104px;
+            z-index: 1110;
+        }
+
+        .wa-popup {
+            bottom: 174px;
+            z-index: 1111;
+        }
+
         .popular-brands-section {
                 padding: 40px 0;
                 background: #f7f7f7;
@@ -524,6 +554,26 @@
                     gap: 20px;
                 }
 
+                .menu-top-area .t-m-s-a,
+                .menu-top-area .right-area {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-wrap: wrap;
+                    gap: 6px 14px;
+                }
+
+                .menu-top-area .track-order-link,
+                .menu-top-area .main-link,
+                .menu-top-area .login-register .track-order-link {
+                    font-size: 12px;
+                    line-height: 1.25;
+                }
+
+                .menu-top-area .right-area > * {
+                    margin: 0;
+                }
+
                 .site-header .vehicle-search {
                     width: auto;
                 }
@@ -576,6 +626,34 @@
                     justify-content: space-between;
                     white-space: normal;
                     height: auto;
+                }
+
+                .cookie-consent {
+                    left: 12px;
+                    right: 12px;
+                    bottom: 12px;
+                    padding: 12px 14px;
+                    border-radius: 12px;
+                }
+
+                body {
+                    padding-bottom: 138px;
+                }
+
+                .whatsapp-float {
+                    right: 16px;
+                    bottom: 92px;
+                    width: 52px;
+                    height: 52px;
+                    font-size: 28px;
+                }
+
+                .wa-popup {
+                    right: 12px;
+                    left: 12px;
+                    width: auto;
+                    max-width: none;
+                    bottom: 156px;
                 }
             }
 
