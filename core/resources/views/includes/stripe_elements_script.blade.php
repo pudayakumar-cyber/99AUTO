@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const appBasePath = window.location.pathname.startsWith('/core/') ? '/core' : '';
     const stripeCreateIntentUrl = `${window.location.origin}${appBasePath}/stripe/create-intent`;
     const stripeConfirmPaymentUrl = `${window.location.origin}${appBasePath}/stripe/confirm-payment`;
-    const stripeReturnUrl = `${window.location.origin}${appBasePath}/checkout/success`;
+    const stripeReturnUrl = `${window.location.origin}${appBasePath}/stripe/return`;
 
     // Initialize Stripe when modal is shown
     stripeModal.addEventListener('shown.bs.modal', function() {
