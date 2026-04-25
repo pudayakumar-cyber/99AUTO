@@ -107,8 +107,9 @@
             opacity: 0.65;
         }
         span.input-group-btn{
-            margin-top: 10px;
+            margin-top: 10px!important;
         }
+        
         input.form-control{
             margin-top: 7px;
         }
