@@ -106,6 +106,9 @@
         .pa-vehicle-fitment .pa-ymm-bar select:disabled {
             opacity: 0.65;
         }
+        input.form-control{
+            margin-top: 5px;
+        }
         .pa-highlight-card {
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
         }
