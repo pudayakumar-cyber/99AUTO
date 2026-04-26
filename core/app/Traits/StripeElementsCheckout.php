@@ -247,29 +247,19 @@ trait StripeElementsCheckout
                 $email->sendTemplateMail($emailData, "template");
             }
 
-            // Send Facebook Conversion API event only when the service exists.
+            // Send Facebook Conversion API event
             try {
-                if (class_exists(\App\Services\FacebookConversionApi::class)) {
-                    $facebookApi = new \App\Services\FacebookConversionApi();
-                    $facebookApi->trackPurchase(
-                        $order,
-                        $cart,
-                        EmailHelper::getEmail(),
-                        json_decode($order->billing_info, true)['bill_phone'] ?? null,
-                        request()->ip(),
-                        request()->header('User-Agent')
-                    );
-                } else {
-                    \Log::warning('Facebook CAPI service not found. Skipping purchase tracking.', [
-                        'order_id' => $order->id,
-                        'transaction_number' => $order->transaction_number,
-                    ]);
-                }
-            } catch (\Throwable $e) {
-                \Log::warning('Facebook CAPI tracking failed: ' . $e->getMessage(), [
-                    'order_id' => $order->id,
-                    'transaction_number' => $order->transaction_number,
-                ]);
+                $facebookApi = new \App\Services\FacebookConversionApi();
+                $facebookApi->trackPurchase(
+                    $order,
+                    $cart,
+                    EmailHelper::getEmail(),
+                    json_decode($order->billing_info, true)['bill_phone'] ?? null,
+                    request()->ip(),
+                    request()->header('User-Agent')
+                );
+            } catch (\Exception $e) {
+                \Log::warning('Facebook CAPI tracking failed: ' . $e->getMessage());
             }
 
             Session::put('order_id', $order->id);
