@@ -119,7 +119,13 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (error) {
-                // Payment failed
+                // Check if it's a redirect-required error (Stripe Link / 3DS)
+                // In this case the payment may have succeeded via redirect
+                if (error.type === 'invalid_request_error' || error.code === 'payment_intent_redirect_to_url') {
+                    // Payment requires redirect - Stripe will handle it via return_url
+                    return;
+                }
+                // Genuine payment failure
                 showError(error.message);
                 submitButton.disabled = false;
                 buttonText.classList.remove('d-none');
@@ -148,6 +154,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     buttonText.classList.remove('d-none');
                     spinner.classList.add('d-none');
                 }
+            } else if (!error && !paymentIntent) {
+                // Stripe is handling the redirect (e.g. Stripe Link, 3DS)
+                // Do nothing - browser will be redirected to return_url
+                return;
             } else {
                 // Unexpected state - show generic error
                 showError('A processing error occurred. Please contact support if your card was charged.');
@@ -157,6 +167,31 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (err) {
             console.error('Payment error:', err);
+            // Do not show error immediately - the payment may have gone through
+            // Check if we have a client secret to retrieve the payment intent status
+            if (stripe && clientSecret) {
+                try {
+                    const {paymentIntent: pi} = await stripe.retrievePaymentIntent(clientSecret);
+                    if (pi && ['succeeded', 'processing', 'requires_capture'].includes(pi.status)) {
+                        // Payment actually succeeded - confirm with backend
+                        const response = await fetch(stripeConfirmPaymentUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}'
+                            },
+                            body: JSON.stringify({ payment_intent_id: pi.id })
+                        });
+                        const result = await response.json();
+                        if (result.status) {
+                            window.location.href = result.redirect;
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    console.error('Retrieve error:', e);
+                }
+            }
             showError('An unexpected error occurred. Please try again.');
             submitButton.disabled = false;
             buttonText.classList.remove('d-none');
