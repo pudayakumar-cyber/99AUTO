@@ -710,6 +710,39 @@ class CheckoutController extends Controller
         return $this->stripeElementsConfirm($request);
     }
 
+    /**
+     * Handle Stripe 3D Secure redirect return
+     * Called when Stripe redirects back after 3D Secure authentication
+     */
+    public function stripeReturn(Request $request)
+    {
+        $paymentIntentId = $request->get('payment_intent');
+        $redirectStatus  = $request->get('redirect_status');
+
+        if (!$paymentIntentId) {
+            return redirect()->route('front.checkout.cancle');
+        }
+
+        if ($redirectStatus !== 'succeeded') {
+            Session::put('message', 'Payment was not completed. Please try again.');
+            return redirect()->route('front.checkout.cancle');
+        }
+
+        // Put the payment intent ID into session so stripeElementsConfirm can retrieve it
+        Session::put('stripe_payment_intent_id', $paymentIntentId);
+
+        // Run the confirm logic
+        $result = $this->stripeElementsConfirm($request);
+        $data   = json_decode($result->getContent(), true);
+
+        if (!empty($data['status'])) {
+            return redirect()->route('front.checkout.success');
+        }
+
+        Session::put('message', $data['message'] ?? 'Payment confirmation failed.');
+        return redirect()->route('front.checkout.cancle');
+    }
+
     public function stateSetUp(Request $request)
     {
         $state_id = $request->state_id;

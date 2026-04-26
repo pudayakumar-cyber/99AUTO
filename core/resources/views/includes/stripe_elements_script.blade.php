@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const appBasePath = window.location.pathname.startsWith('/core/') ? '/core' : '';
     const stripeCreateIntentUrl = `${window.location.origin}${appBasePath}/stripe/create-intent`;
     const stripeConfirmPaymentUrl = `${window.location.origin}${appBasePath}/stripe/confirm-payment`;
-    const stripeReturnUrl = `${window.location.origin}${appBasePath}/checkout/success`;
+    const stripeReturnUrl = `${window.location.origin}${appBasePath}/stripe/return`;
 
     // Initialize Stripe when modal is shown
     stripeModal.addEventListener('shown.bs.modal', function() {
@@ -124,8 +124,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 submitButton.disabled = false;
                 buttonText.classList.remove('d-none');
                 spinner.classList.add('d-none');
-            } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-                // Payment succeeded - confirm with backend
+            } else if (paymentIntent && ['succeeded', 'processing', 'requires_capture'].includes(paymentIntent.status)) {
+                // Payment succeeded or is processing - confirm with backend
                 const response = await fetch(stripeConfirmPaymentUrl, {
                     method: 'POST',
                     headers: {
@@ -148,6 +148,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     buttonText.classList.remove('d-none');
                     spinner.classList.add('d-none');
                 }
+            } else {
+                // Unexpected state - show generic error
+                showError('A processing error occurred. Please contact support if your card was charged.');
+                submitButton.disabled = false;
+                buttonText.classList.remove('d-none');
+                spinner.classList.add('d-none');
             }
         } catch (err) {
             console.error('Payment error:', err);

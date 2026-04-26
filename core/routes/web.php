@@ -459,6 +459,7 @@ Route::group(['middleware' => 'maintainance'], function () {
         // Stripe Elements routes
         Route::post('/stripe/create-intent', 'Front\CheckoutController@stripeCreateIntent')->name('front.stripe.create.intent');
         Route::post('/stripe/confirm-payment', 'Front\CheckoutController@stripeConfirmPayment')->name('front.stripe.confirm.payment');
+        Route::get('/stripe/return', 'Front\CheckoutController@stripeReturn')->name('front.stripe.return');
 
         Route::get('/checkout', 'Front\CheckoutController@checkoutPage')->name('front.checkout');
 

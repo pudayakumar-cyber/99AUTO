@@ -134,7 +134,11 @@ trait StripeElementsCheckout
         \Stripe\Stripe::setApiKey(Config::get('services.stripe.secret'));
 
         try {
-            $paymentIntentId = Session::get('stripe_payment_intent_id');
+            // Prefer payment_intent_id from request (JS POST or 3DS redirect query param)
+            // Fall back to session in case it was stored earlier
+            $paymentIntentId = $request->input('payment_intent_id')
+                ?? $request->get('payment_intent')
+                ?? Session::get('stripe_payment_intent_id');
 
             if (!$paymentIntentId) {
                 return response()->json([
@@ -146,7 +150,7 @@ trait StripeElementsCheckout
             // Retrieve the payment intent
             $paymentIntent = \Stripe\PaymentIntent::retrieve($paymentIntentId);
 
-            if ($paymentIntent->status !== 'succeeded') {
+            if (!in_array($paymentIntent->status, ['succeeded', 'processing', 'requires_capture'])) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Payment not completed'
