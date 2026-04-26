@@ -824,6 +824,11 @@ body_theme4 @endif
                     </div>
                     <div class="col-md-8">
                         <div class="right-area">
+                            @auth
+                                <a class="track-order-link d-inline-block d-lg-none"
+                                    href="{{ route('user.dashboard') }}"><i
+                                        class="icon-user"></i>{{ __('Dashboard') }}</a>
+                            @endauth
 
                             <a class="track-order-link wishlist-mobile d-inline-block d-lg-none"
                                 href="{{ route('user.wishlist.index') }}"><i
@@ -974,6 +979,14 @@ body_theme4 @endif
                                                 class="text-label">{{ __('Compare') }}</span></div>
                                     </a>
                                 </div>
+                                @auth
+                                    <div class="toolbar-item hidden-on-mobile"><a
+                                            href="{{ route('user.dashboard') }}">
+                                            <div><span class="compare-icon"><i class="icon-user"></i></span><span
+                                                    class="text-label">{{ __('Dashboard') }}</span></div>
+                                        </a>
+                                    </div>
+                                @endauth
                                 @if (Auth::check())
                                     <div class="toolbar-item hidden-on-mobile"><a
                                             href="{{ route('user.wishlist.index') }}">
