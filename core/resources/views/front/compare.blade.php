@@ -127,6 +127,15 @@
         .compare-picker-result-actions {
             flex: 0 0 auto;
         }
+        .compare-picker-filters {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        .compare-picker-filters .form-control {
+            min-width: 0;
+        }
         .compare-picker-status {
             margin-top: 0.9rem;
             display: none;
@@ -156,6 +165,9 @@
             .compare-picker-result {
                 align-items: flex-start;
                 flex-wrap: wrap;
+            }
+            .compare-picker-filters {
+                grid-template-columns: 1fr;
             }
             .compare-picker-result-actions {
                 width: 100%;
@@ -354,7 +366,18 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted mb-3">{{ __('Search by product name, SKU, part number, or brand to add an item directly into compare.') }}</p>
+                    <p class="text-muted mb-3">{{ __('Select Year, Make, and Model to narrow the product list, then use keyword search if you need to refine it further.') }}</p>
+                    <div class="compare-picker-filters">
+                        <select id="comparePickerYear" class="form-control">
+                            <option value="">{{ __('Year') }}</option>
+                        </select>
+                        <select id="comparePickerMake" class="form-control" disabled>
+                            <option value="">{{ __('Make') }}</option>
+                        </select>
+                        <select id="comparePickerModel" class="form-control" disabled>
+                            <option value="">{{ __('Model') }}</option>
+                        </select>
+                    </div>
                     <form id="comparePickerForm" class="input-group">
                         <input type="text" class="form-control" id="comparePickerQuery" placeholder="{{ __('Search products to compare') }}" autocomplete="off">
                         <button class="btn btn-primary" type="submit">{{ __('Search') }}</button>
@@ -372,10 +395,85 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const compareSearchUrl = @json(route('front.compare.search'));
+            const yearsUrl = @json(route('vehicle.years'));
+            const makesBase = @json(rtrim(url('/makes'), '/'));
+            const modelsBase = @json(rtrim(url('/models'), '/'));
+            const storageKey = 'selected_vehicle';
             const compareResults = document.getElementById('comparePickerResults');
             const compareStatus = document.getElementById('comparePickerStatus');
             const compareQueryInput = document.getElementById('comparePickerQuery');
             const compareForm = document.getElementById('comparePickerForm');
+            const compareYear = document.getElementById('comparePickerYear');
+            const compareMake = document.getElementById('comparePickerMake');
+            const compareModel = document.getElementById('comparePickerModel');
+
+            function fillSelect(select, items, placeholder, labelKey) {
+                select.innerHTML = '<option value="">' + placeholder + '</option>';
+                items.forEach(function (item) {
+                    const option = document.createElement('option');
+                    option.value = String(item.id);
+                    option.textContent = item[labelKey] || '';
+                    select.appendChild(option);
+                });
+            }
+
+            function normalizeText(value) {
+                return String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
+            }
+
+            function findOptionValueByText(select, text) {
+                const target = normalizeText(text);
+                if (!target) {
+                    return '';
+                }
+
+                const options = Array.from(select.options || []);
+                const match = options.find(function (option) {
+                    return normalizeText(option.textContent || option.text || '') === target;
+                });
+
+                return match ? String(match.value) : '';
+            }
+
+            function loadMakes(yearId, selectedMakeId) {
+                compareMake.disabled = true;
+                compareModel.disabled = true;
+                fillSelect(compareModel, [], @json(__('Model')), 'model');
+
+                if (!yearId) {
+                    fillSelect(compareMake, [], @json(__('Make')), 'make');
+                    return Promise.resolve();
+                }
+
+                return fetch(makesBase + '/' + encodeURIComponent(yearId))
+                    .then(function (response) { return response.json(); })
+                    .then(function (data) {
+                        fillSelect(compareMake, data, @json(__('Make')), 'make');
+                        compareMake.disabled = false;
+                        if (selectedMakeId) {
+                            compareMake.value = String(selectedMakeId);
+                        }
+                    });
+            }
+
+            function loadModels(makeId, selectedModelId) {
+                compareModel.disabled = true;
+
+                if (!makeId) {
+                    fillSelect(compareModel, [], @json(__('Model')), 'model');
+                    return Promise.resolve();
+                }
+
+                return fetch(modelsBase + '/' + encodeURIComponent(makeId))
+                    .then(function (response) { return response.json(); })
+                    .then(function (data) {
+                        fillSelect(compareModel, data, @json(__('Model')), 'model');
+                        compareModel.disabled = false;
+                        if (selectedModelId) {
+                            compareModel.value = String(selectedModelId);
+                        }
+                    });
+            }
 
             function setCompareStatus(message, level) {
                 compareStatus.textContent = message;
@@ -415,17 +513,34 @@
 
             async function performCompareSearch() {
                 const query = compareQueryInput.value.trim();
+                const yearText = compareYear.value ? compareYear.options[compareYear.selectedIndex].text.trim() : '';
+                const makeText = compareMake.value ? compareMake.options[compareMake.selectedIndex].text.trim() : '';
+                const modelText = compareModel.value ? compareModel.options[compareModel.selectedIndex].text.trim() : '';
                 clearCompareStatus();
 
-                if (!query) {
-                    compareResults.innerHTML = '<p class="text-muted mb-0">{{ __('Enter a search term to find products.') }}</p>';
+                if (!query && !yearText && !makeText && !modelText) {
+                    compareResults.innerHTML = '<p class="text-muted mb-0">{{ __('Choose a vehicle or enter a search term to find products.') }}</p>';
                     return;
                 }
 
                 compareResults.innerHTML = '<p class="text-muted mb-0">{{ __('Searching products...') }}</p>';
 
                 try {
-                    const response = await fetch(compareSearchUrl + '?q=' + encodeURIComponent(query), {
+                    const params = new URLSearchParams();
+                    if (query) {
+                        params.set('q', query);
+                    }
+                    if (yearText) {
+                        params.set('year', yearText);
+                    }
+                    if (makeText) {
+                        params.set('make', makeText);
+                    }
+                    if (modelText) {
+                        params.set('model', modelText);
+                    }
+
+                    const response = await fetch(compareSearchUrl + '?' + params.toString(), {
                         headers: {
                             'X-Requested-With': 'XMLHttpRequest',
                         }
@@ -447,6 +562,67 @@
                 clearTimeout(compareSearchTimer);
                 compareSearchTimer = setTimeout(performCompareSearch, 250);
             });
+
+            compareYear.addEventListener('change', function () {
+                const yearId = compareYear.value;
+                loadMakes(yearId).then(function () {
+                    performCompareSearch();
+                });
+            });
+
+            compareMake.addEventListener('change', function () {
+                const makeId = compareMake.value;
+                loadModels(makeId).then(function () {
+                    performCompareSearch();
+                });
+            });
+
+            compareModel.addEventListener('change', function () {
+                performCompareSearch();
+            });
+
+            fetch(yearsUrl)
+                .then(function (response) { return response.json(); })
+                .then(function (data) {
+                    fillSelect(compareYear, data, @json(__('Year')), 'year');
+
+                    try {
+                        const stored = localStorage.getItem(storageKey);
+                        if (!stored) {
+                            return;
+                        }
+
+                        const vehicle = JSON.parse(stored);
+                        const yearId = vehicle.year_id ? String(vehicle.year_id) : findOptionValueByText(compareYear, vehicle.year);
+                        if (!yearId) {
+                            return;
+                        }
+
+                        compareYear.value = yearId;
+                        loadMakes(yearId, vehicle.make_id).then(function () {
+                            const makeId = vehicle.make_id ? String(vehicle.make_id) : findOptionValueByText(compareMake, vehicle.make);
+                            if (!makeId) {
+                                return;
+                            }
+
+                            compareMake.value = makeId;
+                            return loadModels(makeId, vehicle.model_id).then(function () {
+                                const modelId = vehicle.model_id ? String(vehicle.model_id) : findOptionValueByText(compareModel, vehicle.model);
+                                if (modelId) {
+                                    compareModel.value = modelId;
+                                }
+                            });
+                        }).then(function () {
+                            if (compareYear.value || compareMake.value || compareModel.value) {
+                                performCompareSearch();
+                            }
+                        });
+                    } catch (error) {
+                    }
+                })
+                .catch(function () {
+                    compareResults.innerHTML = '<p class="text-danger mb-0">{{ __('Unable to load vehicle filters right now.') }}</p>';
+                });
 
             document.addEventListener('click', function (event) {
                 const trigger = event.target.closest('.compare-picker-add');

@@ -7,6 +7,7 @@ use App\Helpers\PriceHelper;
 use App\Models\Item;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Str;
 
 class CompareController extends Controller
 {
@@ -84,30 +85,45 @@ class CompareController extends Controller
     public function search(Request $request)
     {
         $query = trim((string) $request->input('q'));
+        $year = trim((string) $request->input('year'));
+        $make = trim((string) $request->input('make'));
+        $model = trim((string) $request->input('model'));
         $selectedIds = Session::get('compare', []);
 
-        if ($query === '') {
+        if ($query === '' && $year === '' && $make === '' && $model === '') {
             return response()->json([
                 'items' => [],
             ]);
         }
 
-        $items = Item::with('brand')
+        $itemsQuery = Item::with('brand')
             ->whereStatus(1)
             ->whereNotIn('id', $selectedIds)
-            ->where(function ($searchQuery) use ($query) {
-                $searchQuery
-                    ->where('name', 'like', "%{$query}%")
-                    ->orWhere('sku', 'like', "%{$query}%")
-                    ->orWhere('prod_number', 'like', "%{$query}%")
-                    ->orWhere('product_part_number', 'like', "%{$query}%")
-                    ->orWhereHas('brand', function ($brandQuery) use ($query) {
-                        $brandQuery->where('name', 'like', "%{$query}%");
-                    });
+            ->when($query !== '', function ($searchBaseQuery) use ($query) {
+                $searchBaseQuery->where(function ($searchQuery) use ($query) {
+                    $searchQuery
+                        ->where('name', 'like', "%{$query}%")
+                        ->orWhere('sku', 'like', "%{$query}%")
+                        ->orWhere('prod_number', 'like', "%{$query}%")
+                        ->orWhere('product_part_number', 'like', "%{$query}%")
+                        ->orWhereHas('brand', function ($brandQuery) use ($query) {
+                            $brandQuery->where('name', 'like', "%{$query}%");
+                        });
+                });
             })
-            ->latest('id')
+            ->latest('id');
+
+        if ($year !== '' || $make !== '' || $model !== '') {
+            $this->applyFitmentKeywordPrefilter($itemsQuery, $year, $make, $model);
+        }
+
+        $items = $this->filterItemsByFitment(
+            $itemsQuery->select('items.*')->take(24)->get(),
+            $year,
+            $make,
+            $model
+        )
             ->take(8)
-            ->get()
             ->map(function ($item) {
                 return [
                     'id' => $item->id,
@@ -175,5 +191,91 @@ class CompareController extends Controller
         }
 
         return url('/core/public/storage/images/' . $filename);
+    }
+
+    private function filterItemsByFitment($items, $year, $make, $model)
+    {
+        if (!($year || $make || $model)) {
+            return $items;
+        }
+
+        return $items->filter(function ($item) use ($year, $make, $model) {
+            if (! $item->details) {
+                return false;
+            }
+
+            $year = $this->normalizeFitmentToken($year);
+            $make = $this->normalizeFitmentToken($make);
+            $model = $this->normalizeFitmentToken($model);
+
+            $details = (string) $item->details;
+            $rowsSource = $details;
+            if (preg_match('/<table[^>]*class="[^"]*\bpa-fitment-table\b[^"]*"[^>]*>[\s\S]*?<\/table>/i', $details, $m)) {
+                $rowsSource = $m[0];
+            }
+
+            preg_match_all('/<tr>(.*?)<\/tr>/si', $rowsSource, $rows);
+
+            foreach ($rows[1] as $rowHtml) {
+                preg_match_all('/<td[^>]*>(.*?)<\/td>/si', $rowHtml, $cols);
+
+                if (count($cols[1]) !== 3) {
+                    continue;
+                }
+
+                [$yearsCell, $makeCell, $modelCell] = array_map(
+                    fn ($value) => $this->normalizeFitmentToken(strip_tags((string) $value)),
+                    $cols[1]
+                );
+
+                if ($year) {
+                    $years = array_map(
+                        fn ($value) => $this->normalizeFitmentToken($value),
+                        explode(',', (string) $yearsCell)
+                    );
+                    if (! in_array($year, $years, true)) {
+                        continue;
+                    }
+                }
+
+                if ($make && strcasecmp($makeCell, $make) !== 0) {
+                    continue;
+                }
+
+                if ($model && strcasecmp($modelCell, $model) !== 0) {
+                    continue;
+                }
+
+                return true;
+            }
+
+            return false;
+        });
+    }
+
+    private function normalizeFitmentToken(?string $value): string
+    {
+        return Str::of((string) $value)
+            ->replaceMatches('/\s+/u', ' ')
+            ->trim()
+            ->lower()
+            ->toString();
+    }
+
+    private function applyFitmentKeywordPrefilter($query, $year, $make, $model): void
+    {
+        foreach ([$year, $make, $model] as $value) {
+            $value = trim((string) $value);
+            if ($value === '') {
+                continue;
+            }
+
+            $query->where('details', 'like', '%' . $this->escapeLike($value) . '%');
+        }
+    }
+
+    private function escapeLike(string $value): string
+    {
+        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value);
     }
 }
