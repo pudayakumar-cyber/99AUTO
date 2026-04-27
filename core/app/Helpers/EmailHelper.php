@@ -64,7 +64,7 @@ class EmailHelper
                 'template_type' => $emailData['type'] ?? null,
                 'recipient' => $emailData['to'] ?? null,
             ]));
-            if ($this->setting->order_mail == 1) {
+            if ($this->shouldSendAdminOrderMail($emailData)) {
                 $this->adminMail($emailData);
             }
         } catch (Exception $e) {
@@ -149,6 +149,36 @@ class EmailHelper
         ];
 
         return strtr($body, $replacements);
+    }
+
+    protected function shouldSendAdminOrderMail(array $emailData): bool
+    {
+        if ((int) $this->setting->order_mail !== 1) {
+            return false;
+        }
+
+        $transactionNumber = trim((string) ($emailData['transaction_number'] ?? ''));
+        $orderCost = $emailData['order_cost'] ?? null;
+        $normalizedOrderCost = is_string($orderCost) ? trim($orderCost) : $orderCost;
+
+        if ($transactionNumber === '' || $normalizedOrderCost === null || $normalizedOrderCost === '') {
+            Log::warning('Skipped admin order email because order data is incomplete.', $this->buildEmailLogContext($emailData, [
+                'template_type' => $emailData['type'] ?? null,
+                'reason' => 'missing_transaction_or_total',
+            ]));
+            return false;
+        }
+
+        $orderExists = Order::where('transaction_number', $transactionNumber)->exists();
+        if (! $orderExists) {
+            Log::warning('Skipped admin order email because no matching order exists.', $this->buildEmailLogContext($emailData, [
+                'template_type' => $emailData['type'] ?? null,
+                'reason' => 'missing_order_record',
+            ]));
+            return false;
+        }
+
+        return true;
     }
 
     protected function buildEmailLogContext(array $emailData, array $extra = []): array
