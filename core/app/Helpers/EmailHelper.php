@@ -157,6 +157,15 @@ class EmailHelper
             return false;
         }
 
+        $templateType = trim((string) ($emailData['type'] ?? ''));
+        if ($templateType !== 'Order') {
+            Log::info('Skipped admin order email because template type is not an order event.', $this->buildEmailLogContext($emailData, [
+                'template_type' => $templateType,
+                'reason' => 'non_order_template',
+            ]));
+            return false;
+        }
+
         $transactionNumber = trim((string) ($emailData['transaction_number'] ?? ''));
         $orderCost = $emailData['order_cost'] ?? null;
         $normalizedOrderCost = is_string($orderCost) ? trim($orderCost) : $orderCost;
