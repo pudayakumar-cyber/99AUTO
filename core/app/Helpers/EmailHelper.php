@@ -11,6 +11,7 @@ use App\{
     Models\Order,
     Models\Setting
 };
+use App\Helpers\PriceHelper;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
@@ -145,10 +146,67 @@ class EmailHelper
             '{order_total}' => $emailData['order_cost'] ?? '',
             '{transaction_number}' => $emailData['transaction_number'] ?? '',
             '{order_number}' => $emailData['transaction_number'] ?? '',
+            '{order_status}' => $emailData['order_status'] ?? '',
+            '{payment_status}' => $emailData['payment_status'] ?? '',
             '{site_title}' => $emailData['site_title'] ?? $this->setting->title,
         ];
 
         return strtr($body, $replacements);
+    }
+
+    public function ensureOrderStatusUpdateTemplate(): EmailTemplate
+    {
+        $existingTemplate = EmailTemplate::whereType('Order Status Update')->first();
+        if ($existingTemplate) {
+            return $existingTemplate;
+        }
+
+        $orderTemplate = EmailTemplate::whereType('Order')->first();
+
+        $subject = $orderTemplate && trim((string) $orderTemplate->subject) !== ''
+            ? $orderTemplate->subject . ' - {order_status}'
+            : 'Order Status Update - {order_status}';
+
+        $body = $orderTemplate && trim((string) $orderTemplate->body) !== ''
+            ? $this->injectOrderStatusMarkup($orderTemplate->body)
+            : '<p>Hello {user_name},</p><p>Your order <strong>{transaction_number}</strong> status is now <strong>{order_status}</strong>.</p><p>Order Total: {order_cost}</p>';
+
+        return EmailTemplate::create([
+            'type' => 'Order Status Update',
+            'subject' => $subject,
+            'body' => $body,
+        ]);
+    }
+
+    public function buildOrderStatusEmailData(Order $order, string $emailAddress): array
+    {
+        $billingInfo = json_decode((string) $order->billing_info, true) ?: [];
+
+        return [
+            'to' => $emailAddress,
+            'type' => 'Order Status Update',
+            'user_name' => trim((string) (($billingInfo['bill_first_name'] ?? '') . ' ' . ($billingInfo['bill_last_name'] ?? ''))),
+            'order_cost' => PriceHelper::OrderTotal($order),
+            'transaction_number' => $order->transaction_number,
+            'order_status' => $order->order_status,
+            'payment_status' => $order->payment_status,
+            'site_title' => $this->setting->title,
+        ];
+    }
+
+    protected function injectOrderStatusMarkup(string $body): string
+    {
+        if (stripos($body, '{order_status}') !== false) {
+            return $body;
+        }
+
+        $statusMarkup = '<p><strong>Order Status:</strong> {order_status}</p>';
+
+        if (stripos($body, '</body>') !== false) {
+            return preg_replace('/<\/body>/i', $statusMarkup . '</body>', $body, 1) ?: ($body . $statusMarkup);
+        }
+
+        return $body . $statusMarkup;
     }
 
     protected function shouldSendAdminOrderMail(array $emailData): bool

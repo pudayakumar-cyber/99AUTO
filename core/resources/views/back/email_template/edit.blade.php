@@ -58,6 +58,14 @@
                                     <td>{order_total}</td>
                                     <td>{{ __('Alias of order cost for order emails') }}</td>
                                 </tr>
+                                <tr>
+                                    <td>{order_status}</td>
+                                    <td>{{ __('Updated order status for status notification emails') }}</td>
+                                </tr>
+                                <tr>
+                                    <td>{payment_status}</td>
+                                    <td>{{ __('Current payment status for order notification emails') }}</td>
+                                </tr>
                                 </tbody>
                             </table>
                             </div>
