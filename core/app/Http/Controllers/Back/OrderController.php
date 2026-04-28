@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\Back;
 
 use App\{
+    Helpers\EmailHelper,
     Models\Order,
     Models\PromoCode,
     Models\TrackOrder,
     Http\Controllers\Controller
 };
+use App\Jobs\EmailSendJob;
 use App\Helpers\SmsHelper;
 use App\Models\Notification;
+use App\Models\Setting;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -124,6 +127,7 @@ class OrderController extends Controller
     {
 
         $order = Order::find($id);
+        $previousValue = $order->{$field} ?? null;
         if($field == 'payment_status'){
             if($order['payment_status'] == 'Paid'){
                 return redirect()->route('back.order.index')->withErrors(__('Order is already paid.'));
@@ -139,6 +143,7 @@ class OrderController extends Controller
             $this->setPromoCode($order);
         }
         $this->setTrackOrder($order);
+        $this->sendCustomerOrderStatusEmail($order->fresh(), $field, $previousValue);
         
         $sms = new SmsHelper();
         $user_number = $order->user->phone;
@@ -235,6 +240,31 @@ class OrderController extends Controller
         }
         $order->delete();
         return redirect()->back()->withSuccess(__('Order Deleted Successfully.'));
+    }
+
+    protected function sendCustomerOrderStatusEmail(Order $order, string $field, $previousValue): void
+    {
+        if ($field !== 'order_status' || $previousValue === $order->order_status) {
+            return;
+        }
+
+        $billingInfo = json_decode((string) $order->billing_info, true) ?: [];
+        $emailAddress = trim((string) ($billingInfo['bill_email'] ?? optional($order->user)->email ?? ''));
+        if ($emailAddress === '') {
+            return;
+        }
+
+        $email = new EmailHelper();
+        $email->ensureOrderStatusUpdateTemplate();
+        $emailData = $email->buildOrderStatusEmailData($order, $emailAddress);
+
+        $setting = Setting::first();
+        if ($setting && (int) $setting->is_queue_enabled === 1) {
+            dispatch(new EmailSendJob($emailData, 'template'));
+            return;
+        }
+
+        $email->sendTemplateMail($emailData);
     }
 
 }
