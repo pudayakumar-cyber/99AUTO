@@ -66,6 +66,10 @@
                                     <td>{payment_status}</td>
                                     <td>{{ __('Current payment status for order notification emails') }}</td>
                                 </tr>
+                                <tr>
+                                    <td>{tracking_number}</td>
+                                    <td>{{ __('Tracking number for shipment notification emails') }}</td>
+                                </tr>
                                 </tbody>
                             </table>
                             </div>

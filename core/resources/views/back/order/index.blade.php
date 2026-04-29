@@ -70,6 +70,7 @@
               <th>{{ __('Total Amount') }}</th>
               <th>{{ __('Payment Status') }}</th>
               <th>{{ __('Order Status') }}</th>
+              <th>{{ __('Tracking Number') }}</th>
 							<th>{{ __('Actions') }}</th>
 						</tr>
 					</thead>

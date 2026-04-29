@@ -86,6 +86,24 @@ class OrderController extends Controller
         return redirect()->route('back.order.index')->withSuccess(__('Order Updated Successfully.'));
     }
 
+    public function updateTrackingNumber(Request $request, $id)
+    {
+        $request->validate([
+            'tracking_number' => ['required', 'string', 'max:255'],
+        ]);
+
+        $order = Order::findOrFail($id);
+        $previousTrackingNumber = (string) $order->tracking_number;
+
+        $order->update([
+            'tracking_number' => trim((string) $request->tracking_number),
+        ]);
+
+        $this->sendCustomerTrackingEmail($order->fresh(), $previousTrackingNumber);
+
+        return redirect()->back()->withSuccess(__('Tracking number updated successfully.'));
+    }
+
     
 
     /**
@@ -257,6 +275,30 @@ class OrderController extends Controller
         $email = new EmailHelper();
         $email->ensureOrderStatusUpdateTemplate();
         $emailData = $email->buildOrderStatusEmailData($order, $emailAddress);
+
+        $setting = Setting::first();
+        if ($setting && (int) $setting->is_queue_enabled === 1) {
+            dispatch(new EmailSendJob($emailData, 'template'));
+            return;
+        }
+
+        $email->sendTemplateMail($emailData);
+    }
+
+    protected function sendCustomerTrackingEmail(Order $order, string $previousTrackingNumber): void
+    {
+        if ($previousTrackingNumber === (string) $order->tracking_number || trim((string) $order->tracking_number) === '') {
+            return;
+        }
+
+        $billingInfo = json_decode((string) $order->billing_info, true) ?: [];
+        $emailAddress = trim((string) ($billingInfo['bill_email'] ?? optional($order->user)->email ?? ''));
+        if ($emailAddress === '') {
+            return;
+        }
+
+        $email = new EmailHelper();
+        $emailData = $email->buildOrderTrackingEmailData($order, $emailAddress);
 
         $setting = Setting::first();
         if ($setting && (int) $setting->is_queue_enabled === 1) {
