@@ -51,18 +51,28 @@ class EmailHelper
 
     public function sendTemplateMail(array $emailData)
     {
-        $template = EmailTemplate::whereType($emailData['type'])->first();
+        $templateType = $emailData['template_type'] ?? $emailData['type'];
+        $template = EmailTemplate::whereType($templateType)->first();
         try {
-            $email_body = $this->replaceTemplateTokens($template->body, $emailData);
+            $templateBody = $template->body;
+            $templateSubject = $template->subject;
+
+            if (! empty($emailData['append_tracking_markup'])) {
+                $templateBody = $this->injectTrackingMarkup($templateBody);
+                $templateSubject = $this->injectTrackingSubject($templateSubject);
+            }
+
+            $email_body = $this->replaceTemplateTokens($templateBody, $emailData);
+            $email_subject = $this->replaceTemplateTokens($templateSubject, $emailData);
 
             $this->mail->setFrom($this->setting->email_from, $this->setting->email_from_name);
             $this->mail->addAddress($emailData['to']);
             $this->mail->isHTML(true);
-            $this->mail->Subject = $template->subject;
+            $this->mail->Subject = $email_subject;
             $this->mail->Body = $email_body;
             $this->mail->send();
             Log::info('Template email sent.', $this->buildEmailLogContext($emailData, [
-                'template_type' => $emailData['type'] ?? null,
+                'template_type' => $templateType,
                 'recipient' => $emailData['to'] ?? null,
             ]));
             if ($this->shouldSendAdminOrderMail($emailData)) {
@@ -70,7 +80,7 @@ class EmailHelper
             }
         } catch (Exception $e) {
             Log::error('Template email send failed.', $this->buildEmailLogContext($emailData, [
-                'template_type' => $emailData['type'] ?? null,
+                'template_type' => $templateType,
                 'recipient' => $emailData['to'] ?? null,
                 'error' => $e->getMessage(),
             ]));
@@ -118,11 +128,12 @@ class EmailHelper
 
             $template = EmailTemplate::whereType('New Order Admin')->first();
             $email_body = $this->replaceTemplateTokens($template->body, $emailData);
+            $email_subject = $this->replaceTemplateTokens($template->subject, $emailData);
             $this->mail->setFrom($this->setting->email_from, $this->setting->email_from_name);
             $this->mail->clearAddresses();
             $this->mail->addAddress($this->setting->contact_email);
             $this->mail->isHTML(true);
-            $this->mail->Subject = $template->subject;
+            $this->mail->Subject = $email_subject;
             $this->mail->Body = $email_body;
             $this->mail->send();
             Log::info('Admin order email sent.', $this->buildEmailLogContext($emailData, [
@@ -148,6 +159,7 @@ class EmailHelper
             '{order_number}' => $emailData['transaction_number'] ?? '',
             '{order_status}' => $emailData['order_status'] ?? '',
             '{payment_status}' => $emailData['payment_status'] ?? '',
+            '{tracking_number}' => $emailData['tracking_number'] ?? '',
             '{site_title}' => $emailData['site_title'] ?? $this->setting->title,
         ];
 
@@ -194,6 +206,26 @@ class EmailHelper
         ];
     }
 
+    public function buildOrderTrackingEmailData(Order $order, string $emailAddress): array
+    {
+        $billingInfo = json_decode((string) $order->billing_info, true) ?: [];
+
+        return [
+            'to' => $emailAddress,
+            'type' => 'Order',
+            'template_type' => 'Order',
+            'skip_admin_mail' => true,
+            'append_tracking_markup' => true,
+            'user_name' => trim((string) (($billingInfo['bill_first_name'] ?? '') . ' ' . ($billingInfo['bill_last_name'] ?? ''))),
+            'order_cost' => PriceHelper::OrderTotal($order),
+            'transaction_number' => $order->transaction_number,
+            'order_status' => $order->order_status,
+            'payment_status' => $order->payment_status,
+            'tracking_number' => $order->tracking_number,
+            'site_title' => $this->setting->title,
+        ];
+    }
+
     protected function injectOrderStatusMarkup(string $body): string
     {
         if (stripos($body, '{order_status}') !== false) {
@@ -209,8 +241,36 @@ class EmailHelper
         return $body . $statusMarkup;
     }
 
+    protected function injectTrackingMarkup(string $body): string
+    {
+        if (stripos($body, '{tracking_number}') !== false) {
+            return $body;
+        }
+
+        $trackingMarkup = '<p><strong>Tracking Number:</strong> {tracking_number}</p><p><strong>Order Status:</strong> {order_status}</p>';
+
+        if (stripos($body, '</body>') !== false) {
+            return preg_replace('/<\/body>/i', $trackingMarkup . '</body>', $body, 1) ?: ($body . $trackingMarkup);
+        }
+
+        return $body . $trackingMarkup;
+    }
+
+    protected function injectTrackingSubject(string $subject): string
+    {
+        if (stripos($subject, '{tracking_number}') !== false) {
+            return $subject;
+        }
+
+        return $subject . ' - Tracking {tracking_number}';
+    }
+
     protected function shouldSendAdminOrderMail(array $emailData): bool
     {
+        if (! empty($emailData['skip_admin_mail'])) {
+            return false;
+        }
+
         if ((int) $this->setting->order_mail !== 1) {
             return false;
         }

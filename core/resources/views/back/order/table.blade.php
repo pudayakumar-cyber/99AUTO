@@ -53,6 +53,20 @@
             </div>
         </td>
         <td>
+            <form action="{{ route('back.order.tracking.update', $data->id) }}" method="POST" class="d-flex align-items-center">
+                @csrf
+                <input
+                    type="text"
+                    name="tracking_number"
+                    class="form-control form-control-sm mr-2"
+                    value="{{ $data->tracking_number }}"
+                    placeholder="{{ __('Tracking Number') }}"
+                    required
+                >
+                <button type="submit" class="btn btn-primary btn-sm">{{ __('Save') }}</button>
+            </form>
+        </td>
+        <td>
             <div class="action-list">
                 <a class="btn btn-secondary btn-sm" href="{{ route('back.order.invoice', $data->id) }}">
                     <i class="fas fa-eye"></i>

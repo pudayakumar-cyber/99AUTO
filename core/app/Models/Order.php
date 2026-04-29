@@ -25,7 +25,8 @@ class Order extends Model
         'currency_value',
         'tax',
         'state_price',
-        'state'
+        'state',
+        'tracking_number',
     ];
 
     public function user()

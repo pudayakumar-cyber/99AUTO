@@ -37,6 +37,7 @@ Route::group(['middleware' => ['adminlocalize', 'demo']], function () {
             Route::delete('/order/delete/{id}', 'Back\OrderController@delete')->name('back.order.delete');
             Route::get('/order/edit/{id}', 'Back\OrderController@edit')->name('back.order.edit');
             Route::post('/order/update/{id}', 'Back\OrderController@update')->name('back.order.update');
+            Route::post('/order/tracking/update/{id}', 'Back\OrderController@updateTrackingNumber')->name('back.order.tracking.update');
             Route::get('/order/print/{id}', 'Back\OrderController@printOrder')->name('back.order.print');
             Route::get('/order/invoice/{id}', 'Back\OrderController@invoice')->name('back.order.invoice');
             Route::get('/order/status/{id}/{field}/{value}', 'Back\OrderController@status')->name('back.order.status');
