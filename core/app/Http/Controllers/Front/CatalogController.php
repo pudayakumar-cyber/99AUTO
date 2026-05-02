@@ -105,25 +105,7 @@ class CatalogController extends Controller
             return $query->where('brand_id', $brand->id);
         })
         ->when($search, function ($query, $search) {
-            return $query->where(function ($searchQuery) use ($search) {
-                $searchQuery
-                    ->where('name', 'like', '%' . $search . '%')
-                    ->orWhere('sku', 'like', '%' . $search . '%')
-                    ->orWhere('prod_number', 'like', '%' . $search . '%')
-                    ->orWhere('tags', 'like', '%' . $search . '%')
-                    ->orWhereHas('brand', function ($brandQuery) use ($search) {
-                        $brandQuery->where('name', 'like', '%' . $search . '%');
-                    })
-                    ->orWhereHas('category', function ($categoryQuery) use ($search) {
-                        $categoryQuery->where('name', 'like', '%' . $search . '%');
-                    })
-                    ->orWhereHas('subcategory', function ($subcategoryQuery) use ($search) {
-                        $subcategoryQuery->where('name', 'like', '%' . $search . '%');
-                    })
-                    ->orWhereHas('childcategory', function ($childcategoryQuery) use ($search) {
-                        $childcategoryQuery->where('name', 'like', '%' . $search . '%');
-                    });
-            });
+            return $this->applySmartSearch($query, $search);
         })
         ->when($minPrice, function($query, $minPrice) {
           return $query->where('discount_price', '>=', $minPrice);
@@ -258,51 +240,23 @@ class CatalogController extends Controller
         $make   = $request->make;
         $model  = $request->model;
 
-        // 1️⃣ BROAD QUERY (cheap, safe)
-        $items = Item::with(['brand', 'category', 'subcategory', 'childcategory'])
+        $itemsQuery = Item::with(['brand', 'category', 'subcategory', 'childcategory'])
             ->withAvg('reviews', 'rating')
             ->whereStatus(1)
-
-            ->when($search, function ($q) use ($search) {
-                $q->where(function ($searchQuery) use ($search) {
-                    $searchQuery
-                        ->where('name', 'like', "%{$search}%")
-                        ->orWhere('sku', 'like', "%{$search}%")
-                        ->orWhere('prod_number', 'like', "%{$search}%")
-                        ->orWhere('tags', 'like', "%{$search}%")
-                        ->orWhereHas('brand', function ($brandQuery) use ($search) {
-                            $brandQuery->where('name', 'like', "%{$search}%");
-                        })
-                        ->orWhereHas('category', function ($categoryQuery) use ($search) {
-                            $categoryQuery->where('name', 'like', "%{$search}%");
-                        })
-                        ->orWhereHas('subcategory', function ($subcategoryQuery) use ($search) {
-                            $subcategoryQuery->where('name', 'like', "%{$search}%");
-                        })
-                        ->orWhereHas('childcategory', function ($childcategoryQuery) use ($search) {
-                            $childcategoryQuery->where('name', 'like', "%{$search}%");
-                        });
-                });
+            ->when($search, function ($query) use ($search) {
+                $this->applySmartSearch($query, $search);
             })
+            ->when($category, fn ($query) => $query->where('category_id', $category->id))
+            ->orderByDesc('id');
 
-            ->when($category, fn ($q) =>
-                $q->where('category_id', $category->id)
-            )
-
-            // optional pre-filter to reduce rows
-            ->when($year,  fn ($q) => $q->where('details', 'like', "%{$year}%"))
-            ->when($make,  fn ($q) => $q->where('details', 'like', "%{$make}%"))
-            ->when($model, fn ($q) => $q->where('details', 'like', "%{$model}%"))
-
-            ->orderByDesc('id')
-            ->take(30) // small buffer
-            ->get();
-
-        // 2️⃣ STRICT PHP FILTER (exact same-row fitment match)
-        $items = $this->filterItemsByFitment($items, $year, $make, $model);
-
-        // final limit
-        $items = $items->take(10);
+        if ($year || $make || $model) {
+            $matchedFitmentIds = $this->getFitmentMatchedItemIds($itemsQuery, $request, $year, $make, $model);
+            $items = empty($matchedFitmentIds)
+                ? collect()
+                : (clone $itemsQuery)->whereIn('id', $matchedFitmentIds)->take(30)->get()->take(10);
+        } else {
+            $items = $itemsQuery->take(30)->get()->take(10);
+        }
 
         return view('includes.search_suggest', compact('items'));
     }
@@ -320,8 +274,8 @@ class CatalogController extends Controller
             }
 
             $year = $this->normalizeFitmentToken($year);
-            $make = $this->normalizeFitmentToken($make);
-            $model = $this->normalizeFitmentToken($model);
+            $make = $this->canonicalFitmentToken($make);
+            $model = $this->canonicalFitmentToken($model);
 
             // Prefer the normalized fitment table to avoid matching arbitrary 3-column tables.
             $details = (string) $item->details;
@@ -341,28 +295,25 @@ class CatalogController extends Controller
                 }
 
                 [$yearsCell, $makeCell, $modelCell] = array_map(
-                    fn ($v) => $this->normalizeFitmentToken(strip_tags((string) $v)),
+                    fn ($v) => trim(html_entity_decode(strip_tags((string) $v))),
                     $cols[1]
                 );
 
                 // YEAR
                 if ($year) {
-                    $years = array_map(
-                        fn ($v) => $this->normalizeFitmentToken($v),
-                        explode(',', (string) $yearsCell)
-                    );
+                    $years = $this->expandFitmentYears($yearsCell);
                     if (! in_array($year, $years, true)) {
                         continue;
                     }
                 }
 
                 // MAKE
-                if ($make && strcasecmp($makeCell, $make) !== 0) {
+                if ($make && $this->canonicalFitmentToken($makeCell) !== $make) {
                     continue;
                 }
 
                 // MODEL
-                if ($model && strcasecmp($modelCell, $model) !== 0) {
+                if ($model && $this->canonicalFitmentToken($modelCell) !== $model) {
                     continue;
                 }
 
@@ -379,6 +330,16 @@ class CatalogController extends Controller
             ->replaceMatches('/\s+/u', ' ')
             ->trim()
             ->lower()
+            ->toString();
+    }
+
+    private function canonicalFitmentToken(?string $value): string
+    {
+        return Str::of(html_entity_decode((string) $value))
+            ->lower()
+            ->replace('&', ' and ')
+            ->replaceMatches('/[^a-z0-9]+/u', '')
+            ->trim()
             ->toString();
     }
 
@@ -414,13 +375,140 @@ class CatalogController extends Controller
                 continue;
             }
 
-            $query->where('details', 'like', '%' . $this->escapeLike($value) . '%');
+            $variants = $this->fitmentTextVariants($value);
+            $query->where(function ($detailsQuery) use ($variants) {
+                foreach ($variants as $variant) {
+                    $detailsQuery->orWhere('details', 'like', '%' . $this->escapeLike($variant) . '%');
+                }
+            });
         }
     }
 
     private function escapeLike(string $value): string
     {
         return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value);
+    }
+
+    private function fitmentTextVariants(string $value): array
+    {
+        $value = trim(html_entity_decode($value));
+        if ($value === '') {
+            return [];
+        }
+
+        return array_values(array_unique(array_filter([
+            $value,
+            preg_replace('/[-\/_\.]+/u', ' ', $value),
+            preg_replace('/\s+/u', ' ', $value),
+            preg_replace('/[^A-Za-z0-9]+/u', '', $value),
+        ], fn ($variant) => trim((string) $variant) !== '')));
+    }
+
+    private function expandFitmentYears(string $yearsCell): array
+    {
+        $years = [];
+
+        foreach (preg_split('/\s*,\s*/', trim($yearsCell)) ?: [] as $part) {
+            $part = trim($part);
+            if ($part === '') {
+                continue;
+            }
+
+            if (preg_match('/^(\d{4})\s*-\s*(\d{4})$/', $part, $matches)) {
+                $start = (int) $matches[1];
+                $end = (int) $matches[2];
+                if ($start <= $end) {
+                    for ($year = $start; $year <= $end; $year++) {
+                        $years[] = (string) $year;
+                    }
+                    continue;
+                }
+            }
+
+            $years[] = $this->normalizeFitmentToken($part);
+        }
+
+        return array_values(array_unique($years));
+    }
+
+    private function applySmartSearch($query, string $search)
+    {
+        $normalizedSearch = $this->normalizeSearchTerm($search);
+        $normalizedPatterns = $this->buildNormalizedSearchPatterns($search);
+
+        return $query->where(function ($searchQuery) use ($search, $normalizedSearch, $normalizedPatterns) {
+            $searchQuery
+                ->where('name', 'like', '%' . $search . '%')
+                ->orWhere('sku', 'like', '%' . $search . '%')
+                ->orWhere('prod_number', 'like', '%' . $search . '%')
+                ->orWhere('product_part_number', 'like', '%' . $search . '%')
+                ->orWhere('tags', 'like', '%' . $search . '%')
+                ->orWhereHas('brand', function ($brandQuery) use ($search) {
+                    $brandQuery->where('name', 'like', '%' . $search . '%');
+                })
+                ->orWhereHas('category', function ($categoryQuery) use ($search) {
+                    $categoryQuery->where('name', 'like', '%' . $search . '%');
+                })
+                ->orWhereHas('subcategory', function ($subcategoryQuery) use ($search) {
+                    $subcategoryQuery->where('name', 'like', '%' . $search . '%');
+                })
+                ->orWhereHas('childcategory', function ($childcategoryQuery) use ($search) {
+                    $childcategoryQuery->where('name', 'like', '%' . $search . '%');
+                });
+
+            if ($normalizedSearch !== '') {
+                foreach (['name', 'sku', 'prod_number', 'product_part_number'] as $column) {
+                    foreach ($normalizedPatterns as $pattern) {
+                        $searchQuery->orWhereRaw(
+                            $this->normalizedSqlExpression($column) . ' LIKE ?',
+                            [$pattern]
+                        );
+                    }
+                }
+            }
+        });
+    }
+
+    private function normalizeSearchTerm(string $value): string
+    {
+        return Str::of($value)
+            ->lower()
+            ->replace('&', 'and')
+            ->replaceMatches('/[^a-z0-9]+/u', '')
+            ->trim()
+            ->toString();
+    }
+
+    private function normalizedSqlExpression(string $column): string
+    {
+        return "LOWER(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(COALESCE({$column}, ''), '-', ''), ' ', ''), '/', ''), '_', ''), '.', ''), '&', 'and'))";
+    }
+
+    private function buildNormalizedSearchPatterns(string $search): array
+    {
+        $normalizedSearch = $this->normalizeSearchTerm($search);
+        if ($normalizedSearch === '') {
+            return [];
+        }
+
+        $patterns = ['%' . $normalizedSearch . '%'];
+        $segments = $this->splitSearchSegments($search);
+
+        if (count($segments) > 1) {
+            $patterns[] = '%' . implode('%', $segments) . '%';
+        }
+
+        return array_values(array_unique($patterns));
+    }
+
+    private function splitSearchSegments(string $search): array
+    {
+        $clean = strtolower(html_entity_decode($search));
+        preg_match_all('/[a-z]+|\d+/u', $clean, $matches);
+
+        return array_values(array_filter(array_map(function ($segment) {
+            return preg_replace('/[^a-z0-9]+/u', '', (string) $segment);
+        }, $matches[0] ?? [])));
     }
 
 }
