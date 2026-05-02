@@ -931,7 +931,10 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             function normalizeText(v) {
-                return String(v || '').replace(/\s+/g, ' ').trim().toLowerCase();
+                return String(v || '')
+                    .toLowerCase()
+                    .replace(/&/g, ' and ')
+                    .replace(/[^a-z0-9]+/g, '');
             }
 
             function getFitmentRows() {
@@ -1006,7 +1009,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 var selectedModel = normalizeText(modelText);
                 var hasFitmentData = fitmentRows.length > 0;
                 var matched = hasFitmentData && fitmentRows.some(function (row) {
-                    return normalizeText(row[0]) === selectedYear &&
+                    var years = String(row[0] || '').split(',').map(function (part) {
+                        return normalizeText(part);
+                    }).filter(Boolean);
+
+                    return years.indexOf(selectedYear) !== -1 &&
                         normalizeText(row[1]) === selectedMake &&
                         normalizeText(row[2]) === selectedModel;
                 });

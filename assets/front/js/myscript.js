@@ -715,7 +715,10 @@ $(function ($) {
             var storageKey = 'selected_vehicle';
 
             function normalize(v) {
-                return String(v || '').replace(/\s+/g, ' ').trim().toLowerCase();
+                return String(v || '')
+                    .toLowerCase()
+                    .replace(/&/g, ' and ')
+                    .replace(/[^a-z0-9]+/g, '');
             }
 
             function hasVehicle(v) {
