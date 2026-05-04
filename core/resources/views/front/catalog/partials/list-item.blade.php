@@ -24,21 +24,21 @@
             @endif
 
             <img class="lazy" src="{{ $resolveProductImageUrl($item->thumbnail) }}" data-src="{{ $resolveProductImageUrl($item->thumbnail) }}" alt="{{ $item->name }}" loading="lazy" decoding="async" width="230" height="230">
-            <div class="product-button-group">
-                <a class="product-button wishlist_store" href="{{ route('user.wishlist.store', $item->id) }}" title="{{ __('Wishlist') }}"><i class="icon-heart"></i></a>
-                <a data-target="{{ route('fornt.compare.product', $item->id) }}" class="product-button product_compare" href="javascript:;" title="{{ __('Compare') }}"><i class="icon-repeat"></i></a>
-                @include('includes.item_footer', ['sitem' => $item])
-            </div>
         </div>
         <div class="product-card-inner">
             <div class="product-card-body">
-                <div class="product-category"><a href="{{ route('front.catalog') . '?category=' . $item->category->slug }}">{{ $item->category->name }}</a></div>
+                <div class="product-list-meta">
+                    <div class="product-category"><a href="{{ route('front.catalog') . '?category=' . $item->category->slug }}">{{ $item->category->name }}</a></div>
+                    @if(optional($item->brand)->name)
+                        <span class="product-list-brand">{{ optional($item->brand)->name }}</span>
+                    @endif
+                </div>
                 <h3 class="product-title"><a href="{{ route('front.product', $item->slug) }}">
                     {{ Str::limit(collect([
                         optional($item->brand)->name ?: null,
                         $item->product_part_number ?: $item->prod_number ?: null,
                         $item->name,
-                    ])->filter(fn ($v) => trim((string) $v) !== '')->implode(' - '), 52) }}
+                    ])->filter(fn ($v) => trim((string) $v) !== '')->implode(' - '), 76) }}
                 </a></h3>
                 <div class="rating-stars">
                     {!! Helper::renderStarRating($item->reviews_avg_rating) !!}
@@ -50,9 +50,16 @@
                     {{ PriceHelper::grandCurrencyPrice($item) }}
                 </h4>
                 <div class="small mt-1 js-fitment-status d-none" aria-live="polite"></div>
-                <p class="text-sm sort_details_show  text-muted hidden-xs-down my-1">
-                    {{ Str::limit(strip_tags($item->sort_details), 100) }}
+                <p class="product-list-summary text-muted">
+                    {{ Str::limit(strip_tags($item->sort_details), 110) }}
                 </p>
+            </div>
+            <div class="product-list-actions">
+                <div class="product-button-group">
+                    <a class="product-button wishlist_store" href="{{ route('user.wishlist.store', $item->id) }}" title="{{ __('Wishlist') }}"><i class="icon-heart"></i></a>
+                    <a data-target="{{ route('fornt.compare.product', $item->id) }}" class="product-button product_compare" href="javascript:;" title="{{ __('Compare') }}"><i class="icon-repeat"></i></a>
+                    @include('includes.item_footer', ['sitem' => $item])
+                </div>
             </div>
         </div>
     </div>
