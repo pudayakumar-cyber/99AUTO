@@ -39,7 +39,19 @@
     </div>
 @endsection
 
-@section('scripts')
+@push('before_body_close')
+<script>
+window.dataLayer = window.dataLayer || [];
+window.dataLayer.push({
+  'event': 'purchase',
+  'transactionId': '{{ $order->id }}',
+  'transactionTotal': {{ $order_value }},
+  'send_to': 'AW-17081986841/HVZVCO7D3McaEJneqdE_'
+});
+</script>
+@endpush
+
+@section('script')
 <script>
 // Facebook Pixel - Purchase Event
 if (typeof fbq === 'function') {
