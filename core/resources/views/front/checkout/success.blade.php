@@ -39,26 +39,38 @@
     </div>
 @endsection
 
-@section('scripts')
+@section('script')
+@php
+    $googleAdsPurchaseSendTo = 'AW-' . config('services.google.ads_conversion_id') . '/' . config('services.google.ads_purchase_label');
+    $purchaseItems = [];
+    foreach ($cart as $key => $item) {
+        $purchaseItems[] = [
+            'item_id' => (string) ($item['id'] ?? $item['item_id'] ?? $key),
+            'item_name' => $item['name'] ?? '',
+            'quantity' => (int) ($item['qty'] ?? 1),
+            'price' => (float) ($item['main_price'] ?? $item['price'] ?? 0),
+        ];
+    }
+@endphp
 <script>
-// Facebook Pixel - Purchase Event
-if (typeof fbq === 'function') {
-    fbq('track', 'Purchase', {
+document.addEventListener('DOMContentLoaded', function () {
+    if (typeof window.paTrack !== 'function') {
+        return;
+    }
+
+    window.paTrack('Purchase', {
         content_type: 'product',
         content_ids: @json($cart_content_ids),
         value: {{ $order_value }},
         currency: '{{ $currency }}',
         num_items: {{ $num_items }},
-        transaction_id: '{{ $order->transaction_number }}' // For deduplication with server-side event
-    });
-    console.log('🔥 Facebook Pixel Purchase event fired:', {
         transaction_id: '{{ $order->transaction_number }}',
-        value: {{ $order_value }},
-        currency: '{{ $currency }}',
-        items: {{ $num_items }}
+        event_id: '{{ $event_id }}',
+        items: @json($purchaseItems)
+    }, 'purchase', {
+        eventId: '{{ $event_id }}',
+        googleAdsSendTo: '{{ $googleAdsPurchaseSendTo }}'
     });
-} else {
-    console.error('❌ Facebook Pixel (fbq) not loaded - Purchase event not tracked');
-}
+});
 </script>
 @endsection

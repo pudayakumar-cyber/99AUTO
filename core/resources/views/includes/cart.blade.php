@@ -99,11 +99,20 @@
                     @endforeach
                     @php
                         $checkoutContentIds = [];
+                        $checkoutItems = [];
                         $checkoutNumItems = 0;
                         foreach ($cart as $key => $line) {
                             // Adjust if your session keys differ (e.g. $line['item_id'])
-                            $checkoutContentIds[] = (string) ($line['id'] ?? $line['item_id'] ?? \PriceHelper::GetItemId($key) ?? $key);
-                            $checkoutNumItems += (int) ($line['qty'] ?? 1);
+                            $checkoutItemId = (string) ($line['id'] ?? $line['item_id'] ?? \PriceHelper::GetItemId($key) ?? $key);
+                            $checkoutQty = (int) ($line['qty'] ?? 1);
+                            $checkoutContentIds[] = $checkoutItemId;
+                            $checkoutItems[] = [
+                                'item_id' => $checkoutItemId,
+                                'item_name' => $line['name'] ?? '',
+                                'quantity' => $checkoutQty,
+                                'price' => (float) ($line['main_price'] ?? 0),
+                            ];
+                            $checkoutNumItems += $checkoutQty;
                         }
                         $checkoutValue = (float) ($cartTotal - (Session::has('coupon') ? Session::get('coupon')['discount'] : 0));
                     @endphp
@@ -164,18 +173,18 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!el) return;
 
     el.addEventListener('click', function () {
-        if (typeof fbq !== 'function') {
-            console.error('fbq NOT LOADED (InitiateCheckout)');
+        if (typeof window.paTrack !== 'function') {
             return;
         }
 
-        fbq('track', 'InitiateCheckout', {
+        window.paTrack('InitiateCheckout', {
             content_type: 'product',
             content_ids: @json($checkoutContentIds),
             num_items: {{ (int) $checkoutNumItems }},
             value: {{ $checkoutValue }},
-            currency: 'CAD'
-        });
+            currency: 'CAD',
+            items: @json($checkoutItems)
+        }, 'begin_checkout');
     });
 });
 </script>
