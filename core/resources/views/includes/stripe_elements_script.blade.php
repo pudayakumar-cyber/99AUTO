@@ -87,15 +87,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     submitButton.addEventListener('click', async function(e) {
         e.preventDefault();
-        if (typeof fbq !== 'undefined') {
+        if (typeof window.paTrack === 'function') {
             let rawPrice = $(".grand_total_set").text();
             let numericValue = parseFloat(rawPrice.replace(/[^0-9.-]+/g, '')) || 0;
 
-            fbq('track', 'Purchase', {
+            window.paTrack('AddPaymentInfo', {
                 content_type: 'product',
                 value: numericValue,
-                currency: 'CAD' 
-            });
+                currency: 'CAD',
+                payment_type: 'Stripe'
+            }, 'add_payment_info');
         }
         if (!stripe || !clientSecret) {
             showError('Payment not initialized. Please close and reopen the payment form.');

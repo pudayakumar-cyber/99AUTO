@@ -755,16 +755,20 @@
         {!! $setting->facebook_pixel !!}
     @endif
     {{-- Facebook pixel End --}}
+@if (!($setting->is_google_analytics == '1' && trim((string) $setting->google_analytics) !== ''))
 <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-Z486T545YD"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ config('services.google.analytics_id') }}"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
 
-  gtag('config', 'G-Z486T545YD');
+  gtag('config', '{{ config('services.google.analytics_id') }}');
+  gtag('config', 'AW-{{ config('services.google.ads_conversion_id') }}');
 </script>
+@endif
 <!-- #metapixelscript -->
+@if (!($setting->is_facebook_pixel == '1' && trim((string) $setting->facebook_pixel) !== ''))
 <!-- Meta Pixel Base Code -->
 <script>
 !function(f,b,e,v,n,t,s)
@@ -775,15 +779,87 @@ n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '2388576101564001');
+fbq('init', '{{ config('services.facebook.pixel_id') }}');
 fbq('track', 'PageView');
 </script>
 <noscript><img height="1" width="1" style="display:none"
-src="https://www.facebook.com/tr?id=2388576101564001&ev=PageView&noscript=1"
+src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&ev=PageView&noscript=1"
 /></noscript>
 <!-- End Meta Pixel Base Code -->
+@endif
 
 <!-- #metapixelscript -->
+<script>
+(function (window, document) {
+    window.paTrack = function (metaEvent, payload, googleEvent, options) {
+        payload = payload || {};
+        options = options || {};
+
+        try {
+            window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({
+                event: googleEvent || metaEvent,
+                meta_event: metaEvent,
+                ecommerce: payload
+            });
+        } catch (error) {
+            console.warn('Tracking dataLayer push failed', error);
+        }
+
+        try {
+            if (googleEvent && typeof window.gtag === 'function') {
+                window.gtag('event', googleEvent, payload);
+                if (options.googleAdsSendTo) {
+                    window.gtag('event', 'conversion', Object.assign({}, payload, {
+                        send_to: options.googleAdsSendTo
+                    }));
+                }
+            }
+        } catch (error) {
+            console.warn('Google tracking failed', error);
+        }
+
+        try {
+            if (metaEvent && typeof window.fbq === 'function') {
+                var metaOptions = options.eventId ? { eventID: options.eventId } : undefined;
+                window.fbq(options.metaMethod || 'track', metaEvent, payload, metaOptions);
+            }
+        } catch (error) {
+            console.warn('Meta tracking failed', error);
+        }
+    };
+
+    document.addEventListener('click', function (event) {
+        var target = event.target;
+        if (!target || typeof target.closest !== 'function') {
+            return;
+        }
+
+        var element = target.closest('a, button, input[type="submit"], input[type="button"], .btn');
+
+        if (!element || element.closest('[data-pa-track-ignore]')) {
+            return;
+        }
+
+        var label = (
+            element.getAttribute('data-pa-label') ||
+            element.getAttribute('aria-label') ||
+            element.textContent ||
+            element.value ||
+            element.id ||
+            'click'
+        ).replace(/\s+/g, ' ').trim().slice(0, 120);
+
+        window.paTrack('SiteClick', {
+            event_category: 'engagement',
+            event_label: label,
+            link_url: element.href || '',
+            page_location: window.location.href
+        }, 'select_content', { metaMethod: 'trackCustom' });
+    }, true);
+})(window, document);
+</script>
+
 </head>
 <!-- Body-->
 

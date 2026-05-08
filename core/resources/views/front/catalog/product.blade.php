@@ -77,28 +77,6 @@
     <meta name="og:image" content="{{ $resolveProductImageUrl($item->photo) }}">
     <meta name="og:description" content="{{ $item->meta_description }}">
 
-    {{-- ✅ META PIXEL VIEW CONTENT --}}
-    @if($item->is_stock())
-    <script>
-      document.addEventListener('DOMContentLoaded', function () {
-        if (typeof fbq === 'function') {
-          console.log('🔥 ViewContent fired');
-
-          fbq('track', 'ViewContent', {
-            content_type: 'product',
-            content_ids: [{!! json_encode((string)($item->id ?? $item->prod_number ?? '')) !!}],
-            content_name: {!! json_encode($item->name ?? '') !!},
-            content_category: {!! json_encode(optional($item->category)->name ?? '') !!},
-            value: {{ (float) ($item->discount_price ?? $item->previous_price ?? 0) }},
-            currency: 'CAD'
-          });
-
-        } else {
-          console.error('❌ fbq NOT LOADED (ViewContent)');
-        }
-      });
-    </script>
-    @endif
 @endsection
 
 @section('styleplugins')
@@ -340,34 +318,6 @@ document.addEventListener('DOMContentLoaded', function () {
                                         <a href="{{ $item->affiliate_link }}" target="_blank"
                                             class="btn btn-primary m-0"><span><i
                                                     class="icon-bag"></i>{{ __('Buy Now') }}</span></a>
-                                    @endif
-                                    @if($item->is_stock())
-                                        <script>
-                                        document.addEventListener('DOMContentLoaded', function () {
-                                        const btn = document.getElementById('add_to_cart');
-                                        if (!btn) return;
-
-                                        btn.addEventListener('click', function () {
-                                            if (typeof fbq !== 'function') {
-                                            console.error('fbq NOT LOADED (AddToCart)');
-                                            return;
-                                            }
-
-                                            const qtyInput = document.getElementById('product-quantity');
-                                            const qty = qtyInput ? (parseInt(qtyInput.value, 10) || 1) : 1;
-
-                                            fbq('track', 'AddToCart', {
-                                            content_type: 'product',
-                                            content_ids: [@json((string)($item->id ?? $item->prod_number ?? ''))],
-                                            content_name: @json($item->name ?? ''),
-                                            content_category: @json(optional($item->category)->name ?? ''),
-                                            value: {{ (float) ($item->discount_price ?? $item->previous_price ?? 0) }},
-                                            currency: 'CAD',
-                                            num_items: qty
-                                            });
-                                        });
-                                        });
-                                        </script>
                                     @endif
                                 </div>
 
@@ -1181,6 +1131,52 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
             </div>
         </form>
-    @endauth
+@endauth
 
+@endsection
+
+@section('script')
+@if($item->is_stock())
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var productPayload = {
+        content_type: 'product',
+        content_ids: [@json((string)($item->id ?? $item->prod_number ?? ''))],
+        content_name: @json($item->name ?? ''),
+        content_category: @json(optional($item->category)->name ?? ''),
+        value: {{ (float) ($item->discount_price ?? $item->previous_price ?? 0) }},
+        currency: 'CAD',
+        items: [{
+            item_id: @json((string)($item->id ?? $item->prod_number ?? '')),
+            item_name: @json($item->name ?? ''),
+            item_category: @json(optional($item->category)->name ?? ''),
+            price: {{ (float) ($item->discount_price ?? $item->previous_price ?? 0) }}
+        }]
+    };
+
+    if (typeof window.paTrack === 'function') {
+        window.paTrack('ViewContent', productPayload, 'view_item');
+    }
+
+    var addToCartButton = document.getElementById('add_to_cart');
+    if (!addToCartButton) {
+        return;
+    }
+
+    addToCartButton.addEventListener('click', function () {
+        var qtyInput = document.getElementById('product-quantity');
+        var qty = qtyInput ? (parseInt(qtyInput.value, 10) || 1) : 1;
+        var addToCartPayload = Object.assign({}, productPayload, {
+            num_items: qty,
+            quantity: qty,
+            items: [Object.assign({}, productPayload.items[0], { quantity: qty })]
+        });
+
+        if (typeof window.paTrack === 'function') {
+            window.paTrack('AddToCart', addToCartPayload, 'add_to_cart');
+        }
+    });
+});
+</script>
+@endif
 @endsection
