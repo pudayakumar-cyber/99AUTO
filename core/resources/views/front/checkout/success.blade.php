@@ -44,7 +44,7 @@
 window.dataLayer = window.dataLayer || [];
 window.dataLayer.push({
   'event': 'purchase',
-  'transactionId': '{{ $order->id }}',
+  'transactionId': '{{ $order->transaction_number ?: $order->id }}',
   'transactionTotal': {{ $order_value }},
   'send_to': 'AW-17081986841/HVZVCO7D3McaEJneqdE_'
 });
