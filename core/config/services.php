@@ -40,4 +40,10 @@ return [
         'conversion_api_token' => env('FACEBOOK_CONVERSION_API_TOKEN'),
     ],
 
+    'google' => [
+        'analytics_id' => env('GOOGLE_ANALYTICS_ID', 'G-Z486T545YD'),
+        'ads_conversion_id' => env('GOOGLE_ADS_CONVERSION_ID', '17081986841'),
+        'ads_purchase_label' => env('GOOGLE_ADS_PURCHASE_LABEL', 'HVZVCO7D3McaEJneqdE_'),
+    ],
+
 ];

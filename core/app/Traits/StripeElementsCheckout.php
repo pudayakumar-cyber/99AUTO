@@ -251,14 +251,20 @@ trait StripeElementsCheckout
             try {
                 if (class_exists(\App\Services\FacebookConversionApi::class)) {
                     $facebookApi = new \App\Services\FacebookConversionApi();
-                    $facebookApi->trackPurchase(
+                    $eventId = $facebookApi->purchaseEventId($order);
+                    $sent = $facebookApi->trackPurchase(
                         $order,
                         $cart,
                         EmailHelper::getEmail(),
                         json_decode($order->billing_info, true)['bill_phone'] ?? null,
                         request()->ip(),
-                        request()->header('User-Agent')
+                        request()->header('User-Agent'),
+                        $eventId
                     );
+
+                    if ($sent) {
+                        Session::put('facebook_capi_purchase_sent_' . $order->id, true);
+                    }
                 } else {
                     \Log::warning('Facebook CAPI service not found. Skipping purchase tracking.', [
                         'order_id' => $order->id,
