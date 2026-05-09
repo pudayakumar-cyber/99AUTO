@@ -800,6 +800,7 @@ src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&e
             window.dataLayer.push({
                 event: googleEvent || metaEvent,
                 meta_event: metaEvent,
+                google_ads_send_to: options.googleAdsSendTo || null,
                 ecommerce: payload
             });
         } catch (error) {
@@ -807,7 +808,9 @@ src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&e
         }
 
         try {
-            if (googleEvent && typeof window.gtag === 'function') {
+            var shouldSendDirectGoogleEvent = !window.google_tag_manager || options.forceGoogleDirect;
+
+            if (shouldSendDirectGoogleEvent && googleEvent && typeof window.gtag === 'function') {
                 window.gtag('event', googleEvent, payload);
                 if (options.googleAdsSendTo) {
                     window.gtag('event', 'conversion', Object.assign({}, payload, {
