@@ -926,6 +926,47 @@
 @endif
 <!-- #metapixelscript -->
 @if (!($setting->is_facebook_pixel == '1' && trim((string) $setting->facebook_pixel) !== ''))
+@php
+    $metaAdvancedMatching = [];
+    if (Auth::check()) {
+        $metaUser = Auth::user();
+        $metaNormalize = function ($value) {
+            $value = preg_replace('/\s+/', '', strtolower(trim((string) $value)));
+            return $value === '' ? null : hash('sha256', $value);
+        };
+        $metaNormalizeEmail = function ($value) {
+            $value = strtolower(trim((string) $value));
+            return $value === '' ? null : hash('sha256', $value);
+        };
+        $metaNormalizePhone = function ($value) {
+            $value = preg_replace('/\D+/', '', (string) $value);
+            return $value === '' ? null : hash('sha256', $value);
+        };
+        $metaNormalizeCountry = function ($value) use ($metaNormalize) {
+            $value = strtolower(trim((string) $value));
+            $countries = [
+                'canada' => 'ca',
+                'ca' => 'ca',
+                'united states' => 'us',
+                'united states of america' => 'us',
+                'usa' => 'us',
+                'us' => 'us',
+            ];
+            return $metaNormalize($countries[$value] ?? $value);
+        };
+        $metaAdvancedMatching = array_filter([
+            'em' => $metaNormalizeEmail($metaUser->email ?? null),
+            'ph' => $metaNormalizePhone($metaUser->phone ?? null),
+            'fn' => $metaNormalize($metaUser->first_name ?? null),
+            'ln' => $metaNormalize($metaUser->last_name ?? null),
+            'ct' => $metaNormalize($metaUser->bill_city ?? $metaUser->ship_city ?? null),
+            'st' => $metaNormalize($metaUser->bill_province ?? $metaUser->ship_province ?? null),
+            'zp' => $metaNormalize($metaUser->bill_zip ?? $metaUser->ship_zip ?? null),
+            'country' => $metaNormalizeCountry($metaUser->bill_country ?? $metaUser->ship_country ?? null),
+            'external_id' => $metaNormalize('user_' . $metaUser->id),
+        ]);
+    }
+@endphp
 <!-- Meta Pixel Base Code -->
 <script>
 !function(f,b,e,v,n,t,s)
@@ -936,7 +977,7 @@ n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '{{ config('services.facebook.pixel_id') }}');
+fbq('init', '{{ config('services.facebook.pixel_id') }}'@if(!empty($metaAdvancedMatching)), @json($metaAdvancedMatching)@endif);
 fbq('track', 'PageView');
 </script>
 <noscript><img height="1" width="1" style="display:none"
