@@ -569,6 +569,11 @@
                 display: none;
             }
 
+            .mobile-cart-backdrop,
+            .mobile-cart-drawer-close {
+                display: none;
+            }
+
 
 
 
@@ -678,63 +683,215 @@
                     width: auto;
                     max-width: none;
                     bottom: 156px;
-                .site-header .toolbar .toolbar-item.mobile-shop-link {
-                    width: auto;
-                    min-width: 88px;
                 }
 
-                .site-header .toolbar .toolbar-item.mobile-shop-link .toolbar-link {
+                .site-header .topbar {
+                    padding: 8px 0 0;
+                    background: #fff;
+                }
+
+                .site-header .topbar .container > .row > .col-lg-12 > .d-flex {
+                    display: flex !important;
+                    flex-wrap: wrap;
+                    align-items: center;
+                    gap: 8px;
+                }
+
+                .site-header .site-branding {
+                    display: none;
+                }
+
+                .site-header .search-box-wrap {
+                    position: relative !important;
+                    top: auto !important;
+                    left: auto !important;
+                    z-index: 1 !important;
+                    order: 1;
+                    flex: 1 1 100%;
+                    width: 100% !important;
+                    height: auto !important;
+                    background: transparent;
+                    margin: 0;
+                }
+
+                .site-header .toolbar {
+                    order: 2;
+                    display: flex !important;
+                    width: 100%;
+                    justify-content: space-between;
+                    gap: 18px;
+                    margin-top: 7px;
+                    padding: 6px 44px 8px;
+                    border: 0;
+                    background: #fff;
+                }
+
+                .navbar-stuck .topbar {
+                    padding-bottom: 16px !important;
+                }
+
+                .navbar-stuck .site-header .toolbar,
+                .site-header.navbar-stuck .toolbar {
+                    padding-bottom: 20px;
+                }
+
+                .site-header .toolbar .toolbar-item {
+                    display: flex !important;
+                    align-items: center;
+                    justify-content: center;
+                    flex: 1 1 0;
+                    width: auto !important;
+                    min-width: 0;
+                    margin-left: 0 !important;
+                }
+
+                .site-header .toolbar .mobile-menu-toggle {
+                    order: 1;
+                    justify-content: flex-start;
+                }
+
+                .site-header .toolbar .mobile-category-toggle {
+                    order: 2;
+                    justify-content: center;
+                }
+
+                .site-header .toolbar .cart-toolbar-item {
+                    order: 3;
+                    justify-content: flex-end;
+                }
+
+                .site-header .toolbar .toolbar-item > a {
+                    width: 100%;
+                }
+
+                .site-header .toolbar .toolbar-item > a > div {
+                    min-height: 32px;
                     display: inline-flex;
-                    min-width: 88px;
-                    padding: 0 10px;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 3px;
+                    color: #222;
                 }
 
-                .site-header .toolbar .toolbar-item.mobile-shop-link .text-label,
-                .site-header .toolbar .toolbar-item.mobile-shop-link > a > div > .text-label {
-                    display: inline-block;
+                .site-header .toolbar .toolbar-item > a > div > .text-label {
+                    display: inline-block !important;
+                    font-size: 11px;
+                    font-weight: 400;
+                    line-height: 1;
+                    color: #222;
+                }
+
+                .site-header .toolbar .toolbar-item > a > div i {
+                    font-size: 21px;
+                    line-height: 1;
+                }
+
+                .site-header .toolbar .toolbar-item.close-m-serch,
+                .site-header .toolbar .toolbar-item.mobile-shop-link {
+                    display: none !important;
+                }
+
+                .site-header .toolbar .toolbar-item.hidden-on-mobile {
+                    display: none !important;
+                }
+
+                .site-header .toolbar .cart-icon .count-label {
+                    top: -7px;
+                    right: -9px;
+                }
+
+                .site-header .toolbar .cart-icon {
+                    position: relative;
+                }
+
+                .mobile-cart-backdrop {
+                    position: fixed;
+                    inset: 0;
+                    z-index: 1050;
+                    display: block;
+                    background: rgba(0, 0, 0, 0.45);
+                    opacity: 0;
+                    visibility: hidden;
+                    pointer-events: none;
+                    transition: opacity 0.22s ease, visibility 0.22s ease;
+                }
+
+                .mobile-cart-backdrop.is-open {
+                    opacity: 1;
+                    visibility: visible;
+                    pointer-events: auto;
+                }
+
+                body.mobile-cart-open {
+                    overflow: hidden;
+                }
+
+                body.mobile-cart-open .site-header {
+                    position: relative;
+                    z-index: 1060;
+                }
+
+                .site-header .toolbar .cart-toolbar-item.is-cart-open {
+                    z-index: 1070;
+                }
+
+                .site-header .toolbar .cart-toolbar-item .cart-dropdown,
+                body > .cart-dropdown.mobile-cart-drawer {
+                    position: fixed;
+                    top: 122px !important;
+                    right: 0;
+                    bottom: 0;
+                    left: auto;
+                    z-index: 1070;
+                    display: block !important;
+                    width: min(88vw, 380px);
+                    height: calc(100vh - 122px);
+                    max-height: calc(100vh - 122px);
+                    padding: 22px 18px 22px !important;
+                    overflow-y: auto;
+                    background: #fff;
+                    border: 0;
+                    border-radius: 0;
+                    box-shadow: -18px 0 45px rgba(0, 0, 0, 0.18);
+                    opacity: 1;
+                    visibility: visible;
+                    pointer-events: none;
+                    transform: translateX(110%);
+                    transition: transform 0.26s ease;
+                }
+
+                .site-header .toolbar .cart-toolbar-item.is-cart-open .cart-dropdown,
+                body.mobile-cart-open > .cart-dropdown.mobile-cart-drawer {
+                    pointer-events: auto;
+                    transform: translateX(0);
+                }
+
+                .mobile-cart-drawer-close {
+                    position: fixed;
+                    top: 18px;
+                    right: 18px;
+                    z-index: 1080;
+                    display: none !important;
+                    width: 42px;
+                    height: 42px;
+                    border: 0;
+                    border-radius: 50%;
+                    background: #111;
+                    color: #fff;
+                    font-size: 20px;
+                    line-height: 42px;
+                    text-align: center;
+                }
+
+                body.mobile-cart-open .mobile-cart-drawer-close {
+                    display: inline-flex !important;
+                    align-items: center;
+                    justify-content: center;
                 }
 
                 .mobile-primary-nav {
-                    display: block;
-                    padding: 10px 0 0;
-                    background: #fff;
-                    border-top: 1px solid #ececec;
-                }
-
-                .mobile-primary-nav .container {
-                    overflow-x: auto;
-                    -webkit-overflow-scrolling: touch;
-                }
-
-                .mobile-primary-nav-links {
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                    min-width: max-content;
-                    padding-bottom: 6px;
-                }
-
-                .mobile-primary-nav-link {
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                    min-height: 36px;
-                    padding: 0 14px;
-                    border: 1px solid #e5e7eb;
-                    border-radius: 999px;
-                    background: #fff;
-                    color: #111827;
-                    font-size: 13px;
-                    font-weight: 600;
-                    line-height: 1;
-                    text-decoration: none;
-                    white-space: nowrap;
-                }
-
-                .mobile-primary-nav-link.is-active {
-                    border-color: {{ $setting->primary_color }};
-                    background: rgba(220, 33, 39, 0.08);
-                    color: {{ $setting->primary_color }};
+                    display: none !important;
                 }
 
                 .toolbar-item.mobile-shop-link .toolbar-link {
@@ -1043,22 +1200,14 @@ body_theme4 @endif
                             <!-- Toolbar-->
                             <div class="toolbar d-flex">
 
-                                <div class="toolbar-item close-m-serch visible-on-mobile"><a href="#" role="button" aria-label="{{ __('Open search') }}">
-                                        <div>
-                                            <i class="icon-search" aria-hidden="true"></i>
-                                        </div>
-                                    </a>
-                                </div>
-                                <div class="toolbar-item visible-on-mobile mobile-shop-link">
-                                    <a href="{{ route('front.catalog') }}" class="toolbar-link"
-                                        aria-label="{{ __('Browse products') }}">
-                                        <div><i class="icon-bag" aria-hidden="true"></i><span
-                                                class="text-label">{{ __('Shop') }}</span></div>
-                                    </a>
-                                </div>
                                 <div class="toolbar-item visible-on-mobile mobile-menu-toggle"><a href="#" role="button" aria-label="{{ __('Open menu') }}">
                                         <div><i class="icon-menu" aria-hidden="true"></i><span
                                                 class="text-label">{{ __('Menu') }}</span></div>
+                                    </a>
+                                </div>
+                                <div class="toolbar-item visible-on-mobile mobile-category-toggle"><a href="#" role="button" aria-label="{{ __('Browse categories') }}">
+                                        <div><i class="icon-grid" aria-hidden="true"></i><span
+                                                class="text-label">{{ __('Categories') }}</span></div>
                                     </a>
                                 </div>
 
@@ -1093,7 +1242,7 @@ body_theme4 @endif
                                         </a>
                                     </div>
                                 @endif
-                                <div class="toolbar-item"><a href="{{ route('front.cart') }}">
+                                <div class="toolbar-item cart-toolbar-item"><a href="{{ route('front.cart') }}" class="mobile-cart-toggle">
                                         <div><span class="cart-icon"><i class="icon-shopping-cart"></i><span
                                                     class="count-label cart_count">{{ Session::has('cart') ? count(Session::get('cart')) : '0' }}
                                                 </span></span><span class="text-label">{{ __('Cart') }}</span>
@@ -1103,6 +1252,10 @@ body_theme4 @endif
                                         id="header_cart_load" data-target="{{ route('front.header.cart') }}">
                                         @include('includes.header_cart')
                                     </div>
+                                    <button type="button" id="mobileCartClose" class="mobile-cart-drawer-close"
+                                        aria-label="{{ __('Close cart') }}">
+                                        <i class="icon-x" aria-hidden="true"></i>
+                                    </button>
                                 </div>
                             </div>
 
@@ -1238,6 +1391,8 @@ body_theme4 @endif
         </div>
 
     </header>
+
+    <div id="mobileCartBackdrop" class="mobile-cart-backdrop" aria-hidden="true"></div>
 
     <!-- Vehicle Search modal (YMM) — desktop: centered; mobile: bottom sheet style -->
     <div id="vehiclePickerBackdrop" class="vehicle-picker-backdrop" aria-hidden="true">
@@ -2051,5 +2206,140 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const categoryToggle = document.querySelector('.mobile-category-toggle a');
+    const mobileMenu = document.querySelector('.mobile-menu');
+    const menuTab = document.getElementById('mmenu-tab');
+    const categoryTab = document.getElementById('mcat-tab');
+    const menuPane = document.getElementById('mmenu');
+    const categoryPane = document.getElementById('mcat');
+
+    function showMobileMainMenuTab() {
+        if (!menuTab || !menuPane) return;
+
+        if (categoryTab) {
+            categoryTab.classList.remove('active');
+            categoryTab.setAttribute('aria-selected', 'false');
+        }
+        if (categoryPane) {
+            categoryPane.classList.remove('show', 'active');
+        }
+
+        menuTab.classList.add('active');
+        menuTab.setAttribute('aria-selected', 'true');
+        menuPane.classList.add('show', 'active');
+    }
+
+    function showMobileCategoryMenu() {
+        if (!mobileMenu || !categoryTab || !categoryPane) return;
+
+        setCartDrawerState(false);
+        mobileMenu.classList.add('open');
+        if (menuTab) {
+            menuTab.classList.remove('active');
+            menuTab.setAttribute('aria-selected', 'false');
+        }
+        if (menuPane) {
+            menuPane.classList.remove('show', 'active');
+        }
+
+        categoryTab.classList.add('active');
+        categoryTab.setAttribute('aria-selected', 'true');
+        categoryPane.classList.add('show', 'active');
+    }
+
+    if (categoryToggle) {
+        categoryToggle.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            showMobileCategoryMenu();
+        });
+    }
+
+    const mainMenuToggle = document.querySelector('.toolbar > .mobile-menu-toggle:not(.mobile-category-toggle) a');
+    if (mainMenuToggle) {
+        mainMenuToggle.addEventListener('click', function () {
+            showMobileMainMenuTab();
+        });
+    }
+
+    const cartItem = document.querySelector('.cart-toolbar-item');
+    const cartToggle = document.querySelector('.mobile-cart-toggle');
+    const cartDropdown = cartItem ? cartItem.querySelector('.cart-dropdown') : null;
+    const cartBackdrop = document.getElementById('mobileCartBackdrop');
+    const cartClose = document.getElementById('mobileCartClose');
+    const cartPlaceholder = document.createComment('mobile cart drawer placeholder');
+
+    if (cartDropdown && cartDropdown.parentNode) {
+        cartDropdown.parentNode.insertBefore(cartPlaceholder, cartDropdown);
+    }
+
+    function isMobileHeader() {
+        return window.matchMedia('(max-width: 767.98px)').matches;
+    }
+
+    function setCartDrawerState(isOpen) {
+        if (!cartItem || !cartBackdrop) return;
+
+        if (isOpen && mobileMenu) {
+            mobileMenu.classList.remove('open');
+        }
+
+        if (cartDropdown) {
+            if (isOpen && isMobileHeader()) {
+                document.body.appendChild(cartDropdown);
+                cartDropdown.classList.add('mobile-cart-drawer');
+            } else if (cartPlaceholder.parentNode && cartDropdown.parentNode !== cartPlaceholder.parentNode) {
+                cartPlaceholder.parentNode.insertBefore(cartDropdown, cartPlaceholder.nextSibling);
+                cartDropdown.classList.remove('mobile-cart-drawer');
+            }
+        }
+
+        cartItem.classList.toggle('is-cart-open', isOpen);
+        cartBackdrop.classList.toggle('is-open', isOpen);
+        document.body.classList.toggle('mobile-cart-open', isOpen);
+        cartBackdrop.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+        if (cartToggle) {
+            cartToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        }
+    }
+
+    if (cartToggle) {
+        cartToggle.setAttribute('aria-expanded', 'false');
+        cartToggle.addEventListener('click', function (event) {
+            if (!isMobileHeader()) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+            setCartDrawerState(true);
+        });
+    }
+
+    if (cartBackdrop) {
+        cartBackdrop.addEventListener('click', function () {
+            setCartDrawerState(false);
+        });
+    }
+
+    if (cartClose) {
+        cartClose.addEventListener('click', function () {
+            setCartDrawerState(false);
+        });
+    }
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            setCartDrawerState(false);
+        }
+    });
+
+    window.addEventListener('resize', function () {
+        if (!isMobileHeader()) {
+            setCartDrawerState(false);
+        }
+    });
 });
 </script>
