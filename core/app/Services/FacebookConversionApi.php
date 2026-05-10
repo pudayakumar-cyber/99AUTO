@@ -33,6 +33,9 @@ class FacebookConversionApi
         $eventId = $eventId ?: $this->purchaseEventId($order);
         $contents = [];
         $numItems = 0;
+        $billingInfo = json_decode((string) $order->billing_info, true) ?: [];
+        $shippingInfo = json_decode((string) $order->shipping_info, true) ?: [];
+        $user = $order->user;
 
         foreach ($cart as $key => $item) {
             $quantity = (int) ($item['qty'] ?? 1);
@@ -52,8 +55,15 @@ class FacebookConversionApi
                 'action_source' => 'website',
                 'event_source_url' => url()->current(),
                 'user_data' => array_filter([
-                    'em' => $this->hash($email),
-                    'ph' => $this->hash($phone),
+                    'em' => $this->hashEmail($email ?: ($billingInfo['bill_email'] ?? $shippingInfo['ship_email'] ?? $user->email ?? null)),
+                    'ph' => $this->hashPhone($phone ?: ($billingInfo['bill_phone'] ?? $shippingInfo['ship_phone'] ?? $user->phone ?? null)),
+                    'fn' => $this->hashText($billingInfo['bill_first_name'] ?? $shippingInfo['ship_first_name'] ?? $user->first_name ?? null),
+                    'ln' => $this->hashText($billingInfo['bill_last_name'] ?? $shippingInfo['ship_last_name'] ?? $user->last_name ?? null),
+                    'ct' => $this->hashText($billingInfo['bill_city'] ?? $shippingInfo['ship_city'] ?? $user->bill_city ?? $user->ship_city ?? null),
+                    'st' => $this->hashText($billingInfo['bill_province'] ?? $shippingInfo['ship_province'] ?? $user->bill_province ?? $user->ship_province ?? null),
+                    'zp' => $this->hashText($billingInfo['bill_zip'] ?? $shippingInfo['ship_zip'] ?? $user->bill_zip ?? $user->ship_zip ?? null),
+                    'country' => $this->hashCountry($billingInfo['bill_country'] ?? $shippingInfo['ship_country'] ?? $user->bill_country ?? $user->ship_country ?? null),
+                    'external_id' => $this->hashText($order->user_id ? 'user_' . $order->user_id : ($billingInfo['bill_email'] ?? $email)),
                     'client_ip_address' => $clientIp,
                     'client_user_agent' => $userAgent,
                     'fbp' => request()->cookie('_fbp'),
@@ -110,10 +120,39 @@ class FacebookConversionApi
         return 'purchase_' . ($order->transaction_number ?: $order->id);
     }
 
-    private function hash(?string $value): ?string
+    private function hashEmail(?string $value): ?string
     {
         $value = trim(strtolower((string) $value));
 
         return $value === '' ? null : hash('sha256', $value);
+    }
+
+    private function hashPhone(?string $value): ?string
+    {
+        $value = preg_replace('/\D+/', '', (string) $value);
+
+        return $value === '' ? null : hash('sha256', $value);
+    }
+
+    private function hashText(?string $value): ?string
+    {
+        $value = preg_replace('/\s+/', '', trim(strtolower((string) $value)));
+
+        return $value === '' ? null : hash('sha256', $value);
+    }
+
+    private function hashCountry(?string $value): ?string
+    {
+        $value = trim(strtolower((string) $value));
+        $countries = [
+            'canada' => 'ca',
+            'ca' => 'ca',
+            'united states' => 'us',
+            'united states of america' => 'us',
+            'usa' => 'us',
+            'us' => 'us',
+        ];
+
+        return $this->hashText($countries[$value] ?? $value);
     }
 }
