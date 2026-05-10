@@ -721,18 +721,21 @@
                     justify-content: space-between;
                     gap: 18px;
                     margin-top: 7px;
-                    padding: 6px 44px 8px;
+                    padding: 9px 44px 11px;
+                    min-height: 72px;
+                    align-items: center;
                     border: 0;
                     background: #fff;
+                    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06);
                 }
 
                 .navbar-stuck .topbar {
-                    padding-bottom: 16px !important;
+                    padding-bottom: 0 !important;
                 }
 
                 .navbar-stuck .site-header .toolbar,
                 .site-header.navbar-stuck .toolbar {
-                    padding-bottom: 20px;
+                    padding-bottom: 11px;
                 }
 
                 .site-header .toolbar .toolbar-item {
@@ -765,7 +768,7 @@
                 }
 
                 .site-header .toolbar .toolbar-item > a > div {
-                    min-height: 32px;
+                    min-height: 48px;
                     display: inline-flex;
                     flex-direction: column;
                     align-items: center;
@@ -776,15 +779,19 @@
 
                 .site-header .toolbar .toolbar-item > a > div > .text-label {
                     display: inline-block !important;
-                    font-size: 11px;
+                    font-size: 12px;
                     font-weight: 400;
-                    line-height: 1;
+                    line-height: 1.15;
                     color: #222;
                 }
 
                 .site-header .toolbar .toolbar-item > a > div i {
-                    font-size: 21px;
+                    font-size: 25px;
                     line-height: 1;
+                }
+
+                .page-title {
+                    margin-top: 14px;
                 }
 
                 .site-header .toolbar .toolbar-item.close-m-serch,
@@ -839,15 +846,15 @@
                 .site-header .toolbar .cart-toolbar-item .cart-dropdown,
                 body > .cart-dropdown.mobile-cart-drawer {
                     position: fixed;
-                    top: 122px !important;
+                    top: 128px !important;
                     right: 0;
                     bottom: 0;
                     left: auto;
                     z-index: 1070;
                     display: block !important;
                     width: min(88vw, 380px);
-                    height: calc(100vh - 122px);
-                    max-height: calc(100vh - 122px);
+                    height: calc(100vh - 128px);
+                    max-height: calc(100vh - 128px);
                     padding: 22px 18px 22px !important;
                     overflow-y: auto;
                     background: #fff;
