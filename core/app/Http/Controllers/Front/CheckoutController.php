@@ -23,7 +23,7 @@ use App\Models\Item;
 use App\Models\Setting;
 use App\Models\ShippingService;
 use App\Models\State;
-use App\Services\FacebookConversionApi;
+use App\Services\OrderMarketingTracker;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
@@ -665,34 +665,16 @@ class CheckoutController extends Controller
                 }
             }
 
-            // Prepare Facebook Pixel data
-            $cart_content_ids = [];
-            $num_items = 0;
-            foreach ($cart as $key => $item) {
-                $cart_content_ids[] = (string)$key;
-                $num_items += $item['qty'];
-            }
+            $marketingTracker = new OrderMarketingTracker();
+            $purchaseTracking = $marketingTracker->preparePurchaseViewData($order);
+            $cart = $purchaseTracking['cart'];
+            $cart_content_ids = $purchaseTracking['cart_content_ids'];
+            $order_value = $purchaseTracking['order_value'];
+            $currency = $purchaseTracking['currency'];
+            $num_items = $purchaseTracking['num_items'];
+            $event_id = $purchaseTracking['event_id'];
 
-            $order_value = PriceHelper::OrderTotal($order, 'trns');
-            $currency = $order->currency_sign ?? 'CAD';
-            $event_id = (new FacebookConversionApi())->purchaseEventId($order);
-
-            if (!Session::get('facebook_capi_purchase_sent_' . $order->id)) {
-                $billingInfo = json_decode($order->billing_info, true) ?: [];
-                $sent = (new FacebookConversionApi())->trackPurchase(
-                    $order,
-                    $cart,
-                    $billingInfo['bill_email'] ?? EmailHelper::getEmail(),
-                    $billingInfo['bill_phone'] ?? null,
-                    request()->ip(),
-                    request()->header('User-Agent'),
-                    $event_id
-                );
-
-                if ($sent) {
-                    Session::put('facebook_capi_purchase_sent_' . $order->id, true);
-                }
-            }
+            $marketingTracker->trackPurchase($order, $cart, $event_id);
 
             return view('front.checkout.success', compact('order', 'cart', 'cart_content_ids', 'order_value', 'currency', 'num_items', 'event_id'));
         }

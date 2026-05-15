@@ -17,6 +17,7 @@ use App\Models\Item;
 use App\Models\Order;
 use App\Models\ShippingService;
 use App\Models\State;
+use App\Services\OrderMarketingTracker;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -247,30 +248,9 @@ trait StripeElementsCheckout
                 $email->sendTemplateMail($emailData, "template");
             }
 
-            // Send Facebook Conversion API event only when the service exists.
+            // Send the server-side purchase event early; the success page reuses the same event_id for deduplication.
             try {
-                if (class_exists(\App\Services\FacebookConversionApi::class)) {
-                    $facebookApi = new \App\Services\FacebookConversionApi();
-                    $eventId = $facebookApi->purchaseEventId($order);
-                    $sent = $facebookApi->trackPurchase(
-                        $order,
-                        $cart,
-                        EmailHelper::getEmail(),
-                        json_decode($order->billing_info, true)['bill_phone'] ?? null,
-                        request()->ip(),
-                        request()->header('User-Agent'),
-                        $eventId
-                    );
-
-                    if ($sent) {
-                        Session::put('facebook_capi_purchase_sent_' . $order->id, true);
-                    }
-                } else {
-                    \Log::warning('Facebook CAPI service not found. Skipping purchase tracking.', [
-                        'order_id' => $order->id,
-                        'transaction_number' => $order->transaction_number,
-                    ]);
-                }
+                (new OrderMarketingTracker())->trackPurchase($order, $cart);
             } catch (\Throwable $e) {
                 \Log::warning('Facebook CAPI tracking failed: ' . $e->getMessage(), [
                     'order_id' => $order->id,
