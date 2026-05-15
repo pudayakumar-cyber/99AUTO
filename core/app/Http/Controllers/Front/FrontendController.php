@@ -30,6 +30,7 @@ use App\Models\Post;
 use App\Models\Service;
 use App\Models\Slider;
 use App\Models\TrackOrder;
+use App\Services\FacebookConversionApi;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
@@ -581,6 +582,12 @@ class FrontendController extends Controller
             ->get();
 
         $video = explode('=', $item->video);
+        $facebookApi = new FacebookConversionApi();
+        $viewContentEventId = $facebookApi->viewContentEventId($item);
+        app()->terminating(function () use ($facebookApi, $item, $viewContentEventId) {
+            $facebookApi->trackViewContent($item, $viewContentEventId);
+        });
+
         return view('front.catalog.product', [
             'item'          => $item,
             'reviews'       => $reviews,
@@ -590,7 +597,8 @@ class FrontendController extends Controller
             'sec_name'      => isset($item->specification_name) ? json_decode($item->specification_name, true) : [],
             'sec_details'   => isset($item->specification_description) ? json_decode($item->specification_description, true) : [],
             'attributes'    => $item->attributes,
-            'related_items' => $relatedItems
+            'related_items' => $relatedItems,
+            'view_content_event_id' => $viewContentEventId,
         ]);
     }
 
