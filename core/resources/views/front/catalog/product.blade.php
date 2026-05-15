@@ -1146,6 +1146,7 @@ document.addEventListener('DOMContentLoaded', function () {
         content_category: @json(optional($item->category)->name ?? ''),
         value: {{ (float) ($item->discount_price ?? $item->previous_price ?? 0) }},
         currency: 'CAD',
+        event_id: @json($view_content_event_id ?? null),
         items: [{
             item_id: @json((string)($item->id ?? $item->prod_number ?? '')),
             item_name: @json($item->name ?? ''),
@@ -1155,7 +1156,9 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     if (typeof window.paTrack === 'function') {
-        window.paTrack('ViewContent', productPayload, 'view_item');
+        window.paTrack('ViewContent', productPayload, 'view_item', {
+            eventId: @json($view_content_event_id ?? null)
+        });
     }
 
     var addToCartButton = document.getElementById('add_to_cart');
