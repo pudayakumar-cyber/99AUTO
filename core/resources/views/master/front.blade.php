@@ -996,6 +996,35 @@ src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&e
 <!-- #metapixelscript -->
 <script>
 (function (window, document) {
+    function setTrackingCookie(name, value, maxAgeSeconds) {
+        if (!name || !value) {
+            return;
+        }
+
+        var cookie = name + '=' + encodeURIComponent(value) + '; path=/; max-age=' + maxAgeSeconds + '; SameSite=Lax';
+        if (window.location.protocol === 'https:') {
+            cookie += '; Secure';
+        }
+        document.cookie = cookie;
+    }
+
+    try {
+        var params = new URLSearchParams(window.location.search);
+        var fbclid = params.get('fbclid');
+        if (fbclid) {
+            setTrackingCookie('_fbc', 'fb.1.' + Math.floor(Date.now() / 1000) + '.' + fbclid, 7776000);
+        }
+
+        ['gclid', 'gbraid', 'wbraid'].forEach(function (name) {
+            var value = params.get(name);
+            if (value) {
+                setTrackingCookie(name, value, 7776000);
+            }
+        });
+    } catch (error) {
+        console.warn('Click id persistence failed', error);
+    }
+
     window.paTrack = function (metaEvent, payload, googleEvent, options) {
         payload = payload || {};
         options = options || {};
