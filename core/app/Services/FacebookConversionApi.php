@@ -16,7 +16,8 @@ class FacebookConversionApi
         ?string $phone,
         ?string $clientIp,
         ?string $userAgent,
-        ?string $eventId = null
+        ?string $eventId = null,
+        ?string $eventSourceUrl = null
     ): bool {
         $pixelId = config('services.facebook.pixel_id');
         $token = config('services.facebook.conversion_api_token');
@@ -47,28 +48,30 @@ class FacebookConversionApi
             $numItems += $quantity;
         }
 
+        $userData = array_filter([
+            'em' => $this->hashEmail($email ?: ($billingInfo['bill_email'] ?? $shippingInfo['ship_email'] ?? $user->email ?? null)),
+            'ph' => $this->hashPhone($phone ?: ($billingInfo['bill_phone'] ?? $shippingInfo['ship_phone'] ?? $user->phone ?? null)),
+            'fn' => $this->hashText($billingInfo['bill_first_name'] ?? $shippingInfo['ship_first_name'] ?? $user->first_name ?? null),
+            'ln' => $this->hashText($billingInfo['bill_last_name'] ?? $shippingInfo['ship_last_name'] ?? $user->last_name ?? null),
+            'ct' => $this->hashText($billingInfo['bill_city'] ?? $shippingInfo['ship_city'] ?? $user->bill_city ?? $user->ship_city ?? null),
+            'st' => $this->hashText($billingInfo['bill_province'] ?? $shippingInfo['ship_province'] ?? $user->bill_province ?? $user->ship_province ?? null),
+            'zp' => $this->hashText($billingInfo['bill_zip'] ?? $shippingInfo['ship_zip'] ?? $user->bill_zip ?? $user->ship_zip ?? null),
+            'country' => $this->hashCountry($billingInfo['bill_country'] ?? $shippingInfo['ship_country'] ?? $user->bill_country ?? $user->ship_country ?? null),
+            'external_id' => $this->hashText($order->user_id ? 'user_' . $order->user_id : ($billingInfo['bill_email'] ?? $email)),
+            'client_ip_address' => $clientIp,
+            'client_user_agent' => $userAgent,
+            'fbp' => request()->cookie('_fbp'),
+            'fbc' => request()->cookie('_fbc'),
+        ]);
+
         $payload = [
             'data' => [[
                 'event_name' => 'Purchase',
                 'event_time' => time(),
                 'event_id' => $eventId,
                 'action_source' => 'website',
-                'event_source_url' => url()->current(),
-                'user_data' => array_filter([
-                    'em' => $this->hashEmail($email ?: ($billingInfo['bill_email'] ?? $shippingInfo['ship_email'] ?? $user->email ?? null)),
-                    'ph' => $this->hashPhone($phone ?: ($billingInfo['bill_phone'] ?? $shippingInfo['ship_phone'] ?? $user->phone ?? null)),
-                    'fn' => $this->hashText($billingInfo['bill_first_name'] ?? $shippingInfo['ship_first_name'] ?? $user->first_name ?? null),
-                    'ln' => $this->hashText($billingInfo['bill_last_name'] ?? $shippingInfo['ship_last_name'] ?? $user->last_name ?? null),
-                    'ct' => $this->hashText($billingInfo['bill_city'] ?? $shippingInfo['ship_city'] ?? $user->bill_city ?? $user->ship_city ?? null),
-                    'st' => $this->hashText($billingInfo['bill_province'] ?? $shippingInfo['ship_province'] ?? $user->bill_province ?? $user->ship_province ?? null),
-                    'zp' => $this->hashText($billingInfo['bill_zip'] ?? $shippingInfo['ship_zip'] ?? $user->bill_zip ?? $user->ship_zip ?? null),
-                    'country' => $this->hashCountry($billingInfo['bill_country'] ?? $shippingInfo['ship_country'] ?? $user->bill_country ?? $user->ship_country ?? null),
-                    'external_id' => $this->hashText($order->user_id ? 'user_' . $order->user_id : ($billingInfo['bill_email'] ?? $email)),
-                    'client_ip_address' => $clientIp,
-                    'client_user_agent' => $userAgent,
-                    'fbp' => request()->cookie('_fbp'),
-                    'fbc' => request()->cookie('_fbc'),
-                ]),
+                'event_source_url' => $eventSourceUrl ?: url()->current(),
+                'user_data' => $userData,
                 'custom_data' => [
                     'currency' => $order->currency_sign ?: 'CAD',
                     'value' => (float) PriceHelper::OrderTotal($order, 'trns'),
@@ -80,6 +83,10 @@ class FacebookConversionApi
             ]],
             'access_token' => $token,
         ];
+
+        if (config('services.facebook.test_event_code')) {
+            $payload['test_event_code'] = config('services.facebook.test_event_code');
+        }
 
         try {
             $response = Http::timeout(10)->post(
@@ -102,6 +109,10 @@ class FacebookConversionApi
                 'order_id' => $order->id,
                 'transaction_number' => $order->transaction_number,
                 'event_id' => $eventId,
+                'event_source_url' => $eventSourceUrl ?: url()->current(),
+                'user_data_keys' => array_keys($userData),
+                'contents_count' => count($contents),
+                'response' => $response->json(),
             ]);
 
             return true;

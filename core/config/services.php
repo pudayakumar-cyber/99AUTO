@@ -38,6 +38,7 @@ return [
     'facebook' => [
         'pixel_id' => env('FACEBOOK_PIXEL_ID', '2388576101564001'),
         'conversion_api_token' => env('FACEBOOK_CONVERSION_API_TOKEN'),
+        'test_event_code' => env('FACEBOOK_TEST_EVENT_CODE'),
     ],
 
     'google' => [
