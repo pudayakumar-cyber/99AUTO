@@ -1322,6 +1322,14 @@ $(function ($) {
                             dangerNotification(data.message);
                         }
                         else {
+                            if (data.tracking && typeof window.paTrack === 'function') {
+                                window.paTrack(
+                                    data.tracking.meta_event,
+                                    data.tracking.payload,
+                                    data.tracking.google_event,
+                                    { eventId: data.tracking.event_id }
+                                );
+                            }
                             $(".cart_count").text(data.qty);
                             $(".cart_view_header").load(
                                 $("#header_cart_load").attr("data-target")

@@ -1161,24 +1161,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    var addToCartButton = document.getElementById('add_to_cart');
-    if (!addToCartButton) {
-        return;
-    }
-
-    addToCartButton.addEventListener('click', function () {
-        var qtyInput = document.getElementById('product-quantity');
-        var qty = qtyInput ? (parseInt(qtyInput.value, 10) || 1) : 1;
-        var addToCartPayload = Object.assign({}, productPayload, {
-            num_items: qty,
-            quantity: qty,
-            items: [Object.assign({}, productPayload.items[0], { quantity: qty })]
-        });
-
-        if (typeof window.paTrack === 'function') {
-            window.paTrack('AddToCart', addToCartPayload, 'add_to_cart');
-        }
-    });
 });
 </script>
 @endif

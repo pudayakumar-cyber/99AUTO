@@ -235,6 +235,109 @@ class FacebookConversionApi
         }
     }
 
+    public function addToCartEventId(Item $item): string
+    {
+        return 'addtocart_' . $item->id . '_' . (string) Str::uuid();
+    }
+
+    public function trackAddToCart(Item $item, int $quantity, string $eventId): bool
+    {
+        $pixelId = config('services.facebook.pixel_id');
+        $token = config('services.facebook.conversion_api_token');
+
+        if (!$pixelId || !$token) {
+            Log::info('Facebook CAPI AddToCart skipped: missing pixel id or token.', [
+                'item_id' => $item->id,
+                'event_id' => $eventId,
+            ]);
+
+            return false;
+        }
+
+        $user = auth()->user();
+        $itemId = (string) ($item->id ?? $item->prod_number);
+        $price = (float) ($item->discount_price ?? $item->previous_price ?? 0);
+        $userData = array_filter([
+            'em' => $this->hashEmail(optional($user)->email),
+            'ph' => $this->hashPhone(optional($user)->phone),
+            'fn' => $this->hashText(optional($user)->first_name),
+            'ln' => $this->hashText(optional($user)->last_name),
+            'ct' => $this->hashText(optional($user)->bill_city ?? optional($user)->ship_city),
+            'st' => $this->hashText(optional($user)->bill_province ?? optional($user)->ship_province),
+            'zp' => $this->hashText(optional($user)->bill_zip ?? optional($user)->ship_zip),
+            'country' => $this->hashCountry(optional($user)->bill_country ?? optional($user)->ship_country),
+            'external_id' => $user ? $this->hashText('user_' . $user->id) : null,
+            'client_ip_address' => request()->ip(),
+            'client_user_agent' => request()->header('User-Agent'),
+            'fbp' => request()->cookie('_fbp'),
+            'fbc' => request()->cookie('_fbc'),
+        ]);
+
+        $payload = [
+            'data' => [[
+                'event_name' => 'AddToCart',
+                'event_time' => time(),
+                'event_id' => $eventId,
+                'action_source' => 'website',
+                'event_source_url' => route('front.product', $item->slug),
+                'user_data' => $userData,
+                'custom_data' => [
+                    'content_type' => 'product',
+                    'content_ids' => [$itemId],
+                    'content_name' => (string) $item->name,
+                    'content_category' => (string) optional($item->category)->name,
+                    'currency' => 'CAD',
+                    'value' => $price * max(1, $quantity),
+                    'contents' => [[
+                        'id' => $itemId,
+                        'quantity' => max(1, $quantity),
+                        'item_price' => $price,
+                    ]],
+                    'num_items' => max(1, $quantity),
+                ],
+            ]],
+            'access_token' => $token,
+        ];
+
+        if (config('services.facebook.test_event_code')) {
+            $payload['test_event_code'] = config('services.facebook.test_event_code');
+        }
+
+        try {
+            $response = Http::timeout(5)->post(
+                "https://graph.facebook.com/v19.0/{$pixelId}/events",
+                $payload
+            );
+
+            if ($response->failed()) {
+                Log::warning('Facebook CAPI AddToCart failed.', [
+                    'item_id' => $item->id,
+                    'event_id' => $eventId,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                return false;
+            }
+
+            Log::info('Facebook CAPI AddToCart sent.', [
+                'item_id' => $item->id,
+                'event_id' => $eventId,
+                'user_data_keys' => array_keys($userData),
+                'response' => $response->json(),
+            ]);
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::warning('Facebook CAPI AddToCart exception: ' . $e->getMessage(), [
+                'item_id' => $item->id,
+                'event_id' => $eventId,
+            ]);
+
+            return false;
+        }
+    }
+
     private function hashEmail(?string $value): ?string
     {
         $value = trim(strtolower((string) $value));
