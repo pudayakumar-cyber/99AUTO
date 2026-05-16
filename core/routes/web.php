@@ -450,6 +450,7 @@ Route::group(['middleware' => 'maintainance'], function () {
         Route::get('/checkout/shpping/address', 'Front\CheckoutController@shipping')->name('front.checkout.shipping');
         Route::post('/checkout/shpping/store', 'Front\CheckoutController@shippingStore')->name('front.checkout.shipping.store');
         Route::get('/checkout/review/payment', 'Front\CheckoutController@payment')->name('front.checkout.payment');
+        Route::post('/checkout/add-payment-info/track', 'Front\CheckoutController@trackAddPaymentInfo')->name('front.checkout.add_payment_info.track');
         Route::get('/checkout/state/setup', 'Front\CheckoutController@stateSetUp')->name('front.state.setup');
         Route::get('/checkout/shipping/setup', 'Front\CheckoutController@shippingSetUp')->name('front.shipping.setup');
         Route::post('/checkout-submit', 'Front\CheckoutController@checkout')->name('front.checkout.submit');

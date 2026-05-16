@@ -90,7 +90,7 @@ class OrderMarketingTracker
         $contentIds = [];
 
         foreach ($cart as $key => $item) {
-            $contentIds[] = (string) ($item['id'] ?? $item['item_id'] ?? $key);
+            $contentIds[] = (string) ($item['id'] ?? $item['item_id'] ?? explode('-', (string) $key)[0]);
         }
 
         return $contentIds;
