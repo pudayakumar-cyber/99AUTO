@@ -138,8 +138,60 @@ class FacebookConversionApi
         return 'viewcontent_' . $item->id . '_' . (string) Str::uuid();
     }
 
+    public function shouldTrackBrowserEvent(): bool
+    {
+        $request = request();
+        $userAgent = strtolower((string) $request->userAgent());
+
+        if (!$request->isMethod('GET') || $request->ajax() || $request->prefetch() || $userAgent === '') {
+            return false;
+        }
+
+        $blockedAgents = [
+            'bot',
+            'crawl',
+            'spider',
+            'slurp',
+            'facebookexternalhit',
+            'facebot',
+            'google-structured-data-testing-tool',
+            'lighthouse',
+            'pagespeed',
+            'pingdom',
+            'uptimerobot',
+            'semrush',
+            'ahrefs',
+            'mj12bot',
+            'dotbot',
+            'bingpreview',
+            'whatsapp',
+            'telegrambot',
+            'discordbot',
+            'linkedinbot',
+            'twitterbot',
+        ];
+
+        foreach ($blockedAgents as $blockedAgent) {
+            if (strpos($userAgent, $blockedAgent) !== false) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function trackViewContent(Item $item, string $eventId): bool
     {
+        if (!$this->shouldTrackBrowserEvent()) {
+            Log::info('Facebook CAPI ViewContent skipped: non-browser request.', [
+                'item_id' => $item->id,
+                'event_id' => $eventId,
+                'user_agent' => request()->userAgent(),
+            ]);
+
+            return false;
+        }
+
         $pixelId = config('services.facebook.pixel_id');
         $token = config('services.facebook.conversion_api_token');
 
