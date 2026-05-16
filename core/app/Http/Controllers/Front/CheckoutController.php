@@ -23,6 +23,7 @@ use App\Models\Item;
 use App\Models\Setting;
 use App\Models\ShippingService;
 use App\Models\State;
+use App\Services\FacebookConversionApi;
 use App\Services\OrderMarketingTracker;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -113,7 +114,7 @@ class CheckoutController extends Controller
         return view('front.checkout.index', $data);
     }
 
-    public function ship_address()
+    public function ship_address(Request $request)
     {
         $setting = Setting::first();
         if ($setting->is_single_checkout == 1) {
@@ -171,6 +172,22 @@ class CheckoutController extends Controller
         $data['shipping'] = $shipping;
         $data['tax'] = $total_tax;
         $data['payments'] = PaymentSetting::whereStatus(1)->get();
+
+        $initiateCheckoutEventId = $request->query('ic_event_id');
+        if ($initiateCheckoutEventId && !Session::get('facebook_capi_initiate_checkout_sent_' . $initiateCheckoutEventId)) {
+            app()->terminating(function () use ($cart, $initiateCheckoutEventId, $total_amount) {
+                $sent = (new FacebookConversionApi())->trackInitiateCheckout(
+                    $cart,
+                    $initiateCheckoutEventId,
+                    (float) $total_amount,
+                    'CAD'
+                );
+
+                if ($sent) {
+                    Session::put('facebook_capi_initiate_checkout_sent_' . $initiateCheckoutEventId, true);
+                }
+            });
+        }
 
         return view('front.checkout.billing', $data);
     }
