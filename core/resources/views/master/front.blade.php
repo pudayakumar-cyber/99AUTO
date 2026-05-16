@@ -980,6 +980,11 @@
             'external_id' => $metaNormalize('user_' . $metaUser->id),
         ]);
     }
+    $metaPageViewEventId = 'pageview_' . (string) \Illuminate\Support\Str::uuid();
+    $metaPageViewUrl = url()->current();
+    app()->terminating(function () use ($metaPageViewEventId, $metaPageViewUrl) {
+        (new \App\Services\FacebookConversionApi())->trackPageView($metaPageViewEventId, $metaPageViewUrl);
+    });
 @endphp
 <!-- Meta Pixel Base Code -->
 <script>
@@ -992,7 +997,7 @@ t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
 fbq('init', '{{ config('services.facebook.pixel_id') }}'@if(!empty($metaAdvancedMatching)), @json($metaAdvancedMatching)@endif);
-fbq('track', 'PageView');
+fbq('track', 'PageView', {}, { eventID: @json($metaPageViewEventId) });
 </script>
 <noscript><img height="1" width="1" style="display:none"
 src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&ev=PageView&noscript=1"
@@ -1073,34 +1078,36 @@ src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&e
         }
     };
 
-    document.addEventListener('click', function (event) {
-        var target = event.target;
-        if (!target || typeof target.closest !== 'function') {
-            return;
-        }
+    if (@json((bool) config('services.facebook.site_click_tracking'))) {
+        document.addEventListener('click', function (event) {
+            var target = event.target;
+            if (!target || typeof target.closest !== 'function') {
+                return;
+            }
 
-        var element = target.closest('a, button, input[type="submit"], input[type="button"], .btn');
+            var element = target.closest('a, button, input[type="submit"], input[type="button"], .btn');
 
-        if (!element || element.closest('[data-pa-track-ignore]')) {
-            return;
-        }
+            if (!element || element.closest('[data-pa-track-ignore]')) {
+                return;
+            }
 
-        var label = (
-            element.getAttribute('data-pa-label') ||
-            element.getAttribute('aria-label') ||
-            element.textContent ||
-            element.value ||
-            element.id ||
-            'click'
-        ).replace(/\s+/g, ' ').trim().slice(0, 120);
+            var label = (
+                element.getAttribute('data-pa-label') ||
+                element.getAttribute('aria-label') ||
+                element.textContent ||
+                element.value ||
+                element.id ||
+                'click'
+            ).replace(/\s+/g, ' ').trim().slice(0, 120);
 
-        window.paTrack('SiteClick', {
-            event_category: 'engagement',
-            event_label: label,
-            link_url: element.href || '',
-            page_location: window.location.href
-        }, 'select_content', { metaMethod: 'trackCustom' });
-    }, true);
+            window.paTrack('SiteClick', {
+                event_category: 'engagement',
+                event_label: label,
+                link_url: element.href || '',
+                page_location: window.location.href
+            }, 'select_content', { metaMethod: 'trackCustom' });
+        }, true);
+    }
 })(window, document);
 </script>
 

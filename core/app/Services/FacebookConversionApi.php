@@ -5,8 +5,10 @@ namespace App\Services;
 use App\Helpers\PriceHelper;
 use App\Models\Item;
 use App\Models\Order;
+use App\Models\State;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 
 class FacebookConversionApi
@@ -34,6 +36,7 @@ class FacebookConversionApi
         }
 
         $eventId = $eventId ?: $this->purchaseEventId($order);
+        $contentIds = [];
         $contents = [];
         $numItems = 0;
         $billingInfo = json_decode((string) $order->billing_info, true) ?: [];
@@ -42,8 +45,11 @@ class FacebookConversionApi
 
         foreach ($cart as $key => $item) {
             $quantity = (int) ($item['qty'] ?? 1);
+            $itemId = (string) ($item['id'] ?? $item['item_id'] ?? $this->cartItemIdFromKey($key));
+
+            $contentIds[] = $itemId;
             $contents[] = [
-                'id' => (string) ($item['id'] ?? $item['item_id'] ?? $key),
+                'id' => $itemId,
                 'quantity' => $quantity,
                 'item_price' => (float) ($item['main_price'] ?? $item['price'] ?? 0),
             ];
@@ -56,7 +62,7 @@ class FacebookConversionApi
             'fn' => $this->hashText($billingInfo['bill_first_name'] ?? $shippingInfo['ship_first_name'] ?? $user->first_name ?? null),
             'ln' => $this->hashText($billingInfo['bill_last_name'] ?? $shippingInfo['ship_last_name'] ?? $user->last_name ?? null),
             'ct' => $this->hashText($billingInfo['bill_city'] ?? $shippingInfo['ship_city'] ?? $user->bill_city ?? $user->ship_city ?? null),
-            'st' => $this->hashText($billingInfo['bill_province'] ?? $shippingInfo['ship_province'] ?? $user->bill_province ?? $user->ship_province ?? null),
+            'st' => $this->hashText($this->stateValue($billingInfo, $shippingInfo, $user)),
             'zp' => $this->hashText($billingInfo['bill_zip'] ?? $shippingInfo['ship_zip'] ?? $user->bill_zip ?? $user->ship_zip ?? null),
             'country' => $this->hashCountry($billingInfo['bill_country'] ?? $shippingInfo['ship_country'] ?? $user->bill_country ?? $user->ship_country ?? null),
             'external_id' => $this->hashText($order->user_id ? 'user_' . $order->user_id : ($billingInfo['bill_email'] ?? $email)),
@@ -79,6 +85,7 @@ class FacebookConversionApi
                     'value' => (float) PriceHelper::OrderTotal($order, 'trns'),
                     'order_id' => (string) $order->transaction_number,
                     'content_type' => 'product',
+                    'content_ids' => $contentIds,
                     'contents' => $contents,
                     'num_items' => $numItems,
                 ],
@@ -180,6 +187,93 @@ class FacebookConversionApi
         return true;
     }
 
+    public function trackPageView(string $eventId, ?string $eventSourceUrl = null): bool
+    {
+        if (!$this->shouldTrackBrowserEvent()) {
+            Log::info('Facebook CAPI PageView skipped: non-browser request.', [
+                'event_id' => $eventId,
+                'user_agent' => request()->userAgent(),
+            ]);
+
+            return false;
+        }
+
+        $pixelId = config('services.facebook.pixel_id');
+        $token = config('services.facebook.conversion_api_token');
+
+        if (!$pixelId || !$token) {
+            Log::info('Facebook CAPI PageView skipped: missing pixel id or token.', [
+                'event_id' => $eventId,
+            ]);
+
+            return false;
+        }
+
+        $user = auth()->user();
+        $userData = array_filter([
+            'em' => $this->hashEmail(optional($user)->email),
+            'ph' => $this->hashPhone(optional($user)->phone),
+            'fn' => $this->hashText(optional($user)->first_name),
+            'ln' => $this->hashText(optional($user)->last_name),
+            'ct' => $this->hashText(optional($user)->bill_city ?? optional($user)->ship_city),
+            'st' => $this->hashText($this->stateValue([], [], $user)),
+            'zp' => $this->hashText(optional($user)->bill_zip ?? optional($user)->ship_zip),
+            'country' => $this->hashCountry(optional($user)->bill_country ?? optional($user)->ship_country),
+            'external_id' => $user ? $this->hashText('user_' . $user->id) : null,
+            'client_ip_address' => request()->ip(),
+            'client_user_agent' => request()->header('User-Agent'),
+            'fbp' => request()->cookie('_fbp'),
+            'fbc' => request()->cookie('_fbc'),
+        ]);
+
+        $payload = [
+            'data' => [[
+                'event_name' => 'PageView',
+                'event_time' => time(),
+                'event_id' => $eventId,
+                'action_source' => 'website',
+                'event_source_url' => $eventSourceUrl ?: url()->current(),
+                'user_data' => $userData,
+            ]],
+            'access_token' => $token,
+        ];
+
+        if (config('services.facebook.test_event_code')) {
+            $payload['test_event_code'] = config('services.facebook.test_event_code');
+        }
+
+        try {
+            $response = Http::timeout(5)->post(
+                "https://graph.facebook.com/v19.0/{$pixelId}/events",
+                $payload
+            );
+
+            if ($response->failed()) {
+                Log::warning('Facebook CAPI PageView failed.', [
+                    'event_id' => $eventId,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                return false;
+            }
+
+            Log::info('Facebook CAPI PageView sent.', [
+                'event_id' => $eventId,
+                'user_data_keys' => array_keys($userData),
+                'response' => $response->json(),
+            ]);
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::warning('Facebook CAPI PageView exception: ' . $e->getMessage(), [
+                'event_id' => $eventId,
+            ]);
+
+            return false;
+        }
+    }
+
     public function trackViewContent(Item $item, string $eventId): bool
     {
         if (!$this->shouldTrackBrowserEvent()) {
@@ -213,7 +307,7 @@ class FacebookConversionApi
             'fn' => $this->hashText(optional($user)->first_name),
             'ln' => $this->hashText(optional($user)->last_name),
             'ct' => $this->hashText(optional($user)->bill_city ?? optional($user)->ship_city),
-            'st' => $this->hashText(optional($user)->bill_province ?? optional($user)->ship_province),
+            'st' => $this->hashText($this->stateValue([], [], $user)),
             'zp' => $this->hashText(optional($user)->bill_zip ?? optional($user)->ship_zip),
             'country' => $this->hashCountry(optional($user)->bill_country ?? optional($user)->ship_country),
             'external_id' => $user ? $this->hashText('user_' . $user->id) : null,
@@ -297,6 +391,11 @@ class FacebookConversionApi
         return 'initiatecheckout_' . (string) Str::uuid();
     }
 
+    public function addPaymentInfoEventId(): string
+    {
+        return 'addpaymentinfo_' . (string) Str::uuid();
+    }
+
     public function trackInitiateCheckout(array $cart, string $eventId, float $value, string $currency = 'CAD'): bool
     {
         $pixelId = config('services.facebook.pixel_id');
@@ -335,7 +434,7 @@ class FacebookConversionApi
             'fn' => $this->hashText(optional($user)->first_name),
             'ln' => $this->hashText(optional($user)->last_name),
             'ct' => $this->hashText(optional($user)->bill_city ?? optional($user)->ship_city),
-            'st' => $this->hashText(optional($user)->bill_province ?? optional($user)->ship_province),
+            'st' => $this->hashText($this->stateValue([], [], $user)),
             'zp' => $this->hashText(optional($user)->bill_zip ?? optional($user)->ship_zip),
             'country' => $this->hashCountry(optional($user)->bill_country ?? optional($user)->ship_country),
             'external_id' => $user ? $this->hashText('user_' . $user->id) : null,
@@ -425,7 +524,7 @@ class FacebookConversionApi
             'fn' => $this->hashText(optional($user)->first_name),
             'ln' => $this->hashText(optional($user)->last_name),
             'ct' => $this->hashText(optional($user)->bill_city ?? optional($user)->ship_city),
-            'st' => $this->hashText(optional($user)->bill_province ?? optional($user)->ship_province),
+            'st' => $this->hashText($this->stateValue([], [], $user)),
             'zp' => $this->hashText(optional($user)->bill_zip ?? optional($user)->ship_zip),
             'country' => $this->hashCountry(optional($user)->bill_country ?? optional($user)->ship_country),
             'external_id' => $user ? $this->hashText('user_' . $user->id) : null,
@@ -498,6 +597,141 @@ class FacebookConversionApi
 
             return false;
         }
+    }
+
+    public function trackAddPaymentInfo(
+        array $cart,
+        string $eventId,
+        float $value,
+        string $currency = 'CAD',
+        string $paymentType = 'Stripe'
+    ): bool {
+        $pixelId = config('services.facebook.pixel_id');
+        $token = config('services.facebook.conversion_api_token');
+
+        if (!$pixelId || !$token) {
+            Log::info('Facebook CAPI AddPaymentInfo skipped: missing pixel id or token.', [
+                'event_id' => $eventId,
+            ]);
+
+            return false;
+        }
+
+        $user = auth()->user();
+        $billingInfo = Session::get('billing_address', []);
+        $shippingInfo = Session::get('shipping_address', []);
+        $contentIds = [];
+        $contents = [];
+        $numItems = 0;
+
+        foreach ($cart as $key => $item) {
+            $quantity = max(1, (int) ($item['qty'] ?? 1));
+            $itemId = (string) ($item['id'] ?? $item['item_id'] ?? $this->cartItemIdFromKey($key));
+            $price = (float) ($item['main_price'] ?? $item['price'] ?? 0);
+
+            $contentIds[] = $itemId;
+            $contents[] = [
+                'id' => $itemId,
+                'quantity' => $quantity,
+                'item_price' => $price,
+            ];
+            $numItems += $quantity;
+        }
+
+        $userData = array_filter([
+            'em' => $this->hashEmail($billingInfo['bill_email'] ?? $shippingInfo['ship_email'] ?? $user->email ?? null),
+            'ph' => $this->hashPhone($billingInfo['bill_phone'] ?? $shippingInfo['ship_phone'] ?? $user->phone ?? null),
+            'fn' => $this->hashText($billingInfo['bill_first_name'] ?? $shippingInfo['ship_first_name'] ?? $user->first_name ?? null),
+            'ln' => $this->hashText($billingInfo['bill_last_name'] ?? $shippingInfo['ship_last_name'] ?? $user->last_name ?? null),
+            'ct' => $this->hashText($billingInfo['bill_city'] ?? $shippingInfo['ship_city'] ?? $user->bill_city ?? $user->ship_city ?? null),
+            'st' => $this->hashText($this->stateValue($billingInfo, $shippingInfo, $user)),
+            'zp' => $this->hashText($billingInfo['bill_zip'] ?? $shippingInfo['ship_zip'] ?? $user->bill_zip ?? $user->ship_zip ?? null),
+            'country' => $this->hashCountry($billingInfo['bill_country'] ?? $shippingInfo['ship_country'] ?? $user->bill_country ?? $user->ship_country ?? null),
+            'external_id' => $this->hashText($user ? 'user_' . $user->id : ($billingInfo['bill_email'] ?? null)),
+            'client_ip_address' => request()->ip(),
+            'client_user_agent' => request()->header('User-Agent'),
+            'fbp' => request()->cookie('_fbp'),
+            'fbc' => request()->cookie('_fbc'),
+        ]);
+
+        $payload = [
+            'data' => [[
+                'event_name' => 'AddPaymentInfo',
+                'event_time' => time(),
+                'event_id' => $eventId,
+                'action_source' => 'website',
+                'event_source_url' => route('front.checkout.payment'),
+                'user_data' => $userData,
+                'custom_data' => [
+                    'content_type' => 'product',
+                    'content_ids' => $contentIds,
+                    'currency' => $currency,
+                    'value' => $value,
+                    'contents' => $contents,
+                    'num_items' => $numItems,
+                    'payment_type' => $paymentType,
+                ],
+            ]],
+            'access_token' => $token,
+        ];
+
+        if (config('services.facebook.test_event_code')) {
+            $payload['test_event_code'] = config('services.facebook.test_event_code');
+        }
+
+        try {
+            $response = Http::timeout(5)->post(
+                "https://graph.facebook.com/v19.0/{$pixelId}/events",
+                $payload
+            );
+
+            if ($response->failed()) {
+                Log::warning('Facebook CAPI AddPaymentInfo failed.', [
+                    'event_id' => $eventId,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                return false;
+            }
+
+            Log::info('Facebook CAPI AddPaymentInfo sent.', [
+                'event_id' => $eventId,
+                'user_data_keys' => array_keys($userData),
+                'contents_count' => count($contents),
+                'response' => $response->json(),
+            ]);
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::warning('Facebook CAPI AddPaymentInfo exception: ' . $e->getMessage(), [
+                'event_id' => $eventId,
+            ]);
+
+            return false;
+        }
+    }
+
+    private function stateValue(array $billingInfo = [], array $shippingInfo = [], $user = null): ?string
+    {
+        $state = $billingInfo['bill_province']
+            ?? $billingInfo['bill_state']
+            ?? $shippingInfo['ship_province']
+            ?? $shippingInfo['ship_state']
+            ?? optional($user)->bill_province
+            ?? optional($user)->ship_province
+            ?? null;
+
+        $stateId = $billingInfo['state_id']
+            ?? $shippingInfo['state_id']
+            ?? optional($user)->state_id
+            ?? null;
+
+        if (!$state && $stateId) {
+            $state = optional(State::find($stateId))->name ?: (string) $stateId;
+        }
+
+        return $state;
     }
 
     private function hashEmail(?string $value): ?string
