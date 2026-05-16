@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const stripeCreateIntentUrl = `${window.location.origin}${appBasePath}/stripe/create-intent`;
     const stripeConfirmPaymentUrl = `${window.location.origin}${appBasePath}/stripe/confirm-payment`;
     const stripeReturnUrl = `${window.location.origin}${appBasePath}/stripe/return`;
+    const addPaymentInfoTrackUrl = `${window.location.origin}${appBasePath}/checkout/add-payment-info/track`;
 
     // Initialize Stripe when modal is shown
     stripeModal.addEventListener('shown.bs.modal', function() {
@@ -87,17 +88,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     submitButton.addEventListener('click', async function(e) {
         e.preventDefault();
-        if (typeof window.paTrack === 'function') {
-            let rawPrice = $(".grand_total_set").text();
-            let numericValue = parseFloat(rawPrice.replace(/[^0-9.-]+/g, '')) || 0;
-
-            window.paTrack('AddPaymentInfo', {
-                content_type: 'product',
-                value: numericValue,
-                currency: 'CAD',
-                payment_type: 'Stripe'
-            }, 'add_payment_info');
-        }
         if (!stripe || !clientSecret) {
             showError('Payment not initialized. Please close and reopen the payment form.');
             return;
@@ -110,6 +100,46 @@ document.addEventListener('DOMContentLoaded', function() {
         hideError();
 
         try {
+            if (typeof window.paTrack === 'function') {
+                let rawPrice = $(".grand_total_set").text();
+                let numericValue = parseFloat(rawPrice.replace(/[^0-9.-]+/g, '')) || 0;
+                let addPaymentEventId = 'addpaymentinfo_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+                let addPaymentPayload = {
+                    content_type: 'product',
+                    value: numericValue,
+                    currency: 'CAD',
+                    payment_type: 'Stripe',
+                    event_id: addPaymentEventId
+                };
+
+                try {
+                    const trackingResponse = await fetch(addPaymentInfoTrackUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({
+                            event_id: addPaymentEventId,
+                            value: numericValue,
+                            currency: 'CAD',
+                            payment_type: 'Stripe'
+                        })
+                    });
+
+                    const trackingResult = await trackingResponse.json();
+                    if (trackingResult.status && trackingResult.tracking) {
+                        addPaymentEventId = trackingResult.tracking.event_id || addPaymentEventId;
+                        addPaymentPayload = trackingResult.tracking.payload || addPaymentPayload;
+                    }
+                } catch (trackingError) {
+                    console.warn('AddPaymentInfo CAPI preparation failed', trackingError);
+                }
+
+                window.paTrack('AddPaymentInfo', addPaymentPayload, 'add_payment_info', { eventId: addPaymentEventId });
+            }
+
             // Confirm payment
             const {error, paymentIntent} = await stripe.confirmPayment({
                 elements,

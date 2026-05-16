@@ -377,6 +377,74 @@ class CheckoutController extends Controller
         return view('front.checkout.payment', $data);
     }
 
+    public function trackAddPaymentInfo(Request $request)
+    {
+        if (!Session::has('cart')) {
+            return response()->json(['status' => false, 'message' => 'Cart not found.'], 422);
+        }
+
+        $cart = Session::get('cart');
+        $eventId = $request->input('event_id') ?: (new FacebookConversionApi())->addPaymentInfoEventId();
+        $currency = $request->input('currency', 'CAD');
+        $paymentType = $request->input('payment_type', 'Stripe');
+        $value = (float) $request->input('value', 0);
+        $contentIds = [];
+        $contents = [];
+        $numItems = 0;
+
+        foreach ($cart as $key => $item) {
+            $quantity = max(1, (int) ($item['qty'] ?? 1));
+            $itemId = (string) ($item['id'] ?? $item['item_id'] ?? explode('-', (string) $key)[0]);
+            $price = (float) ($item['main_price'] ?? $item['price'] ?? 0);
+
+            $contentIds[] = $itemId;
+            $contents[] = [
+                'id' => $itemId,
+                'quantity' => $quantity,
+                'item_price' => $price,
+            ];
+            $numItems += $quantity;
+
+            if ($value <= 0) {
+                $value += $price * $quantity;
+            }
+        }
+
+        if (!Session::get('facebook_capi_add_payment_info_sent_' . $eventId)) {
+            Session::put('facebook_capi_add_payment_info_sent_' . $eventId, true);
+
+            app()->terminating(function () use ($cart, $eventId, $value, $currency, $paymentType) {
+                (new FacebookConversionApi())->trackAddPaymentInfo(
+                    $cart,
+                    $eventId,
+                    (float) $value,
+                    (string) $currency,
+                    (string) $paymentType
+                );
+            });
+        }
+
+        return response()->json([
+            'status' => true,
+            'tracking' => [
+                'event_id' => $eventId,
+                'meta_event' => 'AddPaymentInfo',
+                'google_event' => 'add_payment_info',
+                'payload' => [
+                    'content_type' => 'product',
+                    'content_ids' => $contentIds,
+                    'value' => $value,
+                    'currency' => $currency,
+                    'payment_type' => $paymentType,
+                    'contents' => $contents,
+                    'items' => $contents,
+                    'num_items' => $numItems,
+                    'event_id' => $eventId,
+                ],
+            ],
+        ]);
+    }
+
     public function checkout(PaymentRequest $request)
     {
 
