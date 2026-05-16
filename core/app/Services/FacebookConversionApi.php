@@ -292,6 +292,116 @@ class FacebookConversionApi
         return 'addtocart_' . $item->id . '_' . (string) Str::uuid();
     }
 
+    public function initiateCheckoutEventId(): string
+    {
+        return 'initiatecheckout_' . (string) Str::uuid();
+    }
+
+    public function trackInitiateCheckout(array $cart, string $eventId, float $value, string $currency = 'CAD'): bool
+    {
+        $pixelId = config('services.facebook.pixel_id');
+        $token = config('services.facebook.conversion_api_token');
+
+        if (!$pixelId || !$token) {
+            Log::info('Facebook CAPI InitiateCheckout skipped: missing pixel id or token.', [
+                'event_id' => $eventId,
+            ]);
+
+            return false;
+        }
+
+        $user = auth()->user();
+        $contentIds = [];
+        $contents = [];
+        $numItems = 0;
+
+        foreach ($cart as $key => $item) {
+            $quantity = max(1, (int) ($item['qty'] ?? 1));
+            $itemId = (string) ($item['id'] ?? $item['item_id'] ?? $this->cartItemIdFromKey($key));
+            $price = (float) ($item['main_price'] ?? $item['price'] ?? 0);
+
+            $contentIds[] = $itemId;
+            $contents[] = [
+                'id' => $itemId,
+                'quantity' => $quantity,
+                'item_price' => $price,
+            ];
+            $numItems += $quantity;
+        }
+
+        $userData = array_filter([
+            'em' => $this->hashEmail(optional($user)->email),
+            'ph' => $this->hashPhone(optional($user)->phone),
+            'fn' => $this->hashText(optional($user)->first_name),
+            'ln' => $this->hashText(optional($user)->last_name),
+            'ct' => $this->hashText(optional($user)->bill_city ?? optional($user)->ship_city),
+            'st' => $this->hashText(optional($user)->bill_province ?? optional($user)->ship_province),
+            'zp' => $this->hashText(optional($user)->bill_zip ?? optional($user)->ship_zip),
+            'country' => $this->hashCountry(optional($user)->bill_country ?? optional($user)->ship_country),
+            'external_id' => $user ? $this->hashText('user_' . $user->id) : null,
+            'client_ip_address' => request()->ip(),
+            'client_user_agent' => request()->header('User-Agent'),
+            'fbp' => request()->cookie('_fbp'),
+            'fbc' => request()->cookie('_fbc'),
+        ]);
+
+        $payload = [
+            'data' => [[
+                'event_name' => 'InitiateCheckout',
+                'event_time' => time(),
+                'event_id' => $eventId,
+                'action_source' => 'website',
+                'event_source_url' => route('front.checkout.billing'),
+                'user_data' => $userData,
+                'custom_data' => [
+                    'content_type' => 'product',
+                    'content_ids' => $contentIds,
+                    'currency' => $currency,
+                    'value' => $value,
+                    'contents' => $contents,
+                    'num_items' => $numItems,
+                ],
+            ]],
+            'access_token' => $token,
+        ];
+
+        if (config('services.facebook.test_event_code')) {
+            $payload['test_event_code'] = config('services.facebook.test_event_code');
+        }
+
+        try {
+            $response = Http::timeout(5)->post(
+                "https://graph.facebook.com/v19.0/{$pixelId}/events",
+                $payload
+            );
+
+            if ($response->failed()) {
+                Log::warning('Facebook CAPI InitiateCheckout failed.', [
+                    'event_id' => $eventId,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                return false;
+            }
+
+            Log::info('Facebook CAPI InitiateCheckout sent.', [
+                'event_id' => $eventId,
+                'user_data_keys' => array_keys($userData),
+                'contents_count' => count($contents),
+                'response' => $response->json(),
+            ]);
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::warning('Facebook CAPI InitiateCheckout exception: ' . $e->getMessage(), [
+                'event_id' => $eventId,
+            ]);
+
+            return false;
+        }
+    }
+
     public function trackAddToCart(Item $item, int $quantity, string $eventId): bool
     {
         $pixelId = config('services.facebook.pixel_id');
@@ -424,5 +534,10 @@ class FacebookConversionApi
         ];
 
         return $this->hashText($countries[$value] ?? $value);
+    }
+
+    private function cartItemIdFromKey($key): string
+    {
+        return (string) explode('-', (string) $key)[0];
     }
 }
