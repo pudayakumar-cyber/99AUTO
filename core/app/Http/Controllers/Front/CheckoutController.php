@@ -208,7 +208,8 @@ class CheckoutController extends Controller
         ]);
 
         if ($request->same_ship_address) {
-            Session::put('billing_address', $request->all());
+            $billingAddress = $request->all();
+            Session::put('billing_address', $billingAddress);
 
             if (PriceHelper::CheckDigital()) {
                 $shipping = [
@@ -232,9 +233,12 @@ class CheckoutController extends Controller
                 ];
             }
             Session::put('shipping_address', $shipping);
+            (new FacebookConversionApi())->rememberCheckoutIdentity($billingAddress, $shipping);
         } else {
-            Session::put('billing_address', $request->all());
+            $billingAddress = $request->all();
+            Session::put('billing_address', $billingAddress);
             Session::forget('shipping_address');
+            (new FacebookConversionApi())->rememberCheckoutIdentity($billingAddress);
         }
 
         if (Session::has('shipping_address')) {
@@ -312,7 +316,9 @@ class CheckoutController extends Controller
             'ship_city' => 'required',
         ]);
 
-        Session::put('shipping_address', $request->all());
+        $shippingAddress = $request->all();
+        Session::put('shipping_address', $shippingAddress);
+        (new FacebookConversionApi())->rememberCheckoutIdentity(Session::get('billing_address', []), $shippingAddress);
         return redirect(route('front.checkout.payment'));
     }
 
