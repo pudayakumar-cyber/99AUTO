@@ -925,54 +925,63 @@
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
+  gtag('consent', 'default', {
+    ad_storage: 'granted',
+    analytics_storage: 'granted',
+    ad_user_data: 'granted',
+    ad_personalization: 'granted'
+  });
   gtag('js', new Date());
 
   gtag('config', '{{ config('services.google.analytics_id') }}');
-  gtag('config', 'AW-{{ config('services.google.ads_conversion_id') }}');
+  gtag('config', 'AW-{{ config('services.google.ads_conversion_id') }}', {
+    allow_enhanced_conversions: true
+  });
 </script>
 @endif
 <!-- #metapixelscript -->
 @if (!($setting->is_facebook_pixel == '1' && trim((string) $setting->facebook_pixel) !== ''))
 @php
     $metaAdvancedMatching = [];
-    if (Auth::check()) {
-        $metaUser = Auth::user();
-        $metaNormalize = function ($value) {
-            $value = preg_replace('/\s+/', '', strtolower(trim((string) $value)));
-            return $value === '' ? null : hash('sha256', $value);
-        };
-        $metaNormalizeEmail = function ($value) {
-            $value = strtolower(trim((string) $value));
-            return $value === '' ? null : hash('sha256', $value);
-        };
-        $metaNormalizePhone = function ($value) {
-            $value = preg_replace('/\D+/', '', (string) $value);
-            return $value === '' ? null : hash('sha256', $value);
-        };
-        $metaNormalizeCountry = function ($value) use ($metaNormalize) {
-            $value = strtolower(trim((string) $value));
-            $countries = [
-                'canada' => 'ca',
-                'ca' => 'ca',
-                'united states' => 'us',
-                'united states of america' => 'us',
-                'usa' => 'us',
-                'us' => 'us',
-            ];
-            return $metaNormalize($countries[$value] ?? $value);
-        };
-        $metaAdvancedMatching = array_filter([
-            'em' => $metaNormalizeEmail($metaUser->email ?? null),
-            'ph' => $metaNormalizePhone($metaUser->phone ?? null),
-            'fn' => $metaNormalize($metaUser->first_name ?? null),
-            'ln' => $metaNormalize($metaUser->last_name ?? null),
-            'ct' => $metaNormalize($metaUser->bill_city ?? $metaUser->ship_city ?? null),
-            'st' => $metaNormalize($metaUser->bill_province ?? $metaUser->ship_province ?? null),
-            'zp' => $metaNormalize($metaUser->bill_zip ?? $metaUser->ship_zip ?? null),
-            'country' => $metaNormalizeCountry($metaUser->bill_country ?? $metaUser->ship_country ?? null),
-            'external_id' => $metaNormalize('user_' . $metaUser->id),
-        ]);
-    }
+    $metaUser = Auth::user();
+    $metaBilling = Session::get('billing_address', []);
+    $metaShipping = Session::get('shipping_address', []);
+    $metaCheckoutIdentity = Session::get('facebook_checkout_identity', []);
+    $metaNormalize = function ($value) {
+        $value = preg_replace('/\s+/', '', strtolower(trim((string) $value)));
+        return $value === '' ? null : hash('sha256', $value);
+    };
+    $metaNormalizeEmail = function ($value) {
+        $value = strtolower(trim((string) $value));
+        return $value === '' ? null : hash('sha256', $value);
+    };
+    $metaNormalizePhone = function ($value) {
+        $value = preg_replace('/\D+/', '', (string) $value);
+        return $value === '' ? null : hash('sha256', $value);
+    };
+    $metaNormalizeCountry = function ($value) use ($metaNormalize) {
+        $value = strtolower(trim((string) $value));
+        $countries = [
+            'canada' => 'ca',
+            'ca' => 'ca',
+            'united states' => 'us',
+            'united states of america' => 'us',
+            'usa' => 'us',
+            'us' => 'us',
+        ];
+        return $metaNormalize($countries[$value] ?? $value);
+    };
+    $metaAdvancedMatching = array_filter([
+        'em' => $metaNormalizeEmail($metaBilling['bill_email'] ?? $metaShipping['ship_email'] ?? $metaCheckoutIdentity['email'] ?? optional($metaUser)->email),
+        'ph' => $metaNormalizePhone($metaBilling['bill_phone'] ?? $metaShipping['ship_phone'] ?? $metaCheckoutIdentity['phone'] ?? optional($metaUser)->phone),
+        'fn' => $metaNormalize($metaBilling['bill_first_name'] ?? $metaShipping['ship_first_name'] ?? $metaCheckoutIdentity['first_name'] ?? optional($metaUser)->first_name),
+        'ln' => $metaNormalize($metaBilling['bill_last_name'] ?? $metaShipping['ship_last_name'] ?? $metaCheckoutIdentity['last_name'] ?? optional($metaUser)->last_name),
+        'ct' => $metaNormalize($metaBilling['bill_city'] ?? $metaShipping['ship_city'] ?? $metaCheckoutIdentity['city'] ?? optional($metaUser)->bill_city ?? optional($metaUser)->ship_city),
+        'st' => $metaNormalize($metaBilling['bill_province'] ?? $metaShipping['ship_province'] ?? $metaCheckoutIdentity['state'] ?? optional($metaUser)->bill_province ?? optional($metaUser)->ship_province),
+        'zp' => $metaNormalize($metaBilling['bill_zip'] ?? $metaShipping['ship_zip'] ?? $metaCheckoutIdentity['zip'] ?? optional($metaUser)->bill_zip ?? optional($metaUser)->ship_zip),
+        'country' => $metaNormalizeCountry($metaBilling['bill_country'] ?? $metaShipping['ship_country'] ?? $metaCheckoutIdentity['country'] ?? optional($metaUser)->bill_country ?? optional($metaUser)->ship_country),
+        'external_id' => $metaNormalize($metaUser ? 'user_' . $metaUser->id : ($metaCheckoutIdentity['email'] ?? $metaBilling['bill_email'] ?? null)),
+    ]);
     $metaPageViewEventId = 'pageview_' . (string) \Illuminate\Support\Str::uuid();
     $metaPageViewUrl = url()->current();
     (new \App\Services\FacebookConversionApi())->rememberClickIdsFromRequest();
