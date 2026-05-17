@@ -6,6 +6,7 @@ use App\Helpers\PriceHelper;
 use App\Models\Item;
 use App\Models\Order;
 use App\Models\State;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
@@ -56,20 +57,15 @@ class FacebookConversionApi
             $numItems += $quantity;
         }
 
-        $userData = array_filter([
-            'em' => $this->hashEmail($email ?: ($billingInfo['bill_email'] ?? $shippingInfo['ship_email'] ?? $user->email ?? null)),
-            'ph' => $this->hashPhone($phone ?: ($billingInfo['bill_phone'] ?? $shippingInfo['ship_phone'] ?? $user->phone ?? null)),
-            'fn' => $this->hashText($billingInfo['bill_first_name'] ?? $shippingInfo['ship_first_name'] ?? $user->first_name ?? null),
-            'ln' => $this->hashText($billingInfo['bill_last_name'] ?? $shippingInfo['ship_last_name'] ?? $user->last_name ?? null),
-            'ct' => $this->hashText($billingInfo['bill_city'] ?? $shippingInfo['ship_city'] ?? $user->bill_city ?? $user->ship_city ?? null),
-            'st' => $this->hashText($this->stateValue($billingInfo, $shippingInfo, $user)),
-            'zp' => $this->hashText($billingInfo['bill_zip'] ?? $shippingInfo['ship_zip'] ?? $user->bill_zip ?? $user->ship_zip ?? null),
-            'country' => $this->hashCountry($billingInfo['bill_country'] ?? $shippingInfo['ship_country'] ?? $user->bill_country ?? $user->ship_country ?? null),
-            'external_id' => $this->hashText($order->user_id ? 'user_' . $order->user_id : ($billingInfo['bill_email'] ?? $email)),
+        $userData = $this->buildUserData([
+            'billing' => $billingInfo,
+            'shipping' => $shippingInfo,
+            'user' => $user,
+            'email' => $email,
+            'phone' => $phone,
+            'external_id' => $order->user_id ? 'user_' . $order->user_id : ($billingInfo['bill_email'] ?? $email),
             'client_ip_address' => $clientIp,
             'client_user_agent' => $userAgent,
-            'fbp' => request()->cookie('_fbp'),
-            'fbc' => request()->cookie('_fbc'),
         ]);
 
         $payload = [
@@ -209,22 +205,7 @@ class FacebookConversionApi
             return false;
         }
 
-        $user = auth()->user();
-        $userData = array_filter([
-            'em' => $this->hashEmail(optional($user)->email),
-            'ph' => $this->hashPhone(optional($user)->phone),
-            'fn' => $this->hashText(optional($user)->first_name),
-            'ln' => $this->hashText(optional($user)->last_name),
-            'ct' => $this->hashText(optional($user)->bill_city ?? optional($user)->ship_city),
-            'st' => $this->hashText($this->stateValue([], [], $user)),
-            'zp' => $this->hashText(optional($user)->bill_zip ?? optional($user)->ship_zip),
-            'country' => $this->hashCountry(optional($user)->bill_country ?? optional($user)->ship_country),
-            'external_id' => $user ? $this->hashText('user_' . $user->id) : null,
-            'client_ip_address' => request()->ip(),
-            'client_user_agent' => request()->header('User-Agent'),
-            'fbp' => request()->cookie('_fbp'),
-            'fbc' => request()->cookie('_fbc'),
-        ]);
+        $userData = $this->buildUserData();
 
         $payload = [
             'data' => [[
@@ -298,24 +279,9 @@ class FacebookConversionApi
             return false;
         }
 
-        $user = auth()->user();
         $itemId = (string) ($item->id ?? $item->prod_number);
         $price = (float) ($item->discount_price ?? $item->previous_price ?? 0);
-        $userData = array_filter([
-            'em' => $this->hashEmail(optional($user)->email),
-            'ph' => $this->hashPhone(optional($user)->phone),
-            'fn' => $this->hashText(optional($user)->first_name),
-            'ln' => $this->hashText(optional($user)->last_name),
-            'ct' => $this->hashText(optional($user)->bill_city ?? optional($user)->ship_city),
-            'st' => $this->hashText($this->stateValue([], [], $user)),
-            'zp' => $this->hashText(optional($user)->bill_zip ?? optional($user)->ship_zip),
-            'country' => $this->hashCountry(optional($user)->bill_country ?? optional($user)->ship_country),
-            'external_id' => $user ? $this->hashText('user_' . $user->id) : null,
-            'client_ip_address' => request()->ip(),
-            'client_user_agent' => request()->header('User-Agent'),
-            'fbp' => request()->cookie('_fbp'),
-            'fbc' => request()->cookie('_fbc'),
-        ]);
+        $userData = $this->buildUserData();
 
         $payload = [
             'data' => [[
@@ -409,7 +375,6 @@ class FacebookConversionApi
             return false;
         }
 
-        $user = auth()->user();
         $contentIds = [];
         $contents = [];
         $numItems = 0;
@@ -428,21 +393,7 @@ class FacebookConversionApi
             $numItems += $quantity;
         }
 
-        $userData = array_filter([
-            'em' => $this->hashEmail(optional($user)->email),
-            'ph' => $this->hashPhone(optional($user)->phone),
-            'fn' => $this->hashText(optional($user)->first_name),
-            'ln' => $this->hashText(optional($user)->last_name),
-            'ct' => $this->hashText(optional($user)->bill_city ?? optional($user)->ship_city),
-            'st' => $this->hashText($this->stateValue([], [], $user)),
-            'zp' => $this->hashText(optional($user)->bill_zip ?? optional($user)->ship_zip),
-            'country' => $this->hashCountry(optional($user)->bill_country ?? optional($user)->ship_country),
-            'external_id' => $user ? $this->hashText('user_' . $user->id) : null,
-            'client_ip_address' => request()->ip(),
-            'client_user_agent' => request()->header('User-Agent'),
-            'fbp' => request()->cookie('_fbp'),
-            'fbc' => request()->cookie('_fbc'),
-        ]);
+        $userData = $this->buildUserData();
 
         $payload = [
             'data' => [[
@@ -515,24 +466,9 @@ class FacebookConversionApi
             return false;
         }
 
-        $user = auth()->user();
         $itemId = (string) ($item->id ?? $item->prod_number);
         $price = (float) ($item->discount_price ?? $item->previous_price ?? 0);
-        $userData = array_filter([
-            'em' => $this->hashEmail(optional($user)->email),
-            'ph' => $this->hashPhone(optional($user)->phone),
-            'fn' => $this->hashText(optional($user)->first_name),
-            'ln' => $this->hashText(optional($user)->last_name),
-            'ct' => $this->hashText(optional($user)->bill_city ?? optional($user)->ship_city),
-            'st' => $this->hashText($this->stateValue([], [], $user)),
-            'zp' => $this->hashText(optional($user)->bill_zip ?? optional($user)->ship_zip),
-            'country' => $this->hashCountry(optional($user)->bill_country ?? optional($user)->ship_country),
-            'external_id' => $user ? $this->hashText('user_' . $user->id) : null,
-            'client_ip_address' => request()->ip(),
-            'client_user_agent' => request()->header('User-Agent'),
-            'fbp' => request()->cookie('_fbp'),
-            'fbc' => request()->cookie('_fbc'),
-        ]);
+        $userData = $this->buildUserData();
 
         $payload = [
             'data' => [[
@@ -617,7 +553,6 @@ class FacebookConversionApi
             return false;
         }
 
-        $user = auth()->user();
         $billingInfo = Session::get('billing_address', []);
         $shippingInfo = Session::get('shipping_address', []);
         $contentIds = [];
@@ -638,20 +573,9 @@ class FacebookConversionApi
             $numItems += $quantity;
         }
 
-        $userData = array_filter([
-            'em' => $this->hashEmail($billingInfo['bill_email'] ?? $shippingInfo['ship_email'] ?? $user->email ?? null),
-            'ph' => $this->hashPhone($billingInfo['bill_phone'] ?? $shippingInfo['ship_phone'] ?? $user->phone ?? null),
-            'fn' => $this->hashText($billingInfo['bill_first_name'] ?? $shippingInfo['ship_first_name'] ?? $user->first_name ?? null),
-            'ln' => $this->hashText($billingInfo['bill_last_name'] ?? $shippingInfo['ship_last_name'] ?? $user->last_name ?? null),
-            'ct' => $this->hashText($billingInfo['bill_city'] ?? $shippingInfo['ship_city'] ?? $user->bill_city ?? $user->ship_city ?? null),
-            'st' => $this->hashText($this->stateValue($billingInfo, $shippingInfo, $user)),
-            'zp' => $this->hashText($billingInfo['bill_zip'] ?? $shippingInfo['ship_zip'] ?? $user->bill_zip ?? $user->ship_zip ?? null),
-            'country' => $this->hashCountry($billingInfo['bill_country'] ?? $shippingInfo['ship_country'] ?? $user->bill_country ?? $user->ship_country ?? null),
-            'external_id' => $this->hashText($user ? 'user_' . $user->id : ($billingInfo['bill_email'] ?? null)),
-            'client_ip_address' => request()->ip(),
-            'client_user_agent' => request()->header('User-Agent'),
-            'fbp' => request()->cookie('_fbp'),
-            'fbc' => request()->cookie('_fbc'),
+        $userData = $this->buildUserData([
+            'billing' => $billingInfo,
+            'shipping' => $shippingInfo,
         ]);
 
         $payload = [
@@ -732,6 +656,87 @@ class FacebookConversionApi
         }
 
         return $state;
+    }
+
+    public function rememberCheckoutIdentity(array $billingInfo = [], array $shippingInfo = []): void
+    {
+        $identity = array_filter(array_merge(
+            Session::get('facebook_checkout_identity', []),
+            [
+                'email' => $billingInfo['bill_email'] ?? $shippingInfo['ship_email'] ?? null,
+                'phone' => $billingInfo['bill_phone'] ?? $shippingInfo['ship_phone'] ?? null,
+                'first_name' => $billingInfo['bill_first_name'] ?? $shippingInfo['ship_first_name'] ?? null,
+                'last_name' => $billingInfo['bill_last_name'] ?? $shippingInfo['ship_last_name'] ?? null,
+                'city' => $billingInfo['bill_city'] ?? $shippingInfo['ship_city'] ?? null,
+                'state' => $this->stateValue($billingInfo, $shippingInfo, auth()->user()),
+                'zip' => $billingInfo['bill_zip'] ?? $shippingInfo['ship_zip'] ?? null,
+                'country' => $billingInfo['bill_country'] ?? $shippingInfo['ship_country'] ?? null,
+            ]
+        ));
+
+        if (!empty($identity)) {
+            Session::put('facebook_checkout_identity', $identity);
+        }
+    }
+
+    private function buildUserData(array $context = []): array
+    {
+        $billingInfo = $context['billing'] ?? Session::get('billing_address', []);
+        $shippingInfo = $context['shipping'] ?? Session::get('shipping_address', []);
+        $sessionIdentity = Session::get('facebook_checkout_identity', []);
+        $user = $context['user'] ?? auth()->user();
+        $email = $context['email'] ?? null;
+        $phone = $context['phone'] ?? null;
+        $externalId = $context['external_id'] ?? ($user ? 'user_' . $user->id : ($sessionIdentity['email'] ?? $billingInfo['bill_email'] ?? null));
+
+        return array_filter([
+            'em' => $this->hashEmail($email ?: ($billingInfo['bill_email'] ?? $shippingInfo['ship_email'] ?? $sessionIdentity['email'] ?? optional($user)->email)),
+            'ph' => $this->hashPhone($phone ?: ($billingInfo['bill_phone'] ?? $shippingInfo['ship_phone'] ?? $sessionIdentity['phone'] ?? optional($user)->phone)),
+            'fn' => $this->hashText($billingInfo['bill_first_name'] ?? $shippingInfo['ship_first_name'] ?? $sessionIdentity['first_name'] ?? optional($user)->first_name),
+            'ln' => $this->hashText($billingInfo['bill_last_name'] ?? $shippingInfo['ship_last_name'] ?? $sessionIdentity['last_name'] ?? optional($user)->last_name),
+            'ct' => $this->hashText($billingInfo['bill_city'] ?? $shippingInfo['ship_city'] ?? $sessionIdentity['city'] ?? optional($user)->bill_city ?? optional($user)->ship_city),
+            'st' => $this->hashText($this->stateValue($billingInfo, $shippingInfo, $user) ?? ($sessionIdentity['state'] ?? null)),
+            'zp' => $this->hashText($billingInfo['bill_zip'] ?? $shippingInfo['ship_zip'] ?? $sessionIdentity['zip'] ?? optional($user)->bill_zip ?? optional($user)->ship_zip),
+            'country' => $this->hashCountry($billingInfo['bill_country'] ?? $shippingInfo['ship_country'] ?? $sessionIdentity['country'] ?? optional($user)->bill_country ?? optional($user)->ship_country),
+            'external_id' => $this->hashText($externalId),
+            'client_ip_address' => $context['client_ip_address'] ?? request()->ip(),
+            'client_user_agent' => $context['client_user_agent'] ?? request()->header('User-Agent'),
+            'fbp' => $this->fbp(),
+            'fbc' => $this->fbc(),
+        ]);
+    }
+
+    private function fbp(): ?string
+    {
+        $value = request()->cookie('_fbp');
+        if ($value) {
+            Session::put('facebook_fbp', $value);
+
+            return $value;
+        }
+
+        return Session::get('facebook_fbp');
+    }
+
+    private function fbc(): ?string
+    {
+        $cookieValue = request()->cookie('_fbc');
+        if ($cookieValue) {
+            Session::put('facebook_fbc', $cookieValue);
+
+            return $cookieValue;
+        }
+
+        $fbclid = request()->query('fbclid');
+        if ($fbclid) {
+            $value = 'fb.1.' . time() . '.' . $fbclid;
+            Session::put('facebook_fbc', $value);
+            Cookie::queue(cookie('_fbc', $value, 60 * 24 * 90, '/', null, request()->isSecure(), false, false, 'Lax'));
+
+            return $value;
+        }
+
+        return Session::get('facebook_fbc');
     }
 
     private function hashEmail(?string $value): ?string
