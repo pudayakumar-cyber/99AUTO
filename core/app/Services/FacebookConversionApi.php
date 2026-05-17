@@ -679,6 +679,12 @@ class FacebookConversionApi
         }
     }
 
+    public function rememberClickIdsFromRequest(): void
+    {
+        $this->fbp();
+        $this->fbc();
+    }
+
     private function buildUserData(array $context = []): array
     {
         $billingInfo = $context['billing'] ?? Session::get('billing_address', []);
