@@ -975,6 +975,7 @@
     }
     $metaPageViewEventId = 'pageview_' . (string) \Illuminate\Support\Str::uuid();
     $metaPageViewUrl = url()->current();
+    (new \App\Services\FacebookConversionApi())->rememberClickIdsFromRequest();
     app()->terminating(function () use ($metaPageViewEventId, $metaPageViewUrl) {
         (new \App\Services\FacebookConversionApi())->trackPageView($metaPageViewEventId, $metaPageViewUrl);
     });
