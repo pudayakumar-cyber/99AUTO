@@ -584,9 +584,6 @@ class FrontendController extends Controller
         $video = explode('=', $item->video);
         $facebookApi = new FacebookConversionApi();
         $viewContentEventId = $facebookApi->viewContentEventId($item);
-        app()->terminating(function () use ($facebookApi, $item, $viewContentEventId) {
-            $facebookApi->trackViewContent($item, $viewContentEventId);
-        });
 
         return view('front.catalog.product', [
             'item'          => $item,
@@ -599,6 +596,39 @@ class FrontendController extends Controller
             'attributes'    => $item->attributes,
             'related_items' => $relatedItems,
             'view_content_event_id' => $viewContentEventId,
+        ]);
+    }
+
+    public function trackViewContent(Request $request)
+    {
+        $itemId = $request->input('item_id');
+        $eventId = $request->input('event_id');
+
+        if (!$itemId || !$eventId) {
+            return response()->json(['status' => false, 'message' => 'Missing tracking payload.'], 422);
+        }
+
+        $item = Item::whereStatus(1)->find($itemId);
+
+        if (!$item) {
+            return response()->json(['status' => false, 'message' => 'Product not found.'], 404);
+        }
+
+        if (!Session::get('facebook_capi_view_content_sent_' . $eventId)) {
+            Session::put('facebook_capi_view_content_sent_' . $eventId, true);
+
+            app()->terminating(function () use ($item, $eventId) {
+                (new FacebookConversionApi())->trackViewContent($item, $eventId);
+            });
+        }
+
+        return response()->json([
+            'status' => true,
+            'tracking' => [
+                'event_id' => $eventId,
+                'meta_event' => 'ViewContent',
+                'item_id' => $item->id,
+            ],
         ]);
     }
 
