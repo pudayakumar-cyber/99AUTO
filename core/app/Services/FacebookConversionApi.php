@@ -364,6 +364,11 @@ class FacebookConversionApi
         return 'addpaymentinfo_' . (string) Str::uuid();
     }
 
+    public function siteClickEventId(): string
+    {
+        return 'siteclick_' . (string) Str::uuid();
+    }
+
     public function trackInitiateCheckout(array $cart, string $eventId, float $value, string $currency = 'CAD'): bool
     {
         $pixelId = config('services.facebook.pixel_id');
@@ -447,6 +452,75 @@ class FacebookConversionApi
             return true;
         } catch (\Throwable $e) {
             Log::warning('Facebook CAPI InitiateCheckout exception: ' . $e->getMessage(), [
+                'event_id' => $eventId,
+            ]);
+
+            return false;
+        }
+    }
+
+    public function trackSiteClick(string $eventId, array $payload = []): bool
+    {
+        $pixelId = config('services.facebook.pixel_id');
+        $token = config('services.facebook.conversion_api_token');
+
+        if (!$pixelId || !$token) {
+            Log::info('Facebook CAPI SiteClick skipped: missing pixel id or token.', [
+                'event_id' => $eventId,
+            ]);
+
+            return false;
+        }
+
+        $userData = $this->buildUserData();
+
+        $payload = [
+            'data' => [[
+                'event_name' => 'SiteClick',
+                'event_time' => time(),
+                'event_id' => $eventId,
+                'action_source' => 'website',
+                'event_source_url' => $payload['page_location'] ?? url()->current(),
+                'user_data' => $userData,
+                'custom_data' => array_filter([
+                    'event_category' => $payload['event_category'] ?? 'engagement',
+                    'event_label' => $payload['event_label'] ?? null,
+                    'link_url' => $payload['link_url'] ?? null,
+                    'page_location' => $payload['page_location'] ?? null,
+                ]),
+            ]],
+            'access_token' => $token,
+        ];
+
+        if (config('services.facebook.test_event_code')) {
+            $payload['test_event_code'] = config('services.facebook.test_event_code');
+        }
+
+        try {
+            $response = Http::timeout(5)->post(
+                "https://graph.facebook.com/v19.0/{$pixelId}/events",
+                $payload
+            );
+
+            if ($response->failed()) {
+                Log::warning('Facebook CAPI SiteClick failed.', [
+                    'event_id' => $eventId,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+
+                return false;
+            }
+
+            Log::info('Facebook CAPI SiteClick sent.', [
+                'event_id' => $eventId,
+                'user_data_keys' => array_keys($userData),
+                'response' => $response->json(),
+            ]);
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::warning('Facebook CAPI SiteClick exception: ' . $e->getMessage(), [
                 'event_id' => $eventId,
             ]);
 
