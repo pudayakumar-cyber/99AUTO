@@ -451,6 +451,39 @@ class CheckoutController extends Controller
         ]);
     }
 
+    public function trackSiteClick(Request $request)
+    {
+        if (!config('services.facebook.site_click_tracking')) {
+            return response()->json(['status' => false, 'message' => 'Site click tracking disabled.'], 404);
+        }
+
+        $facebookApi = new FacebookConversionApi();
+        $eventId = $request->input('event_id') ?: $facebookApi->siteClickEventId();
+        $payload = [
+            'event_category' => $request->input('event_category', 'engagement'),
+            'event_label' => $request->input('event_label'),
+            'link_url' => $request->input('link_url'),
+            'page_location' => $request->input('page_location', url()->current()),
+        ];
+
+        if (!Session::get('facebook_capi_site_click_sent_' . $eventId)) {
+            Session::put('facebook_capi_site_click_sent_' . $eventId, true);
+
+            app()->terminating(function () use ($facebookApi, $eventId, $payload) {
+                $facebookApi->trackSiteClick($eventId, $payload);
+            });
+        }
+
+        return response()->json([
+            'status' => true,
+            'tracking' => [
+                'event_id' => $eventId,
+                'meta_event' => 'SiteClick',
+                'payload' => $payload,
+            ],
+        ]);
+    }
+
     public function checkout(PaymentRequest $request)
     {
 
