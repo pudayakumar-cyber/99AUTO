@@ -1161,6 +1161,30 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    try {
+        var csrfTokenTag = document.querySelector('meta[name="csrf-token"]');
+        var csrfToken = (csrfTokenTag ? csrfTokenTag.getAttribute('content') : '') || @json(csrf_token());
+
+        if (window.fetch && csrfToken && productPayload.event_id && productPayload.content_ids && productPayload.content_ids[0]) {
+            window.fetch(@json(route('front.tracking.view_content')), {
+                method: 'POST',
+                credentials: 'same-origin',
+                keepalive: true,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    event_id: productPayload.event_id,
+                    item_id: productPayload.content_ids[0]
+                })
+            }).catch(function () {});
+        }
+    } catch (error) {
+        console.warn('ViewContent CAPI sync failed', error);
+    }
+
 });
 </script>
 @endif
