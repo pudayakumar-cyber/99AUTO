@@ -1027,6 +1027,13 @@ src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&e
     }
 
     try {
+        var hasFbpCookie = document.cookie.split(';').some(function (cookiePart) {
+            return cookiePart.trim().indexOf('_fbp=') === 0;
+        });
+        if (!hasFbpCookie) {
+            setTrackingCookie('_fbp', 'fb.1.' + Math.floor(Date.now() / 1000) + '.' + Math.floor(Math.random() * 10000000000), 7776000);
+        }
+
         var params = new URLSearchParams(window.location.search);
         var fbclid = params.get('fbclid');
         if (fbclid) {

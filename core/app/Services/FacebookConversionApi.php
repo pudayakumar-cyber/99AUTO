@@ -862,7 +862,16 @@ class FacebookConversionApi
             return $value;
         }
 
-        return Session::get('facebook_fbp');
+        $sessionValue = Session::get('facebook_fbp');
+        if ($sessionValue) {
+            return $sessionValue;
+        }
+
+        $value = 'fb.1.' . time() . '.' . random_int(1000000000, 9999999999);
+        Session::put('facebook_fbp', $value);
+        Cookie::queue(cookie('_fbp', $value, 60 * 24 * 90, '/', null, request()->isSecure(), false, false, 'Lax'));
+
+        return $value;
     }
 
     private function fbc(): ?string
