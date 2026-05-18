@@ -14,6 +14,8 @@ use Illuminate\Support\Str;
 
 class FacebookConversionApi
 {
+    private const IDENTITY_COOKIE = 'facebook_identity';
+
     public function trackPurchase(
         Order $order,
         array $cart,
@@ -676,7 +678,50 @@ class FacebookConversionApi
 
         if (!empty($identity)) {
             Session::put('facebook_checkout_identity', $identity);
+            $this->rememberPersistentIdentity($identity);
         }
+    }
+
+    public function rememberAuthenticatedIdentity(): void
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return;
+        }
+
+        $identity = array_filter([
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'first_name' => $user->first_name,
+            'last_name' => $user->last_name,
+            'city' => $user->bill_city ?? $user->ship_city,
+            'state' => $user->bill_province ?? $user->ship_province,
+            'zip' => $user->bill_zip ?? $user->ship_zip,
+            'country' => $user->bill_country ?? $user->ship_country,
+            'external_id' => 'user_' . $user->id,
+        ]);
+
+        if (!empty($identity)) {
+            $this->rememberPersistentIdentity($identity);
+        }
+    }
+
+    public function persistentIdentity(): array
+    {
+        $identity = request()->cookie(self::IDENTITY_COOKIE);
+
+        if (is_array($identity)) {
+            return array_filter($identity);
+        }
+
+        if (!is_string($identity) || trim($identity) === '') {
+            return [];
+        }
+
+        $decoded = json_decode($identity, true);
+
+        return is_array($decoded) ? array_filter($decoded) : [];
     }
 
     public function rememberClickIdsFromRequest(): void
@@ -690,26 +735,48 @@ class FacebookConversionApi
         $billingInfo = $context['billing'] ?? Session::get('billing_address', []);
         $shippingInfo = $context['shipping'] ?? Session::get('shipping_address', []);
         $sessionIdentity = Session::get('facebook_checkout_identity', []);
+        $persistentIdentity = $context['persistent_identity'] ?? $this->persistentIdentity();
         $user = $context['user'] ?? auth()->user();
         $email = $context['email'] ?? null;
         $phone = $context['phone'] ?? null;
-        $externalId = $context['external_id'] ?? ($user ? 'user_' . $user->id : ($sessionIdentity['email'] ?? $billingInfo['bill_email'] ?? null));
+        $externalId = $context['external_id'] ?? ($user ? 'user_' . $user->id : ($sessionIdentity['email'] ?? $persistentIdentity['external_id'] ?? $persistentIdentity['email'] ?? $billingInfo['bill_email'] ?? null));
 
         return array_filter([
-            'em' => $this->hashEmail($email ?: ($billingInfo['bill_email'] ?? $shippingInfo['ship_email'] ?? $sessionIdentity['email'] ?? optional($user)->email)),
-            'ph' => $this->hashPhone($phone ?: ($billingInfo['bill_phone'] ?? $shippingInfo['ship_phone'] ?? $sessionIdentity['phone'] ?? optional($user)->phone)),
-            'fn' => $this->hashText($billingInfo['bill_first_name'] ?? $shippingInfo['ship_first_name'] ?? $sessionIdentity['first_name'] ?? optional($user)->first_name),
-            'ln' => $this->hashText($billingInfo['bill_last_name'] ?? $shippingInfo['ship_last_name'] ?? $sessionIdentity['last_name'] ?? optional($user)->last_name),
-            'ct' => $this->hashText($billingInfo['bill_city'] ?? $shippingInfo['ship_city'] ?? $sessionIdentity['city'] ?? optional($user)->bill_city ?? optional($user)->ship_city),
-            'st' => $this->hashText($this->stateValue($billingInfo, $shippingInfo, $user) ?? ($sessionIdentity['state'] ?? null)),
-            'zp' => $this->hashText($billingInfo['bill_zip'] ?? $shippingInfo['ship_zip'] ?? $sessionIdentity['zip'] ?? optional($user)->bill_zip ?? optional($user)->ship_zip),
-            'country' => $this->hashCountry($billingInfo['bill_country'] ?? $shippingInfo['ship_country'] ?? $sessionIdentity['country'] ?? optional($user)->bill_country ?? optional($user)->ship_country),
+            'em' => $this->hashEmail($email ?: ($billingInfo['bill_email'] ?? $shippingInfo['ship_email'] ?? $sessionIdentity['email'] ?? $persistentIdentity['email'] ?? optional($user)->email)),
+            'ph' => $this->hashPhone($phone ?: ($billingInfo['bill_phone'] ?? $shippingInfo['ship_phone'] ?? $sessionIdentity['phone'] ?? $persistentIdentity['phone'] ?? optional($user)->phone)),
+            'fn' => $this->hashText($billingInfo['bill_first_name'] ?? $shippingInfo['ship_first_name'] ?? $sessionIdentity['first_name'] ?? $persistentIdentity['first_name'] ?? optional($user)->first_name),
+            'ln' => $this->hashText($billingInfo['bill_last_name'] ?? $shippingInfo['ship_last_name'] ?? $sessionIdentity['last_name'] ?? $persistentIdentity['last_name'] ?? optional($user)->last_name),
+            'ct' => $this->hashText($billingInfo['bill_city'] ?? $shippingInfo['ship_city'] ?? $sessionIdentity['city'] ?? $persistentIdentity['city'] ?? optional($user)->bill_city ?? optional($user)->ship_city),
+            'st' => $this->hashText($this->stateValue($billingInfo, $shippingInfo, $user) ?? ($sessionIdentity['state'] ?? $persistentIdentity['state'] ?? null)),
+            'zp' => $this->hashText($billingInfo['bill_zip'] ?? $shippingInfo['ship_zip'] ?? $sessionIdentity['zip'] ?? $persistentIdentity['zip'] ?? optional($user)->bill_zip ?? optional($user)->ship_zip),
+            'country' => $this->hashCountry($billingInfo['bill_country'] ?? $shippingInfo['ship_country'] ?? $sessionIdentity['country'] ?? $persistentIdentity['country'] ?? optional($user)->bill_country ?? optional($user)->ship_country),
             'external_id' => $this->hashText($externalId),
             'client_ip_address' => $context['client_ip_address'] ?? request()->ip(),
             'client_user_agent' => $context['client_user_agent'] ?? request()->header('User-Agent'),
             'fbp' => $this->fbp(),
             'fbc' => $this->fbc(),
         ]);
+    }
+
+    private function rememberPersistentIdentity(array $identity): void
+    {
+        $payload = array_filter(array_merge($this->persistentIdentity(), $identity));
+
+        if (empty($payload)) {
+            return;
+        }
+
+        Cookie::queue(cookie(
+            self::IDENTITY_COOKIE,
+            json_encode($payload),
+            60 * 24 * 90,
+            '/',
+            null,
+            request()->isSecure(),
+            true,
+            false,
+            'Lax'
+        ));
     }
 
     private function fbp(): ?string
