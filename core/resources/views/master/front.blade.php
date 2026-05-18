@@ -1106,12 +1106,45 @@ src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&e
                 'click'
             ).replace(/\s+/g, ' ').trim().slice(0, 120);
 
-            window.paTrack('SiteClick', {
+            var siteClickEventId = 'siteclick_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
+            var siteClickPayload = {
                 event_category: 'engagement',
                 event_label: label,
                 link_url: element.href || '',
                 page_location: window.location.href
-            }, 'select_content', { metaMethod: 'trackCustom' });
+            };
+
+            window.paTrack('SiteClick', siteClickPayload, 'select_content', {
+                metaMethod: 'trackCustom',
+                eventId: siteClickEventId
+            });
+
+            try {
+                var csrfTokenTag = document.querySelector('meta[name="csrf-token"]');
+                var csrfToken = (csrfTokenTag ? csrfTokenTag.getAttribute('content') : '') || @json(csrf_token());
+
+                if (window.fetch && csrfToken) {
+                    window.fetch(@json(route('front.tracking.site_click')), {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        keepalive: true,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({
+                            event_id: siteClickEventId,
+                            event_category: siteClickPayload.event_category,
+                            event_label: siteClickPayload.event_label,
+                            link_url: siteClickPayload.link_url,
+                            page_location: siteClickPayload.page_location
+                        })
+                    }).catch(function () {});
+                }
+            } catch (error) {
+                console.warn('Site click CAPI sync failed', error);
+            }
         }, true);
     }
 })(window, document);
