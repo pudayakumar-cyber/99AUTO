@@ -942,11 +942,15 @@
 <!-- #metapixelscript -->
 @if (!($setting->is_facebook_pixel == '1' && trim((string) $setting->facebook_pixel) !== ''))
 @php
+    $facebookApi = new \App\Services\FacebookConversionApi();
+    $facebookApi->rememberAuthenticatedIdentity();
+    $facebookApi->rememberClickIdsFromRequest();
     $metaAdvancedMatching = [];
     $metaUser = Auth::user();
     $metaBilling = Session::get('billing_address', []);
     $metaShipping = Session::get('shipping_address', []);
     $metaCheckoutIdentity = Session::get('facebook_checkout_identity', []);
+    $metaPersistentIdentity = $facebookApi->persistentIdentity();
     $metaNormalize = function ($value) {
         $value = preg_replace('/\s+/', '', strtolower(trim((string) $value)));
         return $value === '' ? null : hash('sha256', $value);
@@ -972,19 +976,18 @@
         return $metaNormalize($countries[$value] ?? $value);
     };
     $metaAdvancedMatching = array_filter([
-        'em' => $metaNormalizeEmail($metaBilling['bill_email'] ?? $metaShipping['ship_email'] ?? $metaCheckoutIdentity['email'] ?? optional($metaUser)->email),
-        'ph' => $metaNormalizePhone($metaBilling['bill_phone'] ?? $metaShipping['ship_phone'] ?? $metaCheckoutIdentity['phone'] ?? optional($metaUser)->phone),
-        'fn' => $metaNormalize($metaBilling['bill_first_name'] ?? $metaShipping['ship_first_name'] ?? $metaCheckoutIdentity['first_name'] ?? optional($metaUser)->first_name),
-        'ln' => $metaNormalize($metaBilling['bill_last_name'] ?? $metaShipping['ship_last_name'] ?? $metaCheckoutIdentity['last_name'] ?? optional($metaUser)->last_name),
-        'ct' => $metaNormalize($metaBilling['bill_city'] ?? $metaShipping['ship_city'] ?? $metaCheckoutIdentity['city'] ?? optional($metaUser)->bill_city ?? optional($metaUser)->ship_city),
-        'st' => $metaNormalize($metaBilling['bill_province'] ?? $metaShipping['ship_province'] ?? $metaCheckoutIdentity['state'] ?? optional($metaUser)->bill_province ?? optional($metaUser)->ship_province),
-        'zp' => $metaNormalize($metaBilling['bill_zip'] ?? $metaShipping['ship_zip'] ?? $metaCheckoutIdentity['zip'] ?? optional($metaUser)->bill_zip ?? optional($metaUser)->ship_zip),
-        'country' => $metaNormalizeCountry($metaBilling['bill_country'] ?? $metaShipping['ship_country'] ?? $metaCheckoutIdentity['country'] ?? optional($metaUser)->bill_country ?? optional($metaUser)->ship_country),
-        'external_id' => $metaNormalize($metaUser ? 'user_' . $metaUser->id : ($metaCheckoutIdentity['email'] ?? $metaBilling['bill_email'] ?? null)),
+        'em' => $metaNormalizeEmail($metaBilling['bill_email'] ?? $metaShipping['ship_email'] ?? $metaCheckoutIdentity['email'] ?? ($metaPersistentIdentity['email'] ?? null) ?? optional($metaUser)->email),
+        'ph' => $metaNormalizePhone($metaBilling['bill_phone'] ?? $metaShipping['ship_phone'] ?? $metaCheckoutIdentity['phone'] ?? ($metaPersistentIdentity['phone'] ?? null) ?? optional($metaUser)->phone),
+        'fn' => $metaNormalize($metaBilling['bill_first_name'] ?? $metaShipping['ship_first_name'] ?? $metaCheckoutIdentity['first_name'] ?? ($metaPersistentIdentity['first_name'] ?? null) ?? optional($metaUser)->first_name),
+        'ln' => $metaNormalize($metaBilling['bill_last_name'] ?? $metaShipping['ship_last_name'] ?? $metaCheckoutIdentity['last_name'] ?? ($metaPersistentIdentity['last_name'] ?? null) ?? optional($metaUser)->last_name),
+        'ct' => $metaNormalize($metaBilling['bill_city'] ?? $metaShipping['ship_city'] ?? $metaCheckoutIdentity['city'] ?? ($metaPersistentIdentity['city'] ?? null) ?? optional($metaUser)->bill_city ?? optional($metaUser)->ship_city),
+        'st' => $metaNormalize($metaBilling['bill_province'] ?? $metaShipping['ship_province'] ?? $metaCheckoutIdentity['state'] ?? ($metaPersistentIdentity['state'] ?? null) ?? optional($metaUser)->bill_province ?? optional($metaUser)->ship_province),
+        'zp' => $metaNormalize($metaBilling['bill_zip'] ?? $metaShipping['ship_zip'] ?? $metaCheckoutIdentity['zip'] ?? ($metaPersistentIdentity['zip'] ?? null) ?? optional($metaUser)->bill_zip ?? optional($metaUser)->ship_zip),
+        'country' => $metaNormalizeCountry($metaBilling['bill_country'] ?? $metaShipping['ship_country'] ?? $metaCheckoutIdentity['country'] ?? ($metaPersistentIdentity['country'] ?? null) ?? optional($metaUser)->bill_country ?? optional($metaUser)->ship_country),
+        'external_id' => $metaNormalize($metaUser ? 'user_' . $metaUser->id : ($metaCheckoutIdentity['email'] ?? $metaBilling['bill_email'] ?? ($metaPersistentIdentity['external_id'] ?? $metaPersistentIdentity['email'] ?? null))),
     ]);
     $metaPageViewEventId = 'pageview_' . (string) \Illuminate\Support\Str::uuid();
     $metaPageViewUrl = url()->current();
-    (new \App\Services\FacebookConversionApi())->rememberClickIdsFromRequest();
     app()->terminating(function () use ($metaPageViewEventId, $metaPageViewUrl) {
         (new \App\Services\FacebookConversionApi())->trackPageView($metaPageViewEventId, $metaPageViewUrl);
     });
