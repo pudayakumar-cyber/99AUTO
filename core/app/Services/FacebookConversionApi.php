@@ -257,9 +257,9 @@ class FacebookConversionApi
         }
     }
 
-    public function trackViewContent(Item $item, string $eventId): bool
+    public function trackViewContent(Item $item, string $eventId, bool $allowAjaxTracking = false): bool
     {
-        if (!$this->shouldTrackBrowserEvent()) {
+        if (!$allowAjaxTracking && !$this->shouldTrackBrowserEvent()) {
             Log::info('Facebook CAPI ViewContent skipped: non-browser request.', [
                 'item_id' => $item->id,
                 'event_id' => $eventId,
