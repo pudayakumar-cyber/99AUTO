@@ -66,6 +66,11 @@ class CartController extends Controller
                     'payload' => [
                         'content_type' => 'product',
                         'content_ids' => [(string) $item->id],
+                        'contents' => [[
+                            'id' => (string) $item->id,
+                            'quantity' => $quantity,
+                            'item_price' => $price,
+                        ]],
                         'content_name' => (string) $item->name,
                         'content_category' => (string) optional($item->category)->name,
                         'value' => $price * $quantity,

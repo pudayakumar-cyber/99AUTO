@@ -615,10 +615,12 @@ class FrontendController extends Controller
         }
 
         if (!Session::get('facebook_capi_view_content_sent_' . $eventId)) {
-            Session::put('facebook_capi_view_content_sent_' . $eventId, true);
-
             app()->terminating(function () use ($item, $eventId) {
-                (new FacebookConversionApi())->trackViewContent($item, $eventId);
+                $sent = (new FacebookConversionApi())->trackViewContent($item, $eventId, true);
+
+                if ($sent) {
+                    Session::put('facebook_capi_view_content_sent_' . $eventId, true);
+                }
             });
         }
 

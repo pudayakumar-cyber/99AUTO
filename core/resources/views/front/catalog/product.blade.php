@@ -1142,6 +1142,12 @@ document.addEventListener('DOMContentLoaded', function () {
     var productPayload = {
         content_type: 'product',
         content_ids: [@json((string)($item->id ?? $item->prod_number ?? ''))],
+        contents: [{
+            id: @json((string)($item->id ?? $item->prod_number ?? '')),
+            quantity: 1,
+            item_price: {{ (float) ($item->discount_price ?? $item->previous_price ?? 0) }}
+        }],
+        num_items: 1,
         content_name: @json($item->name ?? ''),
         content_category: @json(optional($item->category)->name ?? ''),
         value: {{ (float) ($item->discount_price ?? $item->previous_price ?? 0) }},
