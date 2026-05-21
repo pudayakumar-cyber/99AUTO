@@ -96,6 +96,10 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
+    if (!@json($fire_purchase_event ?? false)) {
+        return;
+    }
+
     if (typeof window.gtag === 'function' && Object.keys(@json($googleEnhancedConversionData)).length) {
         window.gtag('set', 'user_data', @json($googleEnhancedConversionData));
     }
