@@ -797,10 +797,15 @@ class CheckoutController extends Controller
             $currency = $purchaseTracking['currency'];
             $num_items = $purchaseTracking['num_items'];
             $event_id = $purchaseTracking['event_id'];
+            $fire_purchase_event = !Session::get('facebook_browser_purchase_sent_' . $order->id);
 
             $marketingTracker->trackPurchase($order, $cart, $event_id);
 
-            return view('front.checkout.success', compact('order', 'cart', 'cart_content_ids', 'order_value', 'currency', 'num_items', 'event_id'));
+            if ($fire_purchase_event) {
+                Session::put('facebook_browser_purchase_sent_' . $order->id, true);
+            }
+
+            return view('front.checkout.success', compact('order', 'cart', 'cart_content_ids', 'order_value', 'currency', 'num_items', 'event_id', 'fire_purchase_event'));
         }
         return redirect()->route('front.index');
     }
