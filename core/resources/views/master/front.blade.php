@@ -919,7 +919,24 @@
         {!! $setting->facebook_pixel !!}
     @endif
     {{-- Facebook pixel End --}}
-@if (!($setting->is_google_analytics == '1' && trim((string) $setting->google_analytics) !== ''))
+@if (config('services.google.tag_manager_id'))
+<!-- Google Tag Manager -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({
+    event: 'pa_gtm_loaded',
+    page_location: window.location.href,
+    page_title: document.title
+  });
+  (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','{{ config('services.google.tag_manager_id') }}');
+</script>
+<!-- End Google Tag Manager -->
+@endif
+@if (!config('services.google.tag_manager_id') && !($setting->is_google_analytics == '1' && trim((string) $setting->google_analytics) !== ''))
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id={{ config('services.google.analytics_id') }}"></script>
 <script>
@@ -1056,10 +1073,18 @@ src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&e
 
         try {
             window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({ ecommerce: null });
             window.dataLayer.push({
                 event: googleEvent || metaEvent,
+                event_id: options.eventId || payload.event_id || null,
+                event_source: 'website',
+                google_event: googleEvent || null,
                 meta_event: metaEvent,
+                meta_method: options.metaMethod || 'track',
+                meta_event_id: options.eventId || payload.event_id || null,
                 google_ads_send_to: options.googleAdsSendTo || null,
+                page_location: window.location.href,
+                page_title: document.title,
                 ecommerce: payload
             });
         } catch (error) {
@@ -1170,6 +1195,12 @@ body_theme3
 @elseif($setting->theme == 'theme4')
 body_theme4 @endif
 ">
+    @if (config('services.google.tag_manager_id'))
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id={{ config('services.google.tag_manager_id') }}"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+    @endif
     @if ($setting->is_loader == 1)
         <!-- Preloader Start -->
         @if ($setting->is_loader == 1)
