@@ -24,6 +24,7 @@ use App\Models\Setting;
 use App\Models\ShippingService;
 use App\Models\State;
 use App\Services\FacebookConversionApi;
+use App\Services\OrderMarketingTracker;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
@@ -110,12 +111,10 @@ class CheckoutController extends Controller
         $data['tax'] = $total_tax;
         $data['payments'] = PaymentSetting::whereStatus(1)->get();
 
-        $this->trackInitiateCheckout($cart, $cart_total);
-
         return view('front.checkout.index', $data);
     }
 
-    public function ship_address()
+    public function ship_address(Request $request)
     {
         $setting = Setting::first();
         if ($setting->is_single_checkout == 1) {
@@ -174,7 +173,21 @@ class CheckoutController extends Controller
         $data['tax'] = $total_tax;
         $data['payments'] = PaymentSetting::whereStatus(1)->get();
 
-        $this->trackInitiateCheckout($cart, $cart_total);
+        $initiateCheckoutEventId = $request->query('ic_event_id');
+        if ($initiateCheckoutEventId && !Session::get('facebook_capi_initiate_checkout_sent_' . $initiateCheckoutEventId)) {
+            app()->terminating(function () use ($cart, $initiateCheckoutEventId, $total_amount) {
+                $sent = (new FacebookConversionApi())->trackInitiateCheckout(
+                    $cart,
+                    $initiateCheckoutEventId,
+                    (float) $total_amount,
+                    'CAD'
+                );
+
+                if ($sent) {
+                    Session::put('facebook_capi_initiate_checkout_sent_' . $initiateCheckoutEventId, true);
+                }
+            });
+        }
 
         return view('front.checkout.billing', $data);
     }
@@ -194,19 +207,9 @@ class CheckoutController extends Controller
             'bill_zip' => 'required',
         ]);
 
-        Session::put('guest_meta_details', [
-            'email' => $request->bill_email,
-            'phone' => $request->bill_phone,
-            'first_name' => $request->bill_first_name,
-            'last_name' => $request->bill_last_name,
-            'city' => $request->bill_city,
-            'province' => $request->bill_province,
-            'zip' => $request->bill_zip,
-            'country' => $request->bill_country ?? 'Canada',
-        ]);
-
         if ($request->same_ship_address) {
-            Session::put('billing_address', $request->all());
+            $billingAddress = $request->all();
+            Session::put('billing_address', $billingAddress);
 
             if (PriceHelper::CheckDigital()) {
                 $shipping = [
@@ -230,9 +233,12 @@ class CheckoutController extends Controller
                 ];
             }
             Session::put('shipping_address', $shipping);
+            (new FacebookConversionApi())->rememberCheckoutIdentity($billingAddress, $shipping);
         } else {
-            Session::put('billing_address', $request->all());
+            $billingAddress = $request->all();
+            Session::put('billing_address', $billingAddress);
             Session::forget('shipping_address');
+            (new FacebookConversionApi())->rememberCheckoutIdentity($billingAddress);
         }
 
         if (Session::has('shipping_address')) {
@@ -310,50 +316,10 @@ class CheckoutController extends Controller
             'ship_city' => 'required',
         ]);
 
-        $guestMeta = Session::get('guest_meta_details', []);
-        Session::put('guest_meta_details', array_merge($guestMeta, [
-            'email' => $request->ship_email,
-            'phone' => $request->ship_phone,
-            'first_name' => $request->ship_first_name,
-            'last_name' => $request->ship_last_name,
-            'city' => $request->ship_city,
-            'province' => $request->ship_province,
-            'zip' => $request->ship_zip,
-            'country' => $request->ship_country ?? $guestMeta['country'] ?? 'Canada',
-        ]));
-
-        Session::put('shipping_address', $request->all());
+        $shippingAddress = $request->all();
+        Session::put('shipping_address', $shippingAddress);
+        (new FacebookConversionApi())->rememberCheckoutIdentity(Session::get('billing_address', []), $shippingAddress);
         return redirect(route('front.checkout.payment'));
-    }
-
-    private function trackInitiateCheckout($cart, $cartTotal): void
-    {
-        $eventId = Session::get('checkout_event_id');
-        if (!$eventId) {
-            $eventId = 'checkout_' . uniqid();
-            Session::put('checkout_event_id', $eventId);
-        }
-
-        try {
-            $checkoutContents = [];
-            foreach ($cart as $key => $item) {
-                $checkoutContents[] = [
-                    'id' => (string) ($item['id'] ?? $key),
-                    'quantity' => (int) ($item['qty'] ?? 1),
-                    'item_price' => (float) ($item['main_price'] ?? 0),
-                ];
-            }
-
-            (new FacebookConversionApi())->trackEvent('InitiateCheckout', [
-                'content_type' => 'product',
-                'value' => (float) $cartTotal,
-                'currency' => 'CAD',
-                'contents' => $checkoutContents,
-                'num_items' => count($cart),
-            ], $eventId);
-        } catch (\Throwable $e) {
-            // Tracking must not block checkout.
-        }
     }
 
 
@@ -415,6 +381,107 @@ class CheckoutController extends Controller
         $data['tax'] = $total_tax;
         $data['payments'] = PaymentSetting::whereStatus(1)->get();
         return view('front.checkout.payment', $data);
+    }
+
+    public function trackAddPaymentInfo(Request $request)
+    {
+        if (!Session::has('cart')) {
+            return response()->json(['status' => false, 'message' => 'Cart not found.'], 422);
+        }
+
+        $cart = Session::get('cart');
+        $eventId = $request->input('event_id') ?: (new FacebookConversionApi())->addPaymentInfoEventId();
+        $currency = $request->input('currency', 'CAD');
+        $paymentType = $request->input('payment_type', 'Stripe');
+        $value = (float) $request->input('value', 0);
+        $contentIds = [];
+        $contents = [];
+        $numItems = 0;
+
+        foreach ($cart as $key => $item) {
+            $quantity = max(1, (int) ($item['qty'] ?? 1));
+            $itemId = (string) ($item['id'] ?? $item['item_id'] ?? explode('-', (string) $key)[0]);
+            $price = (float) ($item['main_price'] ?? $item['price'] ?? 0);
+
+            $contentIds[] = $itemId;
+            $contents[] = [
+                'id' => $itemId,
+                'quantity' => $quantity,
+                'item_price' => $price,
+            ];
+            $numItems += $quantity;
+
+            if ($value <= 0) {
+                $value += $price * $quantity;
+            }
+        }
+
+        if (!Session::get('facebook_capi_add_payment_info_sent_' . $eventId)) {
+            Session::put('facebook_capi_add_payment_info_sent_' . $eventId, true);
+
+            app()->terminating(function () use ($cart, $eventId, $value, $currency, $paymentType) {
+                (new FacebookConversionApi())->trackAddPaymentInfo(
+                    $cart,
+                    $eventId,
+                    (float) $value,
+                    (string) $currency,
+                    (string) $paymentType
+                );
+            });
+        }
+
+        return response()->json([
+            'status' => true,
+            'tracking' => [
+                'event_id' => $eventId,
+                'meta_event' => 'AddPaymentInfo',
+                'google_event' => 'add_payment_info',
+                'payload' => [
+                    'content_type' => 'product',
+                    'content_ids' => $contentIds,
+                    'value' => $value,
+                    'currency' => $currency,
+                    'payment_type' => $paymentType,
+                    'contents' => $contents,
+                    'items' => $contents,
+                    'num_items' => $numItems,
+                    'event_id' => $eventId,
+                ],
+            ],
+        ]);
+    }
+
+    public function trackSiteClick(Request $request)
+    {
+        if (!config('services.facebook.site_click_tracking')) {
+            return response()->json(['status' => false, 'message' => 'Site click tracking disabled.'], 404);
+        }
+
+        $facebookApi = new FacebookConversionApi();
+        $eventId = $request->input('event_id') ?: $facebookApi->siteClickEventId();
+        $payload = [
+            'event_category' => $request->input('event_category', 'engagement'),
+            'event_label' => $request->input('event_label'),
+            'link_url' => $request->input('link_url'),
+            'page_location' => $request->input('page_location', url()->current()),
+        ];
+
+        if (!Session::get('facebook_capi_site_click_sent_' . $eventId)) {
+            Session::put('facebook_capi_site_click_sent_' . $eventId, true);
+
+            app()->terminating(function () use ($facebookApi, $eventId, $payload) {
+                $facebookApi->trackSiteClick($eventId, $payload);
+            });
+        }
+
+        return response()->json([
+            'status' => true,
+            'tracking' => [
+                'event_id' => $eventId,
+                'meta_event' => 'SiteClick',
+                'payload' => $payload,
+            ],
+        ]);
     }
 
     public function checkout(PaymentRequest $request)
@@ -722,36 +789,23 @@ class CheckoutController extends Controller
                 }
             }
 
-            // Prepare Facebook Pixel data
-            $cart_content_ids = [];
-            $num_items = 0;
-            foreach ($cart as $key => $item) {
-                $cart_content_ids[] = (string)$key;
-                $num_items += $item['qty'];
+            $marketingTracker = new OrderMarketingTracker();
+            $purchaseTracking = $marketingTracker->preparePurchaseViewData($order);
+            $cart = $purchaseTracking['cart'];
+            $cart_content_ids = $purchaseTracking['cart_content_ids'];
+            $order_value = $purchaseTracking['order_value'];
+            $currency = $purchaseTracking['currency'];
+            $num_items = $purchaseTracking['num_items'];
+            $event_id = $purchaseTracking['event_id'];
+            $fire_purchase_event = !Session::get('facebook_browser_purchase_sent_' . $order->id);
+
+            $marketingTracker->trackPurchase($order, $cart, $event_id);
+
+            if ($fire_purchase_event) {
+                Session::put('facebook_browser_purchase_sent_' . $order->id, true);
             }
 
-            $order_value = PriceHelper::OrderTotal($order, 'trns');
-            $currency = $order->currency_sign ?? 'CAD';
-            $event_id = (new FacebookConversionApi())->purchaseEventId($order);
-
-            if (!Session::get('facebook_capi_purchase_sent_' . $order->id)) {
-                $billingInfo = json_decode($order->billing_info, true) ?: [];
-                $sent = (new FacebookConversionApi())->trackPurchase(
-                    $order,
-                    $cart,
-                    $billingInfo['bill_email'] ?? EmailHelper::getEmail(),
-                    $billingInfo['bill_phone'] ?? null,
-                    request()->ip(),
-                    request()->header('User-Agent'),
-                    $event_id
-                );
-
-                if ($sent) {
-                    Session::put('facebook_capi_purchase_sent_' . $order->id, true);
-                }
-            }
-
-            return view('front.checkout.success', compact('order', 'cart', 'cart_content_ids', 'order_value', 'currency', 'num_items', 'event_id'));
+            return view('front.checkout.success', compact('order', 'cart', 'cart_content_ids', 'order_value', 'currency', 'num_items', 'event_id', 'fire_purchase_event'));
         }
         return redirect()->route('front.index');
     }

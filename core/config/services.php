@@ -38,9 +38,12 @@ return [
     'facebook' => [
         'pixel_id' => env('FACEBOOK_PIXEL_ID', '2388576101564001'),
         'conversion_api_token' => env('FACEBOOK_CONVERSION_API_TOKEN'),
+        'test_event_code' => env('FACEBOOK_TEST_EVENT_CODE'),
+        'site_click_tracking' => env('FACEBOOK_SITE_CLICK_TRACKING', false),
     ],
 
     'google' => [
+        'tag_manager_id' => env('GOOGLE_TAG_MANAGER_ID'),
         'analytics_id' => env('GOOGLE_ANALYTICS_ID', 'G-Z486T545YD'),
         'ads_conversion_id' => env('GOOGLE_ADS_CONVERSION_ID', '17081986841'),
         'ads_purchase_label' => env('GOOGLE_ADS_PURCHASE_LABEL', 'HVZVCO7D3McaEJneqdE_'),

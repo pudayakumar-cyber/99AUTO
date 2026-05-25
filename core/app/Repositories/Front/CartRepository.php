@@ -201,21 +201,7 @@ class CartRepository
                 Session::put('coupon', $coupon);
             }
 
-            $itemPayload = $this->marketingPayload($item, $qty);
-            $eventId = isset($input['event_id']) ? $input['event_id'] : 'cart_' . $item->id . '_' . uniqid();
-
-            try {
-                (new \App\Services\FacebookConversionApi())->trackEvent('AddToCart', $itemPayload, $eventId);
-            } catch (\Throwable $e) {
-                // Tracking must not block cart updates.
-            }
-
-            $mgs = [
-                'message' => __('Product add successfully'),
-                'qty' => count(Session::get('cart')),
-                'item_payload' => $itemPayload,
-                'event_id' => $eventId,
-            ];
+            $mgs = ['message' => __('Product add successfully'), 'qty' => count(Session::get('cart'))];
             return $mgs;
         }
 
@@ -260,39 +246,18 @@ class CartRepository
 
 
 
-            $itemPayload = $this->marketingPayload($item, $qty);
-            $eventId = isset($input['event_id']) ? $input['event_id'] : 'cart_' . $item->id . '_' . uniqid();
-
-            try {
-                (new \App\Services\FacebookConversionApi())->trackEvent('AddToCart', $itemPayload, $eventId);
-            } catch (\Throwable $e) {
-                // Tracking must not block cart updates.
+            if ($qty_check == 1) {
+                $mgs = ['message' => __('Product add successfully'), 'qty' => count(Session::get('cart'))];
+            } else {
+                $mgs = ['message' => __('Product add successfully'), 'qty' => count(Session::get('cart'))];
             }
 
             $qty_check = 0;
-            return [
-                'message' => __('Product add successfully'),
-                'qty' => count(Session::get('cart')),
-                'item_payload' => $itemPayload,
-                'event_id' => $eventId,
-            ];
+            return $mgs;
         }
 
-        $itemPayload = $this->marketingPayload($item, $qty);
-        $eventId = isset($input['event_id']) ? $input['event_id'] : 'cart_' . $item->id . '_' . uniqid();
-
-        try {
-            (new \App\Services\FacebookConversionApi())->trackEvent('AddToCart', $itemPayload, $eventId);
-        } catch (\Throwable $e) {
-            // Tracking must not block cart updates.
-        }
-
-        return [
-            'message' => __('Product add successfully'),
-            'qty' => count(Session::get('cart')),
-            'item_payload' => $itemPayload,
-            'event_id' => $eventId,
-        ];
+        $mgs = ['message' => __('Product add successfully'), 'qty' => count(Session::get('cart'))];
+        return $mgs;
     }
 
     public function promoStore($request)
@@ -346,29 +311,6 @@ class CartRepository
         return [
             'sub' => $sub,
             'total' => $total
-        ];
-    }
-
-    private function marketingPayload($item, int $qty): array
-    {
-        $price = (float) ($item->discount_price ?? $item->previous_price ?? 0);
-
-        return [
-            'content_type' => 'product',
-            'content_ids' => [(string) ($item->id ?? $item->prod_number ?? '')],
-            'content_name' => $item->name ?? '',
-            'content_category' => optional($item->category)->name ?? '',
-            'value' => $price * $qty,
-            'currency' => 'CAD',
-            'num_items' => $qty,
-            'quantity' => $qty,
-            'items' => [[
-                'item_id' => (string) ($item->id ?? $item->prod_number ?? ''),
-                'item_name' => $item->name ?? '',
-                'item_category' => optional($item->category)->name ?? '',
-                'price' => $price,
-                'quantity' => $qty,
-            ]],
         ];
     }
 }

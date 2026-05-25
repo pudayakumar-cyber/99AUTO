@@ -1092,16 +1092,7 @@ $(function ($) {
             }
 
             if (status == 1) {
-                let fbEventId = '';
-                if (check != 0) {
-                    fbEventId = $('.add_to_single_cart[data-target="' + check + '"]').attr('data-fb-event-id') || '';
-                } else {
-                    fbEventId = $('#add_to_cart').attr('data-fb-event-id') || '';
-                }
-                if (!fbEventId) {
-                    fbEventId = 'cart_' + itemId + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                }
-                let addToCartUrl = `${mainurl}/product/add/cart?item_id=${itemId}&options_ids=${options_ids}&attribute_ids=${attribute_ids}&quantity=${quantity}&type=${type}&item_key=${item_key}&add_type=${add_type}&event_id=${fbEventId}`;
+                let addToCartUrl = `${mainurl}/product/add/cart?item_id=${itemId}&options_ids=${options_ids}&attribute_ids=${attribute_ids}&quantity=${quantity}&type=${type}&item_key=${item_key}&add_type=${add_type}`;
                 $.ajax({
                     method: "GET",
                     contentType: false,
@@ -1117,6 +1108,14 @@ $(function ($) {
                             dangerNotification(data.message);
                         }
                         else {
+                            if (data.tracking && typeof window.paTrack === 'function') {
+                                window.paTrack(
+                                    data.tracking.meta_event,
+                                    data.tracking.payload,
+                                    data.tracking.google_event,
+                                    { eventId: data.tracking.event_id }
+                                );
+                            }
                             $(".cart_count").text(data.qty);
                             $(".cart_view_header").load(
                                 $("#header_cart_load").attr("data-target")

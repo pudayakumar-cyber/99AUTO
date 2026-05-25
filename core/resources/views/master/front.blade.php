@@ -919,22 +919,55 @@
         {!! $setting->facebook_pixel !!}
     @endif
     {{-- Facebook pixel End --}}
-@if (!($setting->is_google_analytics == '1' && trim((string) $setting->google_analytics) !== ''))
+@if (config('services.google.tag_manager_id'))
+<!-- Google Tag Manager -->
+<script>
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push({
+    event: 'pa_gtm_loaded',
+    page_location: window.location.href,
+    page_title: document.title
+  });
+  (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','{{ config('services.google.tag_manager_id') }}');
+</script>
+<!-- End Google Tag Manager -->
+@endif
+@if (!config('services.google.tag_manager_id') && !($setting->is_google_analytics == '1' && trim((string) $setting->google_analytics) !== ''))
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id={{ config('services.google.analytics_id') }}"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
+  gtag('consent', 'default', {
+    ad_storage: 'granted',
+    analytics_storage: 'granted',
+    ad_user_data: 'granted',
+    ad_personalization: 'granted'
+  });
   gtag('js', new Date());
 
   gtag('config', '{{ config('services.google.analytics_id') }}');
-  gtag('config', 'AW-{{ config('services.google.ads_conversion_id') }}');
+  gtag('config', 'AW-{{ config('services.google.ads_conversion_id') }}', {
+    allow_enhanced_conversions: true
+  });
 </script>
 @endif
 <!-- #metapixelscript -->
 @if (!($setting->is_facebook_pixel == '1' && trim((string) $setting->facebook_pixel) !== ''))
 @php
+    $facebookApi = new \App\Services\FacebookConversionApi();
+    $facebookApi->rememberAuthenticatedIdentity();
+    $facebookApi->rememberClickIdsFromRequest();
     $metaAdvancedMatching = [];
+    $metaUser = Auth::user();
+    $metaBilling = Session::get('billing_address', []);
+    $metaShipping = Session::get('shipping_address', []);
+    $metaCheckoutIdentity = Session::get('facebook_checkout_identity', []);
+    $metaPersistentIdentity = $facebookApi->persistentIdentity();
     $metaNormalize = function ($value) {
         $value = preg_replace('/\s+/', '', strtolower(trim((string) $value)));
         return $value === '' ? null : hash('sha256', $value);
@@ -959,36 +992,22 @@
         ];
         return $metaNormalize($countries[$value] ?? $value);
     };
-
-    if (Auth::check()) {
-        $metaUser = Auth::user();
-        $metaAdvancedMatching = array_filter([
-            'em' => $metaNormalizeEmail($metaUser->email ?? null),
-            'ph' => $metaNormalizePhone($metaUser->phone ?? null),
-            'fn' => $metaNormalize($metaUser->first_name ?? null),
-            'ln' => $metaNormalize($metaUser->last_name ?? null),
-            'ct' => $metaNormalize($metaUser->bill_city ?? $metaUser->ship_city ?? null),
-            'st' => $metaNormalize($metaUser->bill_province ?? $metaUser->ship_province ?? null),
-            'zp' => $metaNormalize($metaUser->bill_zip ?? $metaUser->ship_zip ?? null),
-            'country' => $metaNormalizeCountry($metaUser->bill_country ?? $metaUser->ship_country ?? null),
-            'external_id' => $metaNormalize('user_' . $metaUser->id),
-        ]);
-    } else {
-        $guestMeta = Session::get('guest_meta_details');
-        if (is_array($guestMeta) && !empty($guestMeta)) {
-            $metaAdvancedMatching = array_filter([
-                'em' => $metaNormalizeEmail($guestMeta['email'] ?? null),
-                'ph' => $metaNormalizePhone($guestMeta['phone'] ?? null),
-                'fn' => $metaNormalize($guestMeta['first_name'] ?? null),
-                'ln' => $metaNormalize($guestMeta['last_name'] ?? null),
-                'ct' => $metaNormalize($guestMeta['city'] ?? null),
-                'st' => $metaNormalize($guestMeta['province'] ?? null),
-                'zp' => $metaNormalize($guestMeta['zip'] ?? null),
-                'country' => $metaNormalizeCountry($guestMeta['country'] ?? null),
-                'external_id' => $metaNormalize($guestMeta['email'] ?? null),
-            ]);
-        }
-    }
+    $metaAdvancedMatching = array_filter([
+        'em' => $metaNormalizeEmail($metaBilling['bill_email'] ?? $metaShipping['ship_email'] ?? $metaCheckoutIdentity['email'] ?? ($metaPersistentIdentity['email'] ?? null) ?? optional($metaUser)->email),
+        'ph' => $metaNormalizePhone($metaBilling['bill_phone'] ?? $metaShipping['ship_phone'] ?? $metaCheckoutIdentity['phone'] ?? ($metaPersistentIdentity['phone'] ?? null) ?? optional($metaUser)->phone),
+        'fn' => $metaNormalize($metaBilling['bill_first_name'] ?? $metaShipping['ship_first_name'] ?? $metaCheckoutIdentity['first_name'] ?? ($metaPersistentIdentity['first_name'] ?? null) ?? optional($metaUser)->first_name),
+        'ln' => $metaNormalize($metaBilling['bill_last_name'] ?? $metaShipping['ship_last_name'] ?? $metaCheckoutIdentity['last_name'] ?? ($metaPersistentIdentity['last_name'] ?? null) ?? optional($metaUser)->last_name),
+        'ct' => $metaNormalize($metaBilling['bill_city'] ?? $metaShipping['ship_city'] ?? $metaCheckoutIdentity['city'] ?? ($metaPersistentIdentity['city'] ?? null) ?? optional($metaUser)->bill_city ?? optional($metaUser)->ship_city),
+        'st' => $metaNormalize($metaBilling['bill_province'] ?? $metaShipping['ship_province'] ?? $metaCheckoutIdentity['state'] ?? ($metaPersistentIdentity['state'] ?? null) ?? optional($metaUser)->bill_province ?? optional($metaUser)->ship_province),
+        'zp' => $metaNormalize($metaBilling['bill_zip'] ?? $metaShipping['ship_zip'] ?? $metaCheckoutIdentity['zip'] ?? ($metaPersistentIdentity['zip'] ?? null) ?? optional($metaUser)->bill_zip ?? optional($metaUser)->ship_zip),
+        'country' => $metaNormalizeCountry($metaBilling['bill_country'] ?? $metaShipping['ship_country'] ?? $metaCheckoutIdentity['country'] ?? ($metaPersistentIdentity['country'] ?? null) ?? optional($metaUser)->bill_country ?? optional($metaUser)->ship_country),
+        'external_id' => $metaNormalize($metaUser ? 'user_' . $metaUser->id : ($metaCheckoutIdentity['email'] ?? $metaBilling['bill_email'] ?? ($metaPersistentIdentity['external_id'] ?? $metaPersistentIdentity['email'] ?? null))),
+    ]);
+    $metaPageViewEventId = 'pageview_' . (string) \Illuminate\Support\Str::uuid();
+    $metaPageViewUrl = url()->current();
+    app()->terminating(function () use ($metaPageViewEventId, $metaPageViewUrl) {
+        (new \App\Services\FacebookConversionApi())->trackPageView($metaPageViewEventId, $metaPageViewUrl);
+    });
 @endphp
 <!-- Meta Pixel Base Code -->
 <script>
@@ -1001,7 +1020,7 @@ t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
 fbq('init', '{{ config('services.facebook.pixel_id') }}'@if(!empty($metaAdvancedMatching)), @json($metaAdvancedMatching)@endif);
-fbq('track', 'PageView');
+fbq('track', 'PageView', {}, { eventID: @json($metaPageViewEventId) });
 </script>
 <noscript><img height="1" width="1" style="display:none"
 src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&ev=PageView&noscript=1"
@@ -1012,16 +1031,60 @@ src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&e
 <!-- #metapixelscript -->
 <script>
 (function (window, document) {
+    function setTrackingCookie(name, value, maxAgeSeconds) {
+        if (!name || !value) {
+            return;
+        }
+
+        var cookie = name + '=' + encodeURIComponent(value) + '; path=/; max-age=' + maxAgeSeconds + '; SameSite=Lax';
+        if (window.location.protocol === 'https:') {
+            cookie += '; Secure';
+        }
+        document.cookie = cookie;
+    }
+
+    try {
+        var hasFbpCookie = document.cookie.split(';').some(function (cookiePart) {
+            return cookiePart.trim().indexOf('_fbp=') === 0;
+        });
+        if (!hasFbpCookie) {
+            setTrackingCookie('_fbp', 'fb.1.' + Math.floor(Date.now() / 1000) + '.' + Math.floor(Math.random() * 10000000000), 7776000);
+        }
+
+        var params = new URLSearchParams(window.location.search);
+        var fbclid = params.get('fbclid');
+        if (fbclid) {
+            setTrackingCookie('_fbc', 'fb.1.' + Math.floor(Date.now() / 1000) + '.' + fbclid, 7776000);
+        }
+
+        ['gclid', 'gbraid', 'wbraid'].forEach(function (name) {
+            var value = params.get(name);
+            if (value) {
+                setTrackingCookie(name, value, 7776000);
+            }
+        });
+    } catch (error) {
+        console.warn('Click id persistence failed', error);
+    }
+
     window.paTrack = function (metaEvent, payload, googleEvent, options) {
         payload = payload || {};
         options = options || {};
 
         try {
             window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({ ecommerce: null });
             window.dataLayer.push({
                 event: googleEvent || metaEvent,
+                event_id: options.eventId || payload.event_id || null,
+                event_source: 'website',
+                google_event: googleEvent || null,
                 meta_event: metaEvent,
+                meta_method: options.metaMethod || 'track',
+                meta_event_id: options.eventId || payload.event_id || null,
                 google_ads_send_to: options.googleAdsSendTo || null,
+                page_location: window.location.href,
+                page_title: document.title,
                 ecommerce: payload
             });
         } catch (error) {
@@ -1053,34 +1116,69 @@ src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&e
         }
     };
 
-    document.addEventListener('click', function (event) {
-        var target = event.target;
-        if (!target || typeof target.closest !== 'function') {
-            return;
-        }
+    if (@json((bool) config('services.facebook.site_click_tracking'))) {
+        document.addEventListener('click', function (event) {
+            var target = event.target;
+            if (!target || typeof target.closest !== 'function') {
+                return;
+            }
 
-        var element = target.closest('a, button, input[type="submit"], input[type="button"], .btn');
+            var element = target.closest('a, button, input[type="submit"], input[type="button"], .btn');
 
-        if (!element || element.closest('[data-pa-track-ignore]')) {
-            return;
-        }
+            if (!element || element.closest('[data-pa-track-ignore]')) {
+                return;
+            }
 
-        var label = (
-            element.getAttribute('data-pa-label') ||
-            element.getAttribute('aria-label') ||
-            element.textContent ||
-            element.value ||
-            element.id ||
-            'click'
-        ).replace(/\s+/g, ' ').trim().slice(0, 120);
+            var label = (
+                element.getAttribute('data-pa-label') ||
+                element.getAttribute('aria-label') ||
+                element.textContent ||
+                element.value ||
+                element.id ||
+                'click'
+            ).replace(/\s+/g, ' ').trim().slice(0, 120);
 
-        window.paTrack('SiteClick', {
-            event_category: 'engagement',
-            event_label: label,
-            link_url: element.href || '',
-            page_location: window.location.href
-        }, 'select_content', { metaMethod: 'trackCustom' });
-    }, true);
+            var siteClickEventId = 'siteclick_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
+            var siteClickPayload = {
+                event_category: 'engagement',
+                event_label: label,
+                link_url: element.href || '',
+                page_location: window.location.href
+            };
+
+            window.paTrack('SiteClick', siteClickPayload, 'select_content', {
+                metaMethod: 'trackCustom',
+                eventId: siteClickEventId
+            });
+
+            try {
+                var csrfTokenTag = document.querySelector('meta[name="csrf-token"]');
+                var csrfToken = (csrfTokenTag ? csrfTokenTag.getAttribute('content') : '') || @json(csrf_token());
+
+                if (window.fetch && csrfToken) {
+                    window.fetch(@json(route('front.tracking.site_click')), {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        keepalive: true,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({
+                            event_id: siteClickEventId,
+                            event_category: siteClickPayload.event_category,
+                            event_label: siteClickPayload.event_label,
+                            link_url: siteClickPayload.link_url,
+                            page_location: siteClickPayload.page_location
+                        })
+                    }).catch(function () {});
+                }
+            } catch (error) {
+                console.warn('Site click CAPI sync failed', error);
+            }
+        }, true);
+    }
 })(window, document);
 </script>
 
@@ -1097,6 +1195,12 @@ body_theme3
 @elseif($setting->theme == 'theme4')
 body_theme4 @endif
 ">
+    @if (config('services.google.tag_manager_id'))
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id={{ config('services.google.tag_manager_id') }}"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+    @endif
     @if ($setting->is_loader == 1)
         <!-- Preloader Start -->
         @if ($setting->is_loader == 1)
@@ -1124,6 +1228,11 @@ body_theme4 @endif
                     </div>
                     <div class="col-md-8">
                         <div class="right-area">
+                            @auth
+                                <a class="track-order-link d-inline-block d-lg-none"
+                                    href="{{ route('user.dashboard') }}"><i
+                                        class="icon-user"></i>{{ __('Dashboard') }}</a>
+                            @endauth
 
                             <a class="track-order-link wishlist-mobile d-inline-block d-lg-none"
                                 href="{{ route('user.wishlist.index') }}"><i
@@ -1266,6 +1375,14 @@ body_theme4 @endif
                                                 class="text-label">{{ __('Compare') }}</span></div>
                                     </a>
                                 </div>
+                                @auth
+                                    <div class="toolbar-item hidden-on-mobile"><a
+                                            href="{{ route('user.dashboard') }}">
+                                            <div><span class="compare-icon"><i class="icon-user"></i></span><span
+                                                    class="text-label">{{ __('Dashboard') }}</span></div>
+                                        </a>
+                                    </div>
+                                @endauth
                                 @if (Auth::check())
                                     <div class="toolbar-item hidden-on-mobile"><a
                                             href="{{ route('user.wishlist.index') }}">
