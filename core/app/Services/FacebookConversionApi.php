@@ -6,9 +6,135 @@ use App\Helpers\PriceHelper;
 use App\Models\Order;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
 
 class FacebookConversionApi
 {
+    public function trackEvent(
+        string $eventName,
+        array $customData = [],
+        ?string $eventId = null,
+        array $userDataOverrides = []
+    ): bool {
+        $pixelId = config('services.facebook.pixel_id');
+        $token = config('services.facebook.conversion_api_token');
+
+        if (!$pixelId || !$token) {
+            Log::info("Facebook CAPI skipped for event '{$eventName}': missing pixel id or token.");
+            return false;
+        }
+
+        $eventId = $eventId ?: 'evt_' . uniqid('', true);
+        $userData = [];
+
+        if (Auth::check()) {
+            $user = Auth::user();
+            $userData['em'] = $this->hashEmail($user->email);
+            $userData['ph'] = $this->hashPhone($user->phone);
+            $userData['fn'] = $this->hashText($user->first_name);
+            $userData['ln'] = $this->hashText($user->last_name);
+            $userData['ct'] = $this->hashText($user->bill_city ?? $user->ship_city ?? null);
+            $userData['st'] = $this->hashText($user->bill_province ?? $user->ship_province ?? null);
+            $userData['zp'] = $this->hashText($user->bill_zip ?? $user->ship_zip ?? null);
+            $userData['country'] = $this->hashCountry($user->bill_country ?? $user->ship_country ?? null);
+            $userData['external_id'] = $this->hashText('user_' . $user->id);
+        }
+
+        $guestDetails = Session::get('guest_meta_details', []);
+        if (is_array($guestDetails) && !empty($guestDetails)) {
+            if (empty($userData['em']) && !empty($guestDetails['email'])) {
+                $userData['em'] = $this->hashEmail($guestDetails['email']);
+            }
+            if (empty($userData['ph']) && !empty($guestDetails['phone'])) {
+                $userData['ph'] = $this->hashPhone($guestDetails['phone']);
+            }
+            if (empty($userData['fn']) && !empty($guestDetails['first_name'])) {
+                $userData['fn'] = $this->hashText($guestDetails['first_name']);
+            }
+            if (empty($userData['ln']) && !empty($guestDetails['last_name'])) {
+                $userData['ln'] = $this->hashText($guestDetails['last_name']);
+            }
+            if (empty($userData['ct']) && !empty($guestDetails['city'])) {
+                $userData['ct'] = $this->hashText($guestDetails['city']);
+            }
+            if (empty($userData['st']) && !empty($guestDetails['province'])) {
+                $userData['st'] = $this->hashText($guestDetails['province']);
+            }
+            if (empty($userData['zp']) && !empty($guestDetails['zip'])) {
+                $userData['zp'] = $this->hashText($guestDetails['zip']);
+            }
+            if (empty($userData['country']) && !empty($guestDetails['country'])) {
+                $userData['country'] = $this->hashCountry($guestDetails['country']);
+            }
+            if (empty($userData['external_id']) && !empty($guestDetails['email'])) {
+                $userData['external_id'] = $this->hashText($guestDetails['email']);
+            }
+        }
+
+        foreach ($userDataOverrides as $key => $val) {
+            if ($val === null || $val === '') {
+                continue;
+            }
+
+            if (in_array($key, ['em', 'ph', 'fn', 'ln', 'ct', 'st', 'zp', 'country', 'external_id'], true)) {
+                if ($key === 'em') {
+                    $userData[$key] = $this->hashEmail($val);
+                } elseif ($key === 'ph') {
+                    $userData[$key] = $this->hashPhone($val);
+                } elseif ($key === 'country') {
+                    $userData[$key] = $this->hashCountry($val);
+                } else {
+                    $userData[$key] = $this->hashText($val);
+                }
+            } else {
+                $userData[$key] = $val;
+            }
+        }
+
+        $userData['client_ip_address'] = $userData['client_ip_address'] ?? request()->ip();
+        $userData['client_user_agent'] = $userData['client_user_agent'] ?? request()->header('User-Agent');
+        $userData['fbp'] = $userData['fbp'] ?? request()->cookie('_fbp');
+        $userData['fbc'] = $userData['fbc'] ?? request()->cookie('_fbc');
+
+        $payload = [
+            'data' => [[
+                'event_name' => $eventName,
+                'event_time' => time(),
+                'event_id' => $eventId,
+                'action_source' => 'website',
+                'event_source_url' => url()->current(),
+                'user_data' => array_filter($userData),
+                'custom_data' => array_filter($customData),
+            ]],
+            'access_token' => $token,
+        ];
+
+        try {
+            $response = Http::timeout(10)->post(
+                "https://graph.facebook.com/v19.0/{$pixelId}/events",
+                $payload
+            );
+
+            if ($response->failed()) {
+                Log::warning("Facebook CAPI event '{$eventName}' failed.", [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+                return false;
+            }
+
+            Log::info("Facebook CAPI event '{$eventName}' sent.", [
+                'event_id' => $eventId,
+            ]);
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::warning("Facebook CAPI event '{$eventName}' exception: " . $e->getMessage());
+            return false;
+        }
+    }
+
     public function trackPurchase(
         Order $order,
         array $cart,

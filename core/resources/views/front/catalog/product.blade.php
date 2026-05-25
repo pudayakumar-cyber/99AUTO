@@ -1164,6 +1164,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     addToCartButton.addEventListener('click', function () {
+        var eventId = 'cart_' + @json($item->id) + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        addToCartButton.setAttribute('data-fb-event-id', eventId);
+
         var qtyInput = document.getElementById('product-quantity');
         var qty = qtyInput ? (parseInt(qtyInput.value, 10) || 1) : 1;
         var addToCartPayload = Object.assign({}, productPayload, {
@@ -1173,7 +1176,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         if (typeof window.paTrack === 'function') {
-            window.paTrack('AddToCart', addToCartPayload, 'add_to_cart');
+            window.paTrack('AddToCart', addToCartPayload, 'add_to_cart', { eventId: eventId });
         }
     });
 });

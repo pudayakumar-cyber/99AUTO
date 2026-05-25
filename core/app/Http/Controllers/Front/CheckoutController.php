@@ -110,6 +110,8 @@ class CheckoutController extends Controller
         $data['tax'] = $total_tax;
         $data['payments'] = PaymentSetting::whereStatus(1)->get();
 
+        $this->trackInitiateCheckout($cart, $cart_total);
+
         return view('front.checkout.index', $data);
     }
 
@@ -172,6 +174,8 @@ class CheckoutController extends Controller
         $data['tax'] = $total_tax;
         $data['payments'] = PaymentSetting::whereStatus(1)->get();
 
+        $this->trackInitiateCheckout($cart, $cart_total);
+
         return view('front.checkout.billing', $data);
     }
 
@@ -188,6 +192,17 @@ class CheckoutController extends Controller
             'bill_address1' => 'required',
             'bill_city' => 'required',
             'bill_zip' => 'required',
+        ]);
+
+        Session::put('guest_meta_details', [
+            'email' => $request->bill_email,
+            'phone' => $request->bill_phone,
+            'first_name' => $request->bill_first_name,
+            'last_name' => $request->bill_last_name,
+            'city' => $request->bill_city,
+            'province' => $request->bill_province,
+            'zip' => $request->bill_zip,
+            'country' => $request->bill_country ?? 'Canada',
         ]);
 
         if ($request->same_ship_address) {
@@ -295,8 +310,50 @@ class CheckoutController extends Controller
             'ship_city' => 'required',
         ]);
 
+        $guestMeta = Session::get('guest_meta_details', []);
+        Session::put('guest_meta_details', array_merge($guestMeta, [
+            'email' => $request->ship_email,
+            'phone' => $request->ship_phone,
+            'first_name' => $request->ship_first_name,
+            'last_name' => $request->ship_last_name,
+            'city' => $request->ship_city,
+            'province' => $request->ship_province,
+            'zip' => $request->ship_zip,
+            'country' => $request->ship_country ?? $guestMeta['country'] ?? 'Canada',
+        ]));
+
         Session::put('shipping_address', $request->all());
         return redirect(route('front.checkout.payment'));
+    }
+
+    private function trackInitiateCheckout($cart, $cartTotal): void
+    {
+        $eventId = Session::get('checkout_event_id');
+        if (!$eventId) {
+            $eventId = 'checkout_' . uniqid();
+            Session::put('checkout_event_id', $eventId);
+        }
+
+        try {
+            $checkoutContents = [];
+            foreach ($cart as $key => $item) {
+                $checkoutContents[] = [
+                    'id' => (string) ($item['id'] ?? $key),
+                    'quantity' => (int) ($item['qty'] ?? 1),
+                    'item_price' => (float) ($item['main_price'] ?? 0),
+                ];
+            }
+
+            (new FacebookConversionApi())->trackEvent('InitiateCheckout', [
+                'content_type' => 'product',
+                'value' => (float) $cartTotal,
+                'currency' => 'CAD',
+                'contents' => $checkoutContents,
+                'num_items' => count($cart),
+            ], $eventId);
+        } catch (\Throwable $e) {
+            // Tracking must not block checkout.
+        }
     }
 
 

@@ -1092,7 +1092,16 @@ $(function ($) {
             }
 
             if (status == 1) {
-                let addToCartUrl = `${mainurl}/product/add/cart?item_id=${itemId}&options_ids=${options_ids}&attribute_ids=${attribute_ids}&quantity=${quantity}&type=${type}&item_key=${item_key}&add_type=${add_type}`;
+                let fbEventId = '';
+                if (check != 0) {
+                    fbEventId = $('.add_to_single_cart[data-target="' + check + '"]').attr('data-fb-event-id') || '';
+                } else {
+                    fbEventId = $('#add_to_cart').attr('data-fb-event-id') || '';
+                }
+                if (!fbEventId) {
+                    fbEventId = 'cart_' + itemId + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                }
+                let addToCartUrl = `${mainurl}/product/add/cart?item_id=${itemId}&options_ids=${options_ids}&attribute_ids=${attribute_ids}&quantity=${quantity}&type=${type}&item_key=${item_key}&add_type=${add_type}&event_id=${fbEventId}`;
                 $.ajax({
                     method: "GET",
                     contentType: false,
