@@ -62,6 +62,10 @@ public function galleryDelete($gallery)
         $curr = Currency::where('is_default',1)->first();
         $input['discount_price'] = $request->discount_price / $curr->value;
         $input['previous_price'] = $request->previous_price / $curr->value;
+        $input['package_length'] = $request->filled('package_length') ? $request->package_length : null;
+        $input['package_width'] = $request->filled('package_width') ? $request->package_width : null;
+        $input['package_height'] = $request->filled('package_height') ? $request->package_height : null;
+        $input['package_weight'] = $request->filled('package_weight') ? $request->package_weight : null;
 
         if($request->has('meta_keywords')){
             $input['meta_keywords'] = str_replace(["value","{","}","[","]",":","\""],'', $request->meta_keywords);
@@ -165,6 +169,10 @@ public function galleryDelete($gallery)
         $curr = Currency::where('is_default',1)->first();
         $input['discount_price'] = $request->discount_price / $curr->value;
         $input['previous_price'] = $request->previous_price / $curr->value;
+        $input['package_length'] = $request->filled('package_length') ? $request->package_length : null;
+        $input['package_width'] = $request->filled('package_width') ? $request->package_width : null;
+        $input['package_height'] = $request->filled('package_height') ? $request->package_height : null;
+        $input['package_weight'] = $request->filled('package_weight') ? $request->package_weight : null;
 
         if($request->has('meta_keywords')){
             $input['meta_keywords'] = str_replace(["value","{","}","[","]",":","\""],'', $request->meta_keywords);

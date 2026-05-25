@@ -6,6 +6,15 @@
     <td>
         {{ $data->name }}
     </td>
+    <td>
+        @if($data->package_length && $data->package_width && $data->package_height && $data->package_weight)
+            {{ number_format((float) $data->package_length, 2) }} x {{ number_format((float) $data->package_width, 2) }} x {{ number_format((float) $data->package_height, 2) }} in
+            <br>
+            {{ number_format((float) $data->package_weight, 2) }} lb
+        @else
+            <span class="text-warning">{{ __('Not set') }}</span>
+        @endif
+    </td>
 
     <td>
 

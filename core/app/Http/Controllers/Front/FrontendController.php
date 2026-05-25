@@ -581,6 +581,7 @@ class FrontendController extends Controller
             ->get();
 
         $video = explode('=', $item->video);
+
         return view('front.catalog.product', [
             'item'          => $item,
             'reviews'       => $reviews,

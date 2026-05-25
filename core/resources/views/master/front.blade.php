@@ -935,32 +935,33 @@
 @if (!($setting->is_facebook_pixel == '1' && trim((string) $setting->facebook_pixel) !== ''))
 @php
     $metaAdvancedMatching = [];
+    $metaNormalize = function ($value) {
+        $value = preg_replace('/\s+/', '', strtolower(trim((string) $value)));
+        return $value === '' ? null : hash('sha256', $value);
+    };
+    $metaNormalizeEmail = function ($value) {
+        $value = strtolower(trim((string) $value));
+        return $value === '' ? null : hash('sha256', $value);
+    };
+    $metaNormalizePhone = function ($value) {
+        $value = preg_replace('/\D+/', '', (string) $value);
+        return $value === '' ? null : hash('sha256', $value);
+    };
+    $metaNormalizeCountry = function ($value) use ($metaNormalize) {
+        $value = strtolower(trim((string) $value));
+        $countries = [
+            'canada' => 'ca',
+            'ca' => 'ca',
+            'united states' => 'us',
+            'united states of america' => 'us',
+            'usa' => 'us',
+            'us' => 'us',
+        ];
+        return $metaNormalize($countries[$value] ?? $value);
+    };
+
     if (Auth::check()) {
         $metaUser = Auth::user();
-        $metaNormalize = function ($value) {
-            $value = preg_replace('/\s+/', '', strtolower(trim((string) $value)));
-            return $value === '' ? null : hash('sha256', $value);
-        };
-        $metaNormalizeEmail = function ($value) {
-            $value = strtolower(trim((string) $value));
-            return $value === '' ? null : hash('sha256', $value);
-        };
-        $metaNormalizePhone = function ($value) {
-            $value = preg_replace('/\D+/', '', (string) $value);
-            return $value === '' ? null : hash('sha256', $value);
-        };
-        $metaNormalizeCountry = function ($value) use ($metaNormalize) {
-            $value = strtolower(trim((string) $value));
-            $countries = [
-                'canada' => 'ca',
-                'ca' => 'ca',
-                'united states' => 'us',
-                'united states of america' => 'us',
-                'usa' => 'us',
-                'us' => 'us',
-            ];
-            return $metaNormalize($countries[$value] ?? $value);
-        };
         $metaAdvancedMatching = array_filter([
             'em' => $metaNormalizeEmail($metaUser->email ?? null),
             'ph' => $metaNormalizePhone($metaUser->phone ?? null),
@@ -972,6 +973,21 @@
             'country' => $metaNormalizeCountry($metaUser->bill_country ?? $metaUser->ship_country ?? null),
             'external_id' => $metaNormalize('user_' . $metaUser->id),
         ]);
+    } else {
+        $guestMeta = Session::get('guest_meta_details');
+        if (is_array($guestMeta) && !empty($guestMeta)) {
+            $metaAdvancedMatching = array_filter([
+                'em' => $metaNormalizeEmail($guestMeta['email'] ?? null),
+                'ph' => $metaNormalizePhone($guestMeta['phone'] ?? null),
+                'fn' => $metaNormalize($guestMeta['first_name'] ?? null),
+                'ln' => $metaNormalize($guestMeta['last_name'] ?? null),
+                'ct' => $metaNormalize($guestMeta['city'] ?? null),
+                'st' => $metaNormalize($guestMeta['province'] ?? null),
+                'zp' => $metaNormalize($guestMeta['zip'] ?? null),
+                'country' => $metaNormalizeCountry($guestMeta['country'] ?? null),
+                'external_id' => $metaNormalize($guestMeta['email'] ?? null),
+            ]);
+        }
     }
 @endphp
 <!-- Meta Pixel Base Code -->

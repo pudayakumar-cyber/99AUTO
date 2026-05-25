@@ -61,6 +61,10 @@ class ItemRequest extends FormRequest
             'discount_price'  => 'required|max:50',
             'previous_price'  => 'max:50',
             'stock'           => 'numeric|max:9999999999',
+            'package_length'  => 'nullable|numeric|min:0',
+            'package_width'   => 'nullable|numeric|min:0',
+            'package_height'  => 'nullable|numeric|min:0',
+            'package_weight'  => 'nullable|numeric|min:0',
             'tax_id'          => 'required',
             'photo'           => $required, 'mimes:jpeg,jpg,png,svg,webp'
         ];

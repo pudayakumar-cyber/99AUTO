@@ -2,6 +2,7 @@
 
 namespace App\Traits;
 
+use App\Helpers\CheckoutShippingHelper;
 use App\{
     Models\Setting,
     Models\PromoCode,
@@ -54,7 +55,7 @@ trait PaystackCheckout
         if (!PriceHelper::Digital()) {
             $shipping = null;
         }else{
-            $shipping = ShippingService::findOrFail($data['shipping_id']);
+            $shipping = CheckoutShippingHelper::orderShippingPayload($data['shipping_id']);
         }
         $discount = [];
         if(Session::has('coupon')){
@@ -65,7 +66,7 @@ trait PaystackCheckout
             $shipping = null;
         }
         
-        $grand_total = ($cart_total + ($shipping?$shipping->price:0)) + $total_tax;
+        $grand_total = ($cart_total + ($shipping ? $shipping['price'] : 0)) + $total_tax;
         $grand_total = $grand_total - ($discount ? $discount['discount'] : 0);
         $grand_total += PriceHelper::StatePrce($data['state_id'],$cart_total);
         $total_amount = PriceHelper::setConvertPrice($grand_total);
@@ -74,6 +75,7 @@ trait PaystackCheckout
         $orderData['cart'] = json_encode($cart,true);
         $orderData['discount'] = json_encode($discount,true);
         $orderData['shipping'] = json_encode($shipping,true);
+        $orderData = array_merge($orderData, CheckoutShippingHelper::orderShippingColumns($shipping));
         $orderData['tax'] = $total_tax;
         $orderData['shipping_info'] = json_encode(Session::get('shipping_address'),true);
         $orderData['billing_info'] = json_encode(Session::get('billing_address'),true);

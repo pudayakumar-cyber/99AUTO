@@ -27,6 +27,11 @@ class Order extends Model
         'state_price',
         'state',
         'tracking_number',
+        'shipment_provider',
+        'shipping_method_code',
+        'shipping_method_name',
+        'shipping_carrier',
+        'shipment_meta',
     ];
 
     public function user()

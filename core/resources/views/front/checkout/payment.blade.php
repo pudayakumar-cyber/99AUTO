@@ -78,22 +78,20 @@
                             
                                     <select name="shipping_id" class="form-control" id="shipping_id_select" required>
                                         <option value="" selected disabled>{{ __('Select Shipping Method') }}</option>
-                                        @foreach ($checkout_shipping_services as $shipping)
-                                            @if ($shipping->id == 1 && isset($free_shipping) &&  $free_shipping->minimum_price <= $cart_total)
-                                                <option value="{{ $shipping->id }}"
-                                                    data-href="{{ route('front.shipping.setup') }}">{{ $shipping->title }}
-                                                </option>
-                                            @else
-                                                @if ($shipping->id != 1)
-                                                    <option value="{{ $shipping->id }}"
-                                                        data-href="{{ route('front.shipping.setup') }}">{{ $shipping->title }}
-                                                        ({{ PriceHelper::setCurrencyPrice($shipping->price) }})
-                                                    </option>
-                                                @endif
-                                            @endif
+                                        @foreach (($shippingOptions ?? []) as $shipping)
+                                            <option value="{{ $shipping['id'] }}"
+                                                data-href="{{ route('front.shipping.setup') }}">{{ $shipping['title'] }}
+                                                ({{ PriceHelper::setCurrencyPrice($shipping['price']) }})
+                                            </option>
                                         @endforeach
                                     </select>
 
+                                    @if (!empty($shippingOptionsMessage))
+                                        <small class="text-muted d-block mb-2">{{ $shippingOptionsMessage }}</small>
+                                    @endif
+                                    @if (!empty($shippingOptionsError))
+                                        <small class="text-danger d-block mb-2">{{ $shippingOptionsError }}</small>
+                                    @endif
                                     <small class="text-primary shipping_message">{{ __('Please select shipping method') }}</small>
                                     @error('shipping_id')
                                         <p class="text-danger shipping_message">{{ $message }}</p>

@@ -201,7 +201,37 @@ class CartRepository
                 Session::put('coupon', $coupon);
             }
 
-            $mgs = ['message' => __('Product add successfully'), 'qty' => count(Session::get('cart'))];
+            $itemPayload = [
+                'content_type' => 'product',
+                'content_ids' => [(string) ($item->id ?? $item->prod_number ?? '')],
+                'content_name' => $item->name ?? '',
+                'content_category' => optional($item->category)->name ?? '',
+                'value' => (float) ($item->discount_price ?? $item->previous_price ?? 0) * $qty,
+                'currency' => 'CAD',
+                'num_items' => (int)$qty,
+                'quantity' => (int)$qty,
+                'items' => [[
+                    'item_id' => (string) ($item->id ?? $item->prod_number ?? ''),
+                    'item_name' => $item->name ?? '',
+                    'item_category' => optional($item->category)->name ?? '',
+                    'price' => (float) ($item->discount_price ?? $item->previous_price ?? 0),
+                    'quantity' => (int)$qty,
+                ]]
+            ];
+
+            $eventId = isset($input['event_id']) ? $input['event_id'] : 'cart_' . $item->id . '_' . uniqid();
+            try {
+                (new \App\Services\FacebookConversionApi())->trackEvent('AddToCart', $itemPayload, $eventId);
+            } catch (\Throwable $e) {
+                // Silence exception
+            }
+
+            $mgs = [
+                'message' => __('Product add successfully'),
+                'qty' => count(Session::get('cart')),
+                'item_payload' => $itemPayload,
+                'event_id' => $eventId
+            ];
             return $mgs;
         }
 
@@ -244,20 +274,71 @@ class CartRepository
                 Session::put('coupon', $coupon);
             }
 
+            $itemPayload = [
+                'content_type' => 'product',
+                'content_ids' => [(string) ($item->id ?? $item->prod_number ?? '')],
+                'content_name' => $item->name ?? '',
+                'content_category' => optional($item->category)->name ?? '',
+                'value' => (float) ($item->discount_price ?? $item->previous_price ?? 0) * $qty,
+                'currency' => 'CAD',
+                'num_items' => (int)$qty,
+                'quantity' => (int)$qty,
+                'items' => [[
+                    'item_id' => (string) ($item->id ?? $item->prod_number ?? ''),
+                    'item_name' => $item->name ?? '',
+                    'item_category' => optional($item->category)->name ?? '',
+                    'price' => (float) ($item->discount_price ?? $item->previous_price ?? 0),
+                    'quantity' => (int)$qty,
+                ]]
+            ];
 
-
-            if ($qty_check == 1) {
-                $mgs = ['message' => __('Product add successfully'), 'qty' => count(Session::get('cart'))];
-            } else {
-                $mgs = ['message' => __('Product add successfully'), 'qty' => count(Session::get('cart'))];
+            $eventId = isset($input['event_id']) ? $input['event_id'] : 'cart_' . $item->id . '_' . uniqid();
+            try {
+                (new \App\Services\FacebookConversionApi())->trackEvent('AddToCart', $itemPayload, $eventId);
+            } catch (\Throwable $e) {
+                // Silence exception
             }
 
             $qty_check = 0;
-            return $mgs;
+            return [
+                'message' => __('Product add successfully'),
+                'qty' => count(Session::get('cart')),
+                'item_payload' => $itemPayload,
+                'event_id' => $eventId
+            ];
         }
 
-        $mgs = ['message' => __('Product add successfully'), 'qty' => count(Session::get('cart'))];
-        return $mgs;
+        $itemPayload = [
+            'content_type' => 'product',
+            'content_ids' => [(string) ($item->id ?? $item->prod_number ?? '')],
+            'content_name' => $item->name ?? '',
+            'content_category' => optional($item->category)->name ?? '',
+            'value' => (float) ($item->discount_price ?? $item->previous_price ?? 0) * $qty,
+            'currency' => 'CAD',
+            'num_items' => (int)$qty,
+            'quantity' => (int)$qty,
+            'items' => [[
+                'item_id' => (string) ($item->id ?? $item->prod_number ?? ''),
+                'item_name' => $item->name ?? '',
+                'item_category' => optional($item->category)->name ?? '',
+                'price' => (float) ($item->discount_price ?? $item->previous_price ?? 0),
+                'quantity' => (int)$qty,
+            ]]
+        ];
+
+        $eventId = isset($input['event_id']) ? $input['event_id'] : 'cart_' . $item->id . '_' . uniqid();
+        try {
+            (new \App\Services\FacebookConversionApi())->trackEvent('AddToCart', $itemPayload, $eventId);
+        } catch (\Throwable $e) {
+            // Silence exception
+        }
+
+        return [
+            'message' => __('Product add successfully'),
+            'qty' => count(Session::get('cart')),
+            'item_payload' => $itemPayload,
+            'event_id' => $eventId
+        ];
     }
 
     public function promoStore($request)

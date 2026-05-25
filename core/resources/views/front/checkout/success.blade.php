@@ -69,7 +69,8 @@ document.addEventListener('DOMContentLoaded', function () {
         items: @json($purchaseItems)
     }, 'purchase', {
         eventId: '{{ $event_id }}',
-        googleAdsSendTo: '{{ $googleAdsPurchaseSendTo }}'
+        googleAdsSendTo: '{{ $googleAdsPurchaseSendTo }}',
+        forceGoogleDirect: true
     });
 });
 </script>
