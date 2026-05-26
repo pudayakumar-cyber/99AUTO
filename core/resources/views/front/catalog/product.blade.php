@@ -1142,17 +1142,10 @@ document.addEventListener('DOMContentLoaded', function () {
     var productPayload = {
         content_type: 'product',
         content_ids: [@json((string)($item->id ?? $item->prod_number ?? ''))],
-        contents: [{
-            id: @json((string)($item->id ?? $item->prod_number ?? '')),
-            quantity: 1,
-            item_price: {{ (float) ($item->discount_price ?? $item->previous_price ?? 0) }}
-        }],
-        num_items: 1,
         content_name: @json($item->name ?? ''),
         content_category: @json(optional($item->category)->name ?? ''),
         value: {{ (float) ($item->discount_price ?? $item->previous_price ?? 0) }},
         currency: 'CAD',
-        event_id: @json($view_content_event_id ?? null),
         items: [{
             item_id: @json((string)($item->id ?? $item->prod_number ?? '')),
             item_name: @json($item->name ?? ''),
@@ -1162,35 +1155,30 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     if (typeof window.paTrack === 'function') {
-        window.paTrack('ViewContent', productPayload, 'view_item', {
-            eventId: @json($view_content_event_id ?? null)
+        window.paTrack('ViewContent', productPayload, 'view_item');
+    }
+
+    var addToCartButton = document.getElementById('add_to_cart');
+    if (!addToCartButton) {
+        return;
+    }
+
+    addToCartButton.addEventListener('click', function () {
+        var eventId = 'cart_' + @json($item->id) + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        addToCartButton.setAttribute('data-fb-event-id', eventId);
+
+        var qtyInput = document.getElementById('product-quantity');
+        var qty = qtyInput ? (parseInt(qtyInput.value, 10) || 1) : 1;
+        var addToCartPayload = Object.assign({}, productPayload, {
+            num_items: qty,
+            quantity: qty,
+            items: [Object.assign({}, productPayload.items[0], { quantity: qty })]
         });
-    }
 
-    try {
-        var csrfTokenTag = document.querySelector('meta[name="csrf-token"]');
-        var csrfToken = (csrfTokenTag ? csrfTokenTag.getAttribute('content') : '') || @json(csrf_token());
-
-        if (window.fetch && csrfToken && productPayload.event_id && productPayload.content_ids && productPayload.content_ids[0]) {
-            window.fetch(@json(route('front.tracking.view_content')), {
-                method: 'POST',
-                credentials: 'same-origin',
-                keepalive: true,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({
-                    event_id: productPayload.event_id,
-                    item_id: productPayload.content_ids[0]
-                })
-            }).catch(function () {});
+        if (typeof window.paTrack === 'function') {
+            window.paTrack('AddToCart', addToCartPayload, 'add_to_cart', { eventId: eventId });
         }
-    } catch (error) {
-        console.warn('ViewContent CAPI sync failed', error);
-    }
-
+    });
 });
 </script>
 @endif

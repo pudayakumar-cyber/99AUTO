@@ -30,7 +30,6 @@ use App\Models\Post;
 use App\Models\Service;
 use App\Models\Slider;
 use App\Models\TrackOrder;
-use App\Services\FacebookConversionApi;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
@@ -582,8 +581,6 @@ class FrontendController extends Controller
             ->get();
 
         $video = explode('=', $item->video);
-        $facebookApi = new FacebookConversionApi();
-        $viewContentEventId = $facebookApi->viewContentEventId($item);
 
         return view('front.catalog.product', [
             'item'          => $item,
@@ -594,43 +591,7 @@ class FrontendController extends Controller
             'sec_name'      => isset($item->specification_name) ? json_decode($item->specification_name, true) : [],
             'sec_details'   => isset($item->specification_description) ? json_decode($item->specification_description, true) : [],
             'attributes'    => $item->attributes,
-            'related_items' => $relatedItems,
-            'view_content_event_id' => $viewContentEventId,
-        ]);
-    }
-
-    public function trackViewContent(Request $request)
-    {
-        $itemId = $request->input('item_id');
-        $eventId = $request->input('event_id');
-
-        if (!$itemId || !$eventId) {
-            return response()->json(['status' => false, 'message' => 'Missing tracking payload.'], 422);
-        }
-
-        $item = Item::whereStatus(1)->find($itemId);
-
-        if (!$item) {
-            return response()->json(['status' => false, 'message' => 'Product not found.'], 404);
-        }
-
-        if (!Session::get('facebook_capi_view_content_sent_' . $eventId)) {
-            app()->terminating(function () use ($item, $eventId) {
-                $sent = (new FacebookConversionApi())->trackViewContent($item, $eventId, true);
-
-                if ($sent) {
-                    Session::put('facebook_capi_view_content_sent_' . $eventId, true);
-                }
-            });
-        }
-
-        return response()->json([
-            'status' => true,
-            'tracking' => [
-                'event_id' => $eventId,
-                'meta_event' => 'ViewContent',
-                'item_id' => $item->id,
-            ],
+            'related_items' => $relatedItems
         ]);
     }
 
