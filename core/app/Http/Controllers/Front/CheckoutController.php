@@ -776,8 +776,13 @@ class CheckoutController extends Controller
     public function paymentSuccess()
     {
         if (Session::has('order_id')) {
-            $order_id = Session::get('order_id');
+            $order_id = Session::pull('order_id');
             $order = Order::find($order_id);
+
+            if (!$order) {
+                return redirect()->route('front.index');
+            }
+
             $cart = json_decode($order->cart, true);
             $setting = Setting::first();
             if ($setting->is_twilio == 1) {
