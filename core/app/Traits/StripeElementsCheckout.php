@@ -158,6 +158,28 @@ trait StripeElementsCheckout
                 ], 400);
             }
 
+            $existingOrder = Order::where('txnid', $paymentIntent->id)->first();
+            if ($existingOrder) {
+                \Log::info('Stripe Elements confirm reused existing order.', [
+                    'order_id' => $existingOrder->id,
+                    'transaction_number' => $existingOrder->transaction_number,
+                    'payment_intent_id' => $paymentIntent->id,
+                ]);
+
+                Session::put('order_id', $existingOrder->id);
+                Session::forget('cart');
+                Session::forget('discount');
+                Session::forget('order_data');
+                Session::forget('order_payment_id');
+                Session::forget('coupon');
+                Session::forget('stripe_payment_intent_id');
+
+                return response()->json([
+                    'status' => true,
+                    'redirect' => route('front.checkout.success')
+                ]);
+            }
+
             // Create order
             $cart = Session::get('cart');
             $user = Auth::user();
