@@ -3,11 +3,13 @@
 namespace App\Services;
 
 use App\Helpers\PriceHelper;
+use App\Models\Item;
 use App\Models\Order;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Str;
 
 class FacebookConversionApi
 {
@@ -246,6 +248,33 @@ class FacebookConversionApi
     public function purchaseEventId(Order $order): string
     {
         return 'purchase_' . ($order->transaction_number ?: $order->id);
+    }
+
+    public function addToCartEventId(Item $item): string
+    {
+        return 'addtocart_' . $item->id . '_' . (string) Str::uuid();
+    }
+
+    public function trackAddToCart(Item $item, int $quantity, string $eventId): bool
+    {
+        $quantity = max(1, $quantity);
+        $itemId = (string) ($item->id ?? $item->prod_number ?? '');
+        $price = (float) ($item->discount_price ?? $item->previous_price ?? 0);
+
+        return $this->trackEvent('AddToCart', [
+            'content_type' => 'product',
+            'content_ids' => [$itemId],
+            'content_name' => (string) ($item->name ?? ''),
+            'content_category' => (string) optional($item->category)->name,
+            'currency' => 'CAD',
+            'value' => $price * $quantity,
+            'contents' => [[
+                'id' => $itemId,
+                'quantity' => $quantity,
+                'item_price' => $price,
+            ]],
+            'num_items' => $quantity,
+        ], $eventId);
     }
 
     private function hashEmail(?string $value): ?string
