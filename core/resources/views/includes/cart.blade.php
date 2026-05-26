@@ -115,7 +115,6 @@
                             $checkoutNumItems += $checkoutQty;
                         }
                         $checkoutValue = (float) ($cartTotal - (Session::has('coupon') ? Session::get('coupon')['discount'] : 0));
-                        $initiateCheckoutEventId = 'initiatecheckout_' . (string) \Illuminate\Support\Str::uuid();
                     @endphp
 
                 </tbody>
@@ -159,7 +158,7 @@
             <div class="column">
                 <a class="btn btn-primary"
                 id="meta-pixel-checkout"
-                href="{{ route('front.checkout.billing', ['ic_event_id' => $initiateCheckoutEventId]) }}">
+                href="{{ route('front.checkout.billing') }}">
                     <span>{{ __('Checkout') }}</span>
                 </a>
             </div>
@@ -168,21 +167,20 @@
 </div>
 </div>
 @if(count($cart) > 0)
+@php
+    $checkoutEventId = Session::get('checkout_event_id');
+    if (!$checkoutEventId) {
+        $checkoutEventId = 'checkout_' . uniqid();
+        Session::put('checkout_event_id', $checkoutEventId);
+    }
+@endphp
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     var el = document.getElementById('meta-pixel-checkout');
     if (!el) return;
 
-    el.addEventListener('click', function (event) {
-        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || el.target === '_blank') {
-            return;
-        }
-
-        event.preventDefault();
-        var checkoutUrl = el.href;
-
+    el.addEventListener('click', function () {
         if (typeof window.paTrack !== 'function') {
-            window.location.href = checkoutUrl;
             return;
         }
 
@@ -192,15 +190,8 @@ document.addEventListener('DOMContentLoaded', function () {
             num_items: {{ (int) $checkoutNumItems }},
             value: {{ $checkoutValue }},
             currency: 'CAD',
-            event_id: @json($initiateCheckoutEventId),
             items: @json($checkoutItems)
-        }, 'begin_checkout', {
-            eventId: @json($initiateCheckoutEventId)
-        });
-
-        window.setTimeout(function () {
-            window.location.href = checkoutUrl;
-        }, 150);
+        }, 'begin_checkout', { eventId: '{{ $checkoutEventId }}' });
     });
 });
 </script>
