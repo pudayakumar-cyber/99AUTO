@@ -104,6 +104,15 @@
                                 <div class="row">
                                     <div class="col-sm-12">
                                         <div class="form-group">
+                                            <label for="checkout-province">{{ __('Province / State') }}*</label>
+                                            <input class="form-control {{ $errors->has('bill_province') ? 'requireInput' : '' }}" name="bill_province" type="text"
+                                                id="checkout-province" value="{{ isset($user) ? $user->bill_province : '' }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-12">
+                                        <div class="form-group">
                                             <label for="billing-country">{{ __('Country') }}</label>
                                             <select class="form-control {{ $errors->has('bill_country') ? 'requireInput' : '' }}"  name="bill_country"
                                                 id="billing-country">
