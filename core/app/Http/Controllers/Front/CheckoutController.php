@@ -16,12 +16,12 @@ use App\{
     Traits\BankCheckout,
 };
 use App\Helpers\EmailHelper;
-use App\Helpers\CheckoutShippingHelper;
 use App\Helpers\PriceHelper;
 use App\Helpers\SmsHelper;
 use App\Models\Currency;
 use App\Models\Item;
 use App\Models\Setting;
+use App\Models\ShippingService;
 use App\Models\State;
 use App\Services\FacebookConversionApi;
 use Illuminate\Http\Request;
@@ -438,42 +438,7 @@ class CheckoutController extends Controller
         $data['shipping'] = $shipping;
         $data['tax'] = $total_tax;
         $data['payments'] = PaymentSetting::whereStatus(1)->get();
-        $shippingOptions = CheckoutShippingHelper::loadCheckoutOptions(Session::get('shipping_address'), $cart);
-        $data['shippingOptions'] = $shippingOptions['options'];
-        $data['shippingOptionsMessage'] = $shippingOptions['message'];
-        $data['shippingOptionsError'] = $shippingOptions['error'];
         return view('front.checkout.payment', $data);
-    }
-
-    public function shippingOptions(Request $request)
-    {
-        if (!Session::has('cart')) {
-            return response()->json([
-                'options' => [],
-                'message' => null,
-                'error' => __('Your cart is empty.'),
-            ], 422);
-        }
-
-        $shippingAddress = $request->has('ship_address1')
-            ? $request->only([
-                'ship_first_name',
-                'ship_last_name',
-                'ship_email',
-                'ship_phone',
-                'ship_company',
-                'ship_address1',
-                'ship_address2',
-                'ship_zip',
-                'ship_city',
-                'ship_province',
-                'ship_country',
-            ])
-            : CheckoutShippingHelper::billingToShippingPayload($request);
-
-        $result = CheckoutShippingHelper::loadCheckoutOptions($shippingAddress, Session::get('cart'));
-
-        return response()->json($result);
     }
 
     public function checkout(PaymentRequest $request)
@@ -903,13 +868,17 @@ class CheckoutController extends Controller
             }
         }
 
-        $shippingPrice = CheckoutShippingHelper::selectedPrice($shipping_id);
+        $shipping = [];
+        if ($shipping_id) {
+            $shipping = ShippingService::findOrFail($shipping_id);
+        }
+
         $discount = [];
         if (Session::has('coupon')) {
             $discount = Session::get('coupon');
         }
 
-        $grand_total = ($cart_total + $shippingPrice) + $total_tax;
+        $grand_total = ($cart_total + ($shipping ? $shipping->price : 0)) + $total_tax;
         $grand_total = $grand_total - ($discount ? $discount['discount'] : 0);
 
         $state_price = 0;
@@ -966,15 +935,14 @@ class CheckoutController extends Controller
             }
         }
 
-        $shipping = CheckoutShippingHelper::resolveSelectedOption($shipping_id);
-        $shippingPrice = $shipping ? (float) ($shipping['price'] ?? 0) : 0;
+        $shipping = ShippingService::findOrFail($shipping_id);
 
         $discount = [];
         if (Session::has('coupon')) {
             $discount = Session::get('coupon');
         }
 
-        $grand_total = ($cart_total + $shippingPrice) + $total_tax;
+        $grand_total = ($cart_total + ($shipping ? $shipping->price : 0)) + $total_tax;
         $grand_total = $grand_total - ($discount ? $discount['discount'] : 0);
 
         $state_price = 0;
@@ -1001,7 +969,7 @@ class CheckoutController extends Controller
         $total_amount = $grand_total + $state_price;
 
         $data['state_price'] = PriceHelper::setCurrencyPrice($state_price);
-        $data['shipping_price'] = PriceHelper::setCurrencyPrice($shippingPrice);
+        $data['shipping_price'] = PriceHelper::setCurrencyPrice($shipping->price);
         $data['grand_total'] = PriceHelper::setCurrencyPrice($total_amount);
 
         return response()->json($data);
