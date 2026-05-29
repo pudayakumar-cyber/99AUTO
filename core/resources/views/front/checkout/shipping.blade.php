@@ -99,6 +99,15 @@
                             <div class="row">
                                 <div class="col-sm-12">
                                     <div class="form-group">
+                                        <label for="shipping-province">{{ __('Province / State') }} *</label>
+                                        <input class="form-control {{ $errors->has('ship_province') ? 'requireInput' : '' }}" name="ship_province" type="text"
+                                            id="shipping-province" value="{{ isset($user) ? $user->ship_province : '' }}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <div class="form-group">
                                         <label for="shipping-country">{{ __('Country') }}</label>
                                         <select class="form-control" name="ship_country"  id="shipping-country">
                                             <option selected>{{ __('Choose Country') }}</option>
