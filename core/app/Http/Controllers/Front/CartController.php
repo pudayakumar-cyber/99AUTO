@@ -9,7 +9,9 @@ use App\{
 };
 use App\Helpers\PriceHelper;
 use App\Models\ShippingService;
+use App\Services\FacebookConversionApi;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 
 class CartController extends Controller
@@ -44,6 +46,53 @@ class CartController extends Controller
 
         $msg = $this->repository->store($request);
 
+        if ($request->ajax() && empty($msg['status']) && $request->item_id) {
+            $item = Item::with('category')->find($request->item_id);
+
+            if ($item) {
+                $quantity = max(1, (int) $request->input('quantity', 1));
+                $facebookApi = new FacebookConversionApi();
+                $eventId = $request->input('add_to_cart_event_id') ?: $facebookApi->addToCartEventId($item);
+
+                app()->terminating(function () use ($facebookApi, $item, $quantity, $eventId) {
+                    $facebookApi->trackAddToCart($item, $quantity, $eventId);
+                });
+
+                $price = (float) ($item->discount_price ?? $item->previous_price ?? 0);
+                $msg['tracking'] = [
+                    'event_id' => $eventId,
+                    'meta_event' => 'AddToCart',
+                    'google_event' => 'add_to_cart',
+                    'payload' => [
+                        'content_type' => 'product',
+                        'content_ids' => [(string) $item->id],
+                        'contents' => [[
+                            'id' => (string) $item->id,
+                            'quantity' => $quantity,
+                            'item_price' => $price,
+                        ]],
+                        'content_name' => (string) $item->name,
+                        'content_category' => (string) optional($item->category)->name,
+                        'value' => $price * $quantity,
+                        'currency' => 'CAD',
+                        'num_items' => $quantity,
+                        'quantity' => $quantity,
+                        'event_id' => $eventId,
+                        'items' => [[
+                            'item_id' => (string) $item->id,
+                            'item_name' => (string) $item->name,
+                            'item_category' => (string) optional($item->category)->name,
+                            'price' => $price,
+                            'quantity' => $quantity,
+                        ]],
+                    ],
+                ];
+            } else {
+                Log::warning('AddToCart tracking skipped: item not found.', [
+                    'item_id' => $request->item_id,
+                ]);
+            }
+        }
 
         if ($request->ajax()) {
             return $msg;

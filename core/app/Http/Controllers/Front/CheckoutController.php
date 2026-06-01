@@ -110,6 +110,33 @@ class CheckoutController extends Controller
         $data['tax'] = $total_tax;
         $data['payments'] = PaymentSetting::whereStatus(1)->get();
 
+        $eventId = Session::get('checkout_event_id');
+        if (!$eventId) {
+            $eventId = 'checkout_' . uniqid();
+            Session::put('checkout_event_id', $eventId);
+        }
+
+        try {
+            $checkoutContents = [];
+            foreach ($cart as $key => $item) {
+                $checkoutContents[] = [
+                    'id' => (string) ($item['id'] ?? $key),
+                    'quantity' => (int) $item['qty'],
+                    'item_price' => (float) ($item['main_price'] ?? 0),
+                ];
+            }
+            $checkoutPayload = [
+                'content_type' => 'product',
+                'value' => (float) $cart_total,
+                'currency' => 'CAD',
+                'contents' => $checkoutContents,
+                'num_items' => count($cart),
+            ];
+            (new \App\Services\FacebookConversionApi())->trackEvent('InitiateCheckout', $checkoutPayload, $eventId);
+        } catch (\Throwable $e) {
+            // Silence CAPI exceptions
+        }
+
         return view('front.checkout.index', $data);
     }
 
@@ -172,6 +199,33 @@ class CheckoutController extends Controller
         $data['tax'] = $total_tax;
         $data['payments'] = PaymentSetting::whereStatus(1)->get();
 
+        $eventId = Session::get('checkout_event_id');
+        if (!$eventId) {
+            $eventId = 'checkout_' . uniqid();
+            Session::put('checkout_event_id', $eventId);
+        }
+
+        try {
+            $checkoutContents = [];
+            foreach ($cart as $key => $item) {
+                $checkoutContents[] = [
+                    'id' => (string) ($item['id'] ?? $key),
+                    'quantity' => (int) $item['qty'],
+                    'item_price' => (float) ($item['main_price'] ?? 0),
+                ];
+            }
+            $checkoutPayload = [
+                'content_type' => 'product',
+                'value' => (float) $cart_total,
+                'currency' => 'CAD',
+                'contents' => $checkoutContents,
+                'num_items' => count($cart),
+            ];
+            (new \App\Services\FacebookConversionApi())->trackEvent('InitiateCheckout', $checkoutPayload, $eventId);
+        } catch (\Throwable $e) {
+            // Silence CAPI exceptions
+        }
+
         return view('front.checkout.billing', $data);
     }
 
@@ -187,7 +241,20 @@ class CheckoutController extends Controller
             'bill_phone' => 'required',
             'bill_address1' => 'required',
             'bill_city' => 'required',
+            'bill_province' => 'required',
             'bill_zip' => 'required',
+        ]);
+
+        // Save guest details for Meta Advanced Matching
+        Session::put('guest_meta_details', [
+            'email' => $request->bill_email,
+            'phone' => $request->bill_phone,
+            'first_name' => $request->bill_first_name,
+            'last_name' => $request->bill_last_name,
+            'city' => $request->bill_city,
+            'province' => $request->bill_province,
+            'zip' => $request->bill_zip,
+            'country' => $request->bill_country ?? 'Canada',
         ]);
 
         if ($request->same_ship_address) {
@@ -204,6 +271,7 @@ class CheckoutController extends Controller
                     "ship_address2" => $request->bill_address2,
                     "ship_zip" => $request->bill_zip,
                     "ship_city" => $request->bill_city,
+                    "ship_province" => $request->bill_province,
                     "ship_country" => $request->bill_country,
                 ];
             } else {
@@ -293,7 +361,20 @@ class CheckoutController extends Controller
             'ship_address1' => 'required',
             'ship_zip' => 'required',
             'ship_city' => 'required',
+            'ship_province' => 'required',
         ]);
+
+        $guestMeta = Session::get('guest_meta_details', []);
+        Session::put('guest_meta_details', array_merge($guestMeta, [
+            'email' => $request->ship_email,
+            'phone' => $request->ship_phone,
+            'first_name' => $request->ship_first_name,
+            'last_name' => $request->ship_last_name,
+            'city' => $request->ship_city,
+            'province' => $request->ship_province,
+            'zip' => $request->ship_zip,
+            'country' => $request->ship_country ?? $guestMeta['country'] ?? 'Canada',
+        ]));
 
         Session::put('shipping_address', $request->all());
         return redirect(route('front.checkout.payment'));
@@ -791,6 +872,7 @@ class CheckoutController extends Controller
         if ($shipping_id) {
             $shipping = ShippingService::findOrFail($shipping_id);
         }
+
         $discount = [];
         if (Session::has('coupon')) {
             $discount = Session::get('coupon');

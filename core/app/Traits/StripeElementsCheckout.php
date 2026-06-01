@@ -17,6 +17,7 @@ use App\Models\Item;
 use App\Models\Order;
 use App\Models\ShippingService;
 use App\Models\State;
+use App\Services\OrderMarketingTracker;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -157,6 +158,28 @@ trait StripeElementsCheckout
                 ], 400);
             }
 
+            $existingOrder = Order::where('txnid', $paymentIntent->id)->first();
+            if ($existingOrder) {
+                \Log::info('Stripe Elements confirm reused existing order.', [
+                    'order_id' => $existingOrder->id,
+                    'transaction_number' => $existingOrder->transaction_number,
+                    'payment_intent_id' => $paymentIntent->id,
+                ]);
+
+                Session::put('order_id', $existingOrder->id);
+                Session::forget('cart');
+                Session::forget('discount');
+                Session::forget('order_data');
+                Session::forget('order_payment_id');
+                Session::forget('coupon');
+                Session::forget('stripe_payment_intent_id');
+
+                return response()->json([
+                    'status' => true,
+                    'redirect' => route('front.checkout.success')
+                ]);
+            }
+
             // Create order
             $cart = Session::get('cart');
             $user = Auth::user();
@@ -247,30 +270,9 @@ trait StripeElementsCheckout
                 $email->sendTemplateMail($emailData, "template");
             }
 
-            // Send Facebook Conversion API event only when the service exists.
+            // Send the server-side purchase event early; the success page reuses the same event_id for deduplication.
             try {
-                if (class_exists(\App\Services\FacebookConversionApi::class)) {
-                    $facebookApi = new \App\Services\FacebookConversionApi();
-                    $eventId = $facebookApi->purchaseEventId($order);
-                    $sent = $facebookApi->trackPurchase(
-                        $order,
-                        $cart,
-                        EmailHelper::getEmail(),
-                        json_decode($order->billing_info, true)['bill_phone'] ?? null,
-                        request()->ip(),
-                        request()->header('User-Agent'),
-                        $eventId
-                    );
-
-                    if ($sent) {
-                        Session::put('facebook_capi_purchase_sent_' . $order->id, true);
-                    }
-                } else {
-                    \Log::warning('Facebook CAPI service not found. Skipping purchase tracking.', [
-                        'order_id' => $order->id,
-                        'transaction_number' => $order->transaction_number,
-                    ]);
-                }
+                (new OrderMarketingTracker())->trackPurchase($order, $cart);
             } catch (\Throwable $e) {
                 \Log::warning('Facebook CAPI tracking failed: ' . $e->getMessage(), [
                     'order_id' => $order->id,

@@ -167,6 +167,13 @@
 </div>
 </div>
 @if(count($cart) > 0)
+@php
+    $checkoutEventId = Session::get('checkout_event_id');
+    if (!$checkoutEventId) {
+        $checkoutEventId = 'checkout_' . uniqid();
+        Session::put('checkout_event_id', $checkoutEventId);
+    }
+@endphp
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     var el = document.getElementById('meta-pixel-checkout');
@@ -184,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function () {
             value: {{ $checkoutValue }},
             currency: 'CAD',
             items: @json($checkoutItems)
-        }, 'begin_checkout');
+        }, 'begin_checkout', { eventId: '{{ $checkoutEventId }}' });
     });
 });
 </script>

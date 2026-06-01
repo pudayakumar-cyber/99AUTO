@@ -38,12 +38,39 @@ return [
     'facebook' => [
         'pixel_id' => env('FACEBOOK_PIXEL_ID', '2388576101564001'),
         'conversion_api_token' => env('FACEBOOK_CONVERSION_API_TOKEN'),
+        'test_event_code' => env('FACEBOOK_TEST_EVENT_CODE'),
     ],
 
     'google' => [
         'analytics_id' => env('GOOGLE_ANALYTICS_ID', 'G-Z486T545YD'),
         'ads_conversion_id' => env('GOOGLE_ADS_CONVERSION_ID', '17081986841'),
         'ads_purchase_label' => env('GOOGLE_ADS_PURCHASE_LABEL', 'HVZVCO7D3McaEJneqdE_'),
+    ],
+
+    'eshipper' => [
+        'enabled' => env('ESHIPPER_ENABLED', false),
+        'mode' => env('ESHIPPER_MODE', 'live'),
+        'live_url' => env('ESHIPPER_LIVE_URL', env('ESHIPPER_API_URL', 'https://ww2.eshipper.com')),
+        'sandbox_url' => env('ESHIPPER_SANDBOX_URL', 'https://uu2.eshipper.com'),
+        'username' => env('ESHIPPER_USERNAME'),
+        'password' => env('ESHIPPER_PASSWORD'),
+        'timeout' => env('ESHIPPER_TIMEOUT', 20),
+        'connect_timeout' => env('ESHIPPER_CONNECT_TIMEOUT', 10),
+        'top_rates_limit' => env('ESHIPPER_TOP_RATES_LIMIT', 4),
+        'free_shipping_threshold' => env('ESHIPPER_FREE_SHIPPING_THRESHOLD', 150),
+        'fallback_flat_rate' => env('ESHIPPER_FALLBACK_FLAT_RATE', 25),
+        'packaging_unit' => env('ESHIPPER_PACKAGING_UNIT', 'Imperial'),
+        'currency' => env('ESHIPPER_CURRENCY', 'CAD'),
+        'origin_contact' => env('ESHIPPER_ORIGIN_CONTACT', '99Auto'),
+        'origin_company' => env('ESHIPPER_ORIGIN_COMPANY', '99Auto'),
+        'origin_email' => env('ESHIPPER_ORIGIN_EMAIL', '99automotiveparts@gmail.com'),
+        'origin_phone' => env('ESHIPPER_ORIGIN_PHONE', '289-271-5870'),
+        'origin_address1' => env('ESHIPPER_ORIGIN_ADDRESS1'),
+        'origin_address2' => env('ESHIPPER_ORIGIN_ADDRESS2'),
+        'origin_city' => env('ESHIPPER_ORIGIN_CITY', 'Markham'),
+        'origin_province' => env('ESHIPPER_ORIGIN_PROVINCE', 'Ontario'),
+        'origin_postal' => env('ESHIPPER_ORIGIN_POSTAL', 'L3S1R9'),
+        'origin_country' => env('ESHIPPER_ORIGIN_COUNTRY', 'CA'),
     ],
 
 ];

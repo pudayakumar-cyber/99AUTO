@@ -413,6 +413,7 @@ Route::group(['middleware' => 'maintainance'], function () {
 
         Route::get('compare/product/{id}', 'Front\CompareController@compare')->name('fornt.compare.product');
         Route::get('compare/remove/{id}', 'Front\CompareController@compareRemove')->name('front.compare.remove');
+        Route::get('compare/search', 'Front\CompareController@search')->name('front.compare.search');
         Route::get('compare/products/', 'Front\CompareController@compare_product')->name('fornt.compare.index');
 
         // Vendor Routes
@@ -449,6 +450,9 @@ Route::group(['middleware' => 'maintainance'], function () {
         Route::get('/checkout/shpping/address', 'Front\CheckoutController@shipping')->name('front.checkout.shipping');
         Route::post('/checkout/shpping/store', 'Front\CheckoutController@shippingStore')->name('front.checkout.shipping.store');
         Route::get('/checkout/review/payment', 'Front\CheckoutController@payment')->name('front.checkout.payment');
+        Route::post('/checkout/add-payment-info/track', 'Front\CheckoutController@trackAddPaymentInfo')->name('front.checkout.add_payment_info.track');
+        Route::post('/tracking/site-click', 'Front\CheckoutController@trackSiteClick')->name('front.tracking.site_click');
+        Route::post('/tracking/view-content', 'Front\FrontendController@trackViewContent')->name('front.tracking.view_content');
         Route::get('/checkout/state/setup', 'Front\CheckoutController@stateSetUp')->name('front.state.setup');
         Route::get('/checkout/shipping/setup', 'Front\CheckoutController@shippingSetUp')->name('front.shipping.setup');
         Route::post('/checkout-submit', 'Front\CheckoutController@checkout')->name('front.checkout.submit');
