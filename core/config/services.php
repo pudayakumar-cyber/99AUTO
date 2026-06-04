@@ -45,7 +45,7 @@ return [
         'analytics_id' => env('GOOGLE_ANALYTICS_ID', 'G-Z486T545YD'),
         'ads_conversion_id' => env('GOOGLE_ADS_CONVERSION_ID', '17081986841'),
         'ads_purchase_label' => env('GOOGLE_ADS_PURCHASE_LABEL', 'HVZVCO7D3McaEJneqdE_'),
-        'tag_manager_id' => env('GOOGLE_TAG_MANAGER_ID', 'GTM-KJDBTTX6'),
+        'tag_manager_id' => env('GOOGLE_TAG_MANAGER_ID', 'GTM-TG9DD6RK'),
     ],
 
     'eshipper' => [
