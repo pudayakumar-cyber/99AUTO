@@ -1,4 +1,5 @@
 @extends('master.front')
+@section('page_type', 'cart')
 @section('title')
     {{__('Cart')}}
 @endsection
@@ -42,6 +43,50 @@
   @endif
   <!-- Page Content-->
 
+@php
+    $cart = Session::has('cart') ? Session::get('cart') : [];
+    $itemIds = [];
+    foreach ($cart as $key => $line) {
+        $itemId = \PriceHelper::GetItemId($key);
+        if ($itemId) {
+            $itemIds[] = $itemId;
+        }
+    }
+    $cartDbItems = \App\Models\Item::with('category')->whereIn('id', $itemIds)->get()->keyBy('id');
+    $cartItems = [];
+    $cartValue = 0;
+    foreach ($cart as $key => $line) {
+        $itemId = \PriceHelper::GetItemId($key);
+        $dbItem = $cartDbItems->get($itemId);
+        $categoryName = $dbItem && $dbItem->category ? $dbItem->category->name : '';
+        $cartQty = (int) ($line['qty'] ?? 1);
+        $price = (float) ($line['main_price'] ?? 0);
+        $cartItems[] = [
+            'item_id' => (string)$itemId,
+            'item_name' => (string)($line['name'] ?? ''),
+            'item_category' => (string)$categoryName,
+            'quantity' => $cartQty,
+            'price' => $price,
+            'google_business_vertical' => 'retail'
+        ];
+        $cartValue += $price * $cartQty;
+    }
+    $cartValue = $cartValue - (Session::has('coupon') ? Session::get('coupon')['discount'] : 0);
+@endphp
+
+@section('script')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (typeof window.paTrack === 'function' && @json(count($cartItems) > 0)) {
+        window.paTrack('ViewCart', {
+            value: {{ $cartValue }},
+            currency: 'CAD',
+            items: @json($cartItems)
+        }, 'view_cart');
+    }
+});
+</script>
+@endsection
 
 @endsection
 

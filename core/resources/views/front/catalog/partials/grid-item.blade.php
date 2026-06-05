@@ -1,5 +1,10 @@
 <div class="col-xxl-3 col-md-4 col-6">
-    <div class="product-card" data-fitment-rows='@json($extractItemFitmentRows($item))'>
+    <div class="product-card" 
+        data-item-id="{{ $item->id ?? $item->prod_number }}"
+        data-item-name="{{ $item->name }}"
+        data-item-category="{{ optional($item->category)->name }}"
+        data-item-price="{{ (float) ($item->discount_price ?? $item->previous_price ?? 0) }}"
+        data-fitment-rows='@json($extractItemFitmentRows($item))'>
         @if ($item->is_stock())
             <div class="product-badge
                 @if($item->is_type == 'feature')

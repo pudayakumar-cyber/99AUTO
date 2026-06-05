@@ -1,5 +1,7 @@
 @extends('master.front')
 
+@section('page_type', 'product')
+
 @section('title')
     {{ $item->name }}
 @endsection
@@ -1174,10 +1176,6 @@ document.addEventListener('DOMContentLoaded', function () {
             quantity: qty,
             items: [Object.assign({}, productPayload.items[0], { quantity: qty })]
         });
-
-        if (typeof window.paTrack === 'function') {
-            window.paTrack('AddToCart', addToCartPayload, 'add_to_cart', { eventId: eventId });
-        }
     });
 });
 </script>

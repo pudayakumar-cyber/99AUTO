@@ -47,8 +47,10 @@
 
                     @foreach ($cart as $key => $item)
                         @php
-                            
                             $cartTotal += ($item['main_price'] + $total + $item['attribute_price']) * $item['qty'];
+                            $itemId = \PriceHelper::GetItemId($key);
+                            $dbItem = \App\Models\Item::with('category')->find($itemId);
+                            $categoryName = $dbItem && $dbItem->category ? $dbItem->category->name : '';
                         @endphp
                         <tr>
                             <td>
@@ -94,7 +96,12 @@
 
                             <td class="text-center"><a class="remove-from-cart"
                                     href="{{ route('front.cart.destroy', $key) }}" data-toggle="tooltip"
-                                    title="Remove item"><i class="icon-x"></i></a></td>
+                                    title="Remove item"
+                                    data-item-id="{{ $itemId }}"
+                                    data-item-name="{{ $item['name'] }}"
+                                    data-item-category="{{ $categoryName }}"
+                                    data-item-price="{{ (float)$item['main_price'] }}"
+                                    data-item-qty="{{ $item['qty'] }}"><i class="icon-x"></i></a></td>
                         </tr>
                     @endforeach
                     @php

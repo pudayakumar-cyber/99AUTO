@@ -52,7 +52,7 @@ class CartController extends Controller
             if ($item) {
                 $quantity = max(1, (int) $request->input('quantity', 1));
                 $facebookApi = new FacebookConversionApi();
-                $eventId = $request->input('add_to_cart_event_id') ?: $facebookApi->addToCartEventId($item);
+                $eventId = $request->input('add_to_cart_event_id') ?: $request->input('event_id') ?: $facebookApi->addToCartEventId($item);
 
                 app()->terminating(function () use ($facebookApi, $item, $quantity, $eventId) {
                     $facebookApi->trackAddToCart($item, $quantity, $eventId);
