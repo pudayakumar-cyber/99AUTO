@@ -1,4 +1,5 @@
 @extends('master.front')
+@section('page_type', request()->input('search') ? 'search' : 'category')
 @section('meta')
 <meta name="keywords" content="{{$setting->meta_keywords}}">
 <meta name="description" content="{{$setting->meta_description}}">
@@ -349,5 +350,33 @@
 
         <button type="submit" id="search_button" class="d-none"></button>
     </form>
+
+    @php
+        $gtmItems = [];
+        foreach ($items as $index => $item) {
+            $gtmItems[] = [
+                'item_id' => (string)($item->id ?? $item->prod_number ?? ''),
+                'item_name' => (string)($item->name ?? ''),
+                'item_category' => (string)(optional($item->category)->name ?? ''),
+                'price' => (float)($item->discount_price ?? $item->previous_price ?? 0),
+                'index' => $index + 1,
+                'google_business_vertical' => 'retail'
+            ];
+        }
+    @endphp
+
+    @section('script')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof window.paTrack === 'function') {
+                window.paTrack('ViewItemList', {
+                    item_list_id: '{{ request()->input('search') ? 'search_results' : 'category_list' }}',
+                    item_list_name: '{{ request()->input('search') ? 'Search Results' : 'Category List' }}',
+                    items: @json($gtmItems)
+                }, 'view_item_list');
+            }
+        });
+    </script>
+    @endsection
 @endsection
 

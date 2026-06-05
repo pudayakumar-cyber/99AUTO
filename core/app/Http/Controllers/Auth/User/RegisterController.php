@@ -51,6 +51,7 @@ class RegisterController extends Controller
         $this->repository->register($request);
 
         $setting = Setting::first();
+        Session::flash('registered_success_track', true);
         if($setting->is_mail_verify == 0){
             Session::flash('success',__('Account Register Successfully please login'));
             return redirect()->route('user.login');

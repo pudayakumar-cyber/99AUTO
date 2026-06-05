@@ -4,7 +4,25 @@
 <head>
     @if (config('services.google.tag_manager_id'))
     <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      event: 'page_view',
+      page_type: '@yield('page_type', 'other')',
+      page_title: document.title,
+      page_path: window.location.pathname,
+      page_url: window.location.href,
+      user_logged_in: {{ Auth::check() ? 'true' : 'false' }},
+      user_id: {{ Auth::check() ? Auth::id() : 'null' }}
+    });
+    @if(Session::has('registered_success_track'))
+    window.dataLayer.push({
+      event: 'sign_up',
+      method: 'website_account',
+      user_id: {{ Auth::check() ? Auth::id() : 'null' }}
+    });
+    @endif
+    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
     j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
@@ -1026,6 +1044,21 @@ src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&e
         options = options || {};
 
         try {
+            if (payload && Array.isArray(payload.items)) {
+                payload.items.forEach(function (item) {
+                    if (item) {
+                        if (!item.google_business_vertical) {
+                            item.google_business_vertical = 'retail';
+                        }
+                        if (item.price !== undefined) {
+                            item.price = parseFloat(item.price);
+                        }
+                        if (item.quantity !== undefined) {
+                            item.quantity = parseInt(item.quantity, 10);
+                        }
+                    }
+                });
+            }
             window.dataLayer = window.dataLayer || [];
             window.dataLayer.push({
                 event: googleEvent || metaEvent,
