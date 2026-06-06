@@ -788,6 +788,22 @@ $(function ($) {
                         return;
                     }
 
+                    var card = $(this);
+                    if (typeof window.paTrack === 'function') {
+                        var isSearch = $('#search_form input[name="search"]').val();
+                        window.paTrack('SelectItem', {
+                            item_list_id: isSearch ? 'search_results' : 'category_list',
+                            item_list_name: isSearch ? 'Search Results' : 'Category List',
+                            items: [{
+                                item_id: String(card.attr('data-item-id') || ''),
+                                item_name: String(card.attr('data-item-name') || ''),
+                                item_category: String(card.attr('data-item-category') || ''),
+                                price: parseFloat(card.attr('data-item-price') || 0),
+                                google_business_vertical: 'retail'
+                            }]
+                        }, 'select_item');
+                    }
+
                     window.location.href = productLink;
                 });
         }
@@ -1306,7 +1322,16 @@ $(function ($) {
             }
 
             if (status == 1) {
-                let addToCartUrl = `${mainurl}/product/add/cart?item_id=${itemId}&options_ids=${options_ids}&attribute_ids=${attribute_ids}&quantity=${quantity}&type=${type}&item_key=${item_key}&add_type=${add_type}`;
+                let fbEventId = '';
+                if (check != 0) {
+                    fbEventId = $('.add_to_single_cart[data-target="' + check + '"]').attr('data-fb-event-id') || '';
+                } else {
+                    fbEventId = $('#add_to_cart').attr('data-fb-event-id') || '';
+                }
+                if (!fbEventId) {
+                    fbEventId = 'cart_' + itemId + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                }
+                let addToCartUrl = `${mainurl}/product/add/cart?item_id=${itemId}&options_ids=${options_ids}&attribute_ids=${attribute_ids}&quantity=${quantity}&type=${type}&item_key=${item_key}&add_type=${add_type}&event_id=${fbEventId}&add_to_cart_event_id=${fbEventId}`;
                 $.ajax({
                     method: "GET",
                     contentType: false,
@@ -1413,6 +1438,59 @@ $(function ($) {
             var link = $(this).data('href') + '?order_number=' + $('#order_number').val();
             $('#track-order').load(link);
             return false;
+        });
+
+        // remove_from_cart tracking
+        $(document).on('click', '.remove-from-cart', function (e) {
+            var btn = $(this);
+            var href = btn.attr('href');
+            if (!href || href === 'javascript:;') {
+                return;
+            }
+            var itemId = btn.attr('data-item-id');
+            if (itemId && typeof window.paTrack === 'function') {
+                e.preventDefault();
+                window.paTrack('RemoveFromCart', {
+                    value: parseFloat(btn.attr('data-item-price') || 0) * parseInt(btn.attr('data-item-qty') || 1, 10),
+                    currency: 'CAD',
+                    items: [{
+                        item_id: String(itemId),
+                        item_name: String(btn.attr('data-item-name') || ''),
+                        item_brand: String(btn.attr('data-item-brand') || ''),
+                        item_category: String(btn.attr('data-item-category') || ''),
+                        item_category2: String(btn.attr('data-item-category2') || ''),
+                        item_category3: String(btn.attr('data-item-category3') || ''),
+                        price: parseFloat(btn.attr('data-item-price') || 0),
+                        quantity: parseInt(btn.attr('data-item-qty') || 1, 10),
+                        google_business_vertical: 'retail'
+                    }]
+                }, 'remove_from_cart');
+                setTimeout(function () {
+                    window.location.href = href;
+                }, 150);
+            }
+        });
+
+        // select_item tracking (clicks on product title link or product image)
+        $(document).on('click', '.product-card .product-title a, .product-card .product-thumb > img', function (event) {
+            var card = $(this).closest('.product-card');
+            if (card.length && typeof window.paTrack === 'function') {
+                var isSearch = $('#search_form input[name="search"]').val();
+                window.paTrack('SelectItem', {
+                    item_list_id: isSearch ? 'search_results' : 'category_list',
+                    item_list_name: isSearch ? 'Search Results' : 'Category List',
+                    items: [{
+                        item_id: String(card.attr('data-item-id') || ''),
+                        item_name: String(card.attr('data-item-name') || ''),
+                        item_brand: String(card.attr('data-item-brand') || ''),
+                        item_category: String(card.attr('data-item-category') || ''),
+                        item_category2: String(card.attr('data-item-category2') || ''),
+                        item_category3: String(card.attr('data-item-category3') || ''),
+                        price: parseFloat(card.attr('data-item-price') || 0),
+                        google_business_vertical: 'retail'
+                    }]
+                }, 'select_item');
+            }
         });
 
     });

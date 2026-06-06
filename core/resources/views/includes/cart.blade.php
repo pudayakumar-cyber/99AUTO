@@ -47,8 +47,13 @@
 
                     @foreach ($cart as $key => $item)
                         @php
-                            
                             $cartTotal += ($item['main_price'] + $total + $item['attribute_price']) * $item['qty'];
+                            $itemId = \PriceHelper::GetItemId($key);
+                            $dbItem = \App\Models\Item::with(['category', 'subcategory', 'childcategory', 'brand'])->find($itemId);
+                            $categoryName = $dbItem && $dbItem->category ? $dbItem->category->name : '';
+                            $subcategoryName = $dbItem && $dbItem->subcategory ? $dbItem->subcategory->name : '';
+                            $childcategoryName = $dbItem && $dbItem->childcategory ? $dbItem->childcategory->name : '';
+                            $brandName = $dbItem && $dbItem->brand ? $dbItem->brand->name : '';
                         @endphp
                         <tr>
                             <td>
@@ -69,17 +74,18 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="text-center text-lg">{{ PriceHelper::setCurrencyPrice($item['main_price']) }}
-                            </td>
+                            <td class="text-center text-lg">{{ PriceHelper::setCurrencyPrice($item['main_price']) }}</td>
 
                             <td class="text-center">
-                                @if ($item['item_type'] == 'normal')
-                                    <div class="qtySelector product-quantity">
-                                        <span class="decreaseQtycart cartsubclick" data-id="{{ $key }}"
+                                @if ($item['item_type'] != 'normal')
+                                    1
+                                @else
+                                    <div class="qtyNum cartqtyclick">
+                                        <span class="minusQtycart cartaddclick" data-id="{{ $key }}"
                                             data-target="{{ PriceHelper::GetItemId($key) }}"><i
                                                 class="fas fa-minus"></i></span>
-                                        <input type="text" disabled class="qtyValue cartcart-amount"
-                                            value="{{ $item['qty'] }}">
+                                        <input type="text" id="qty_field" class="qty_field_cart"
+                                            value="{{ $item['qty'] }}" readonly>
                                         <span class="increaseQtycart cartaddclick" data-id="{{ $key }}"
                                             data-target="{{ PriceHelper::GetItemId($key) }}"
                                             data-item="{{ implode(',', $item['options_id']) }}"><i
@@ -94,7 +100,15 @@
 
                             <td class="text-center"><a class="remove-from-cart"
                                     href="{{ route('front.cart.destroy', $key) }}" data-toggle="tooltip"
-                                    title="Remove item"><i class="icon-x"></i></a></td>
+                                    title="Remove item"
+                                    data-item-id="{{ $itemId }}"
+                                    data-item-name="{{ $item['name'] }}"
+                                    data-item-brand="{{ $brandName }}"
+                                    data-item-category="{{ $categoryName }}"
+                                    data-item-category2="{{ $subcategoryName }}"
+                                    data-item-category3="{{ $childcategoryName }}"
+                                    data-item-price="{{ (float)$item['main_price'] }}"
+                                    data-item-qty="{{ $item['qty'] }}"><i class="icon-x"></i></a></td>
                         </tr>
                     @endforeach
                     @php

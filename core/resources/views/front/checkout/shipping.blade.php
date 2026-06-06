@@ -1,5 +1,7 @@
 @extends('master.front')
 
+@section('page_type', 'checkout')
+
 @section('title')
     {{ __('Shipping') }}
 @endsection
@@ -140,4 +142,52 @@
             </div>
         </div>
     </div>
+
+@php
+    $checkoutContentIds = [];
+    $checkoutItems = [];
+    $checkoutNumItems = 0;
+    $cartTotal = 0;
+    foreach ($cart as $key => $line) {
+        $checkoutItemId = (string) ($line['id'] ?? $line['item_id'] ?? \PriceHelper::GetItemId($key) ?? $key);
+        $checkoutQty = (int) ($line['qty'] ?? 1);
+        $checkoutContentIds[] = $checkoutItemId;
+        
+        $dbItem = \App\Models\Item::with(['category', 'subcategory', 'childcategory', 'brand'])->find($checkoutItemId);
+        $categoryName = $dbItem && $dbItem->category ? $dbItem->category->name : '';
+        $subcategoryName = $dbItem && $dbItem->subcategory ? $dbItem->subcategory->name : '';
+        $childcategoryName = $dbItem && $dbItem->childcategory ? $dbItem->childcategory->name : '';
+        $brandName = $dbItem && $dbItem->brand ? $dbItem->brand->name : '';
+
+        $checkoutItems[] = [
+            'item_id' => $checkoutItemId,
+            'item_name' => $line['name'] ?? '',
+            'item_brand' => $brandName,
+            'item_category' => $categoryName,
+            'item_category2' => $subcategoryName,
+            'item_category3' => $childcategoryName,
+            'quantity' => $checkoutQty,
+            'price' => (float) ($line['main_price'] ?? 0),
+            'google_business_vertical' => 'retail'
+        ];
+        $checkoutNumItems += $checkoutQty;
+        $cartTotal += ($line['main_price'] + ($line['attribute_price'] ?? 0)) * $checkoutQty;
+    }
+    $checkoutValue = (float) ($cartTotal - (Session::has('coupon') ? Session::get('coupon')['discount'] : 0));
+@endphp
+
+@section('script')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (typeof window.paTrack === 'function') {
+        window.paTrack('AddShippingInfo', {
+            value: {{ $checkoutValue }},
+            currency: 'CAD',
+            items: @json($checkoutItems)
+        }, 'add_shipping_info');
+    }
+});
+</script>
+@endsection
+
 @endsection

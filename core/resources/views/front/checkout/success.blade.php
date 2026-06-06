@@ -1,5 +1,7 @@
 @extends('master.front')
 
+@section('page_type', 'order_confirmation')
+
 @section('title')
     {{ __('Order Success') }}
 @endsection
@@ -44,18 +46,7 @@
     $googleAdsPurchaseSendTo = 'AW-' . config('services.google.ads_conversion_id') . '/' . config('services.google.ads_purchase_label');
     $billingInfo = json_decode((string) $order->billing_info, true) ?: [];
     $shippingInfo = json_decode((string) $order->shipping_info, true) ?: [];
-    $googleNormalize = function ($value) {
-        $value = preg_replace('/\s+/', '', strtolower(trim((string) $value)));
-        return $value === '' ? null : hash('sha256', $value);
-    };
-    $googleNormalizeEmail = function ($value) {
-        $value = strtolower(trim((string) $value));
-        return $value === '' ? null : hash('sha256', $value);
-    };
-    $googleNormalizePhone = function ($value) {
-        $value = preg_replace('/\D+/', '', (string) $value);
-        return $value === '' ? null : hash('sha256', $value);
-    };
+    
     $googleNormalizeCountry = function ($value) {
         $value = strtolower(trim((string) $value));
         $countries = [
@@ -68,25 +59,71 @@
         ];
         return strtoupper($countries[$value] ?? $value);
     };
-    $googleEnhancedConversionData = array_filter([
-        'sha256_email_address' => $googleNormalizeEmail($billingInfo['bill_email'] ?? $shippingInfo['ship_email'] ?? optional($order->user)->email),
-        'sha256_phone_number' => $googleNormalizePhone($billingInfo['bill_phone'] ?? $shippingInfo['ship_phone'] ?? optional($order->user)->phone),
-        'address' => array_filter([
-            'sha256_first_name' => $googleNormalize($billingInfo['bill_first_name'] ?? $shippingInfo['ship_first_name'] ?? optional($order->user)->first_name),
-            'sha256_last_name' => $googleNormalize($billingInfo['bill_last_name'] ?? $shippingInfo['ship_last_name'] ?? optional($order->user)->last_name),
-            'city' => $billingInfo['bill_city'] ?? $shippingInfo['ship_city'] ?? optional($order->user)->bill_city ?? optional($order->user)->ship_city,
-            'region' => $billingInfo['bill_province'] ?? $shippingInfo['ship_province'] ?? optional($order->user)->bill_province ?? optional($order->user)->ship_province,
-            'postal_code' => $billingInfo['bill_zip'] ?? $shippingInfo['ship_zip'] ?? optional($order->user)->bill_zip ?? optional($order->user)->ship_zip,
-            'country' => $googleNormalizeCountry($billingInfo['bill_country'] ?? $shippingInfo['ship_country'] ?? optional($order->user)->bill_country ?? optional($order->user)->ship_country),
-        ]),
+
+    $rawEmail = $billingInfo['bill_email'] ?? $shippingInfo['ship_email'] ?? optional($order->user)->email ?? '';
+    $rawPhone = $billingInfo['bill_phone'] ?? $shippingInfo['ship_phone'] ?? optional($order->user)->phone ?? '';
+    $rawFirstName = $billingInfo['bill_first_name'] ?? $shippingInfo['ship_first_name'] ?? optional($order->user)->first_name ?? '';
+    $rawLastName = $billingInfo['bill_last_name'] ?? $shippingInfo['ship_last_name'] ?? optional($order->user)->last_name ?? '';
+    $rawStreet = trim(($billingInfo['bill_address1'] ?? '') . ' ' . ($billingInfo['bill_address2'] ?? ''));
+    if (empty($rawStreet)) {
+        $rawStreet = trim(($shippingInfo['ship_address1'] ?? '') . ' ' . ($shippingInfo['ship_address2'] ?? ''));
+    }
+    if (empty($rawStreet) && $order->user) {
+        $rawStreet = trim(($order->user->bill_address1 ?? '') . ' ' . ($order->user->bill_address2 ?? '') . ' ' . ($order->user->ship_address1 ?? '') . ' ' . ($order->user->ship_address2 ?? ''));
+    }
+    $rawCity = $billingInfo['bill_city'] ?? $shippingInfo['ship_city'] ?? optional($order->user)->bill_city ?? optional($order->user)->ship_city ?? '';
+    $rawRegion = $billingInfo['bill_province'] ?? $shippingInfo['ship_province'] ?? optional($order->user)->bill_province ?? optional($order->user)->ship_province ?? '';
+    $rawPostalCode = $billingInfo['bill_zip'] ?? $shippingInfo['ship_zip'] ?? optional($order->user)->bill_zip ?? optional($order->user)->ship_zip ?? '';
+    $rawCountry = $billingInfo['bill_country'] ?? $shippingInfo['ship_country'] ?? optional($order->user)->bill_country ?? optional($order->user)->ship_country ?? '';
+
+    $customerData = array_filter([
+        'email' => strtolower(trim($rawEmail)),
+        'phone_number' => preg_replace('/\D+/', '', $rawPhone),
+        'first_name' => trim($rawFirstName),
+        'last_name' => trim($rawLastName),
+        'street' => trim($rawStreet),
+        'city' => trim($rawCity),
+        'region' => trim($rawRegion),
+        'postal_code' => trim($rawPostalCode),
+        'country' => $googleNormalizeCountry($rawCountry),
     ]);
+
+    $subtotal = 0;
+    foreach ($cart as $item) {
+        $subtotal += ($item['main_price'] + ($item['attribute_price'] ?? 0)) * $item['qty'];
+    }
+    $discountInfo = json_decode((string) $order->discount, true) ?: [];
+    $subtotal = $subtotal - ($discountInfo['discount'] ?? 0);
+    $subtotal = round($subtotal * $order->currency_value, 2);
+
     $purchaseItems = [];
+    $itemIds = [];
     foreach ($cart as $key => $item) {
+        $itemId = \PriceHelper::GetItemId($key);
+        if ($itemId) {
+            $itemIds[] = $itemId;
+        }
+    }
+    $purchaseDbItems = \App\Models\Item::with(['category', 'subcategory', 'childcategory', 'brand'])->whereIn('id', $itemIds)->get()->keyBy('id');
+
+    foreach ($cart as $key => $item) {
+        $itemId = \PriceHelper::GetItemId($key);
+        $dbItem = $purchaseDbItems->get($itemId);
+        $categoryName = $dbItem && $dbItem->category ? $dbItem->category->name : '';
+        $subcategoryName = $dbItem && $dbItem->subcategory ? $dbItem->subcategory->name : '';
+        $childcategoryName = $dbItem && $dbItem->childcategory ? $dbItem->childcategory->name : '';
+        $brandName = $dbItem && $dbItem->brand ? $dbItem->brand->name : '';
+
         $purchaseItems[] = [
-            'item_id' => (string) ($item['id'] ?? $item['item_id'] ?? $key),
+            'item_id' => (string) $itemId,
             'item_name' => $item['name'] ?? '',
+            'item_brand' => $brandName,
+            'item_category' => (string) $categoryName,
+            'item_category2' => (string) $subcategoryName,
+            'item_category3' => (string) $childcategoryName,
             'quantity' => (int) ($item['qty'] ?? 1),
             'price' => (float) ($item['main_price'] ?? $item['price'] ?? 0),
+            'google_business_vertical' => 'retail'
         ];
     }
 @endphp
@@ -100,18 +137,17 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
-    if (typeof window.gtag === 'function' && Object.keys(@json($googleEnhancedConversionData)).length) {
-        window.gtag('set', 'user_data', @json($googleEnhancedConversionData));
-    }
-
     window.paTrack('Purchase', {
         content_type: 'product',
         content_ids: @json($cart_content_ids),
-        value: {{ $order_value }},
+        value: {{ $subtotal }},
         currency: '{{ $currency }}',
         num_items: {{ $num_items }},
         transaction_id: '{{ $order->transaction_number }}',
+        tax: {{ (float) ($order->tax ?? 0) }},
+        shipping: {{ (float) ($order->shipping_price ?? 0) }},
         event_id: '{{ $event_id }}',
+        customer_data: @json($customerData),
         items: @json($purchaseItems)
     }, 'purchase', {
         eventId: '{{ $event_id }}',

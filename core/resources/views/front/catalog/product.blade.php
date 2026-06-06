@@ -1,5 +1,7 @@
 @extends('master.front')
 
+@section('page_type', 'product')
+
 @section('title')
     {{ $item->name }}
 @endsection
@@ -1149,7 +1151,10 @@ document.addEventListener('DOMContentLoaded', function () {
         items: [{
             item_id: @json((string)($item->id ?? $item->prod_number ?? '')),
             item_name: @json($item->name ?? ''),
+            item_brand: @json(optional($item->brand)->name ?? ''),
             item_category: @json(optional($item->category)->name ?? ''),
+            item_category2: @json(optional($item->subcategory)->name ?? ''),
+            item_category3: @json(optional($item->childcategory)->name ?? ''),
             price: {{ (float) ($item->discount_price ?? $item->previous_price ?? 0) }}
         }]
     };
@@ -1174,10 +1179,6 @@ document.addEventListener('DOMContentLoaded', function () {
             quantity: qty,
             items: [Object.assign({}, productPayload.items[0], { quantity: qty })]
         });
-
-        if (typeof window.paTrack === 'function') {
-            window.paTrack('AddToCart', addToCartPayload, 'add_to_cart', { eventId: eventId });
-        }
     });
 });
 </script>

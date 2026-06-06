@@ -1,4 +1,5 @@
 @extends('master.front')
+@section('page_type', 'content')
 @section('meta')
 <meta name="keywords" content="{{$setting->meta_keywords}}">
 <meta name="description" content="{{$setting->meta_description}}">
