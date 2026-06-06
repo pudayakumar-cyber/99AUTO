@@ -74,7 +74,7 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="text-center text-lg">{{ PriceHelper::setAvgPrice($item) }}</td>
+                            <td class="text-center text-lg">{{ PriceHelper::setCurrencyPrice($item['main_price']) }}</td>
 
                             <td class="text-center">
                                 @if (\PriceHelper::CheckDigitalItemId($key))
