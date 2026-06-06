@@ -357,7 +357,10 @@
             $gtmItems[] = [
                 'item_id' => (string)($item->id ?? $item->prod_number ?? ''),
                 'item_name' => (string)($item->name ?? ''),
+                'item_brand' => (string)(optional($item->brand)->name ?? ''),
                 'item_category' => (string)(optional($item->category)->name ?? ''),
+                'item_category2' => (string)(optional($item->subcategory)->name ?? ''),
+                'item_category3' => (string)(optional($item->childcategory)->name ?? ''),
                 'price' => (float)($item->discount_price ?? $item->previous_price ?? 0),
                 'index' => $index + 1,
                 'google_business_vertical' => 'retail'

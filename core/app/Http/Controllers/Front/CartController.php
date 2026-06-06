@@ -47,7 +47,7 @@ class CartController extends Controller
         $msg = $this->repository->store($request);
 
         if ($request->ajax() && empty($msg['status']) && $request->item_id) {
-            $item = Item::with('category')->find($request->item_id);
+            $item = Item::with(['category', 'subcategory', 'childcategory', 'brand'])->find($request->item_id);
 
             if ($item) {
                 $quantity = max(1, (int) $request->input('quantity', 1));
@@ -81,7 +81,10 @@ class CartController extends Controller
                         'items' => [[
                             'item_id' => (string) $item->id,
                             'item_name' => (string) $item->name,
+                            'item_brand' => (string) optional($item->brand)->name,
                             'item_category' => (string) optional($item->category)->name,
+                            'item_category2' => (string) optional($item->subcategory)->name,
+                            'item_category3' => (string) optional($item->childcategory)->name,
                             'price' => $price,
                             'quantity' => $quantity,
                         ]],

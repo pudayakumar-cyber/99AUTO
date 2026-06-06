@@ -1045,6 +1045,11 @@ src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&e
 
         try {
             if (payload && Array.isArray(payload.items)) {
+                var activeVehicle = null;
+                try {
+                    activeVehicle = JSON.parse(localStorage.getItem('selected_vehicle') || 'null');
+                } catch (e) {}
+
                 payload.items.forEach(function (item) {
                     if (item) {
                         if (!item.google_business_vertical) {
@@ -1055,6 +1060,17 @@ src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&e
                         }
                         if (item.quantity !== undefined) {
                             item.quantity = parseInt(item.quantity, 10);
+                        }
+                        if (activeVehicle && activeVehicle.year && activeVehicle.make && activeVehicle.model) {
+                            if (!item.vehicle_year) {
+                                item.vehicle_year = String(activeVehicle.year).trim();
+                            }
+                            if (!item.vehicle_make) {
+                                item.vehicle_make = String(activeVehicle.make).trim();
+                            }
+                            if (!item.vehicle_model) {
+                                item.vehicle_model = String(activeVehicle.model).trim();
+                            }
                         }
                     }
                 });

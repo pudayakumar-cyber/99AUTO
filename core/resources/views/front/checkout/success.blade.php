@@ -104,17 +104,23 @@
             $itemIds[] = $itemId;
         }
     }
-    $purchaseDbItems = \App\Models\Item::with('category')->whereIn('id', $itemIds)->get()->keyBy('id');
+    $purchaseDbItems = \App\Models\Item::with(['category', 'subcategory', 'childcategory', 'brand'])->whereIn('id', $itemIds)->get()->keyBy('id');
 
     foreach ($cart as $key => $item) {
         $itemId = \PriceHelper::GetItemId($key);
         $dbItem = $purchaseDbItems->get($itemId);
         $categoryName = $dbItem && $dbItem->category ? $dbItem->category->name : '';
+        $subcategoryName = $dbItem && $dbItem->subcategory ? $dbItem->subcategory->name : '';
+        $childcategoryName = $dbItem && $dbItem->childcategory ? $dbItem->childcategory->name : '';
+        $brandName = $dbItem && $dbItem->brand ? $dbItem->brand->name : '';
 
         $purchaseItems[] = [
             'item_id' => (string) $itemId,
             'item_name' => $item['name'] ?? '',
+            'item_brand' => $brandName,
             'item_category' => (string) $categoryName,
+            'item_category2' => (string) $subcategoryName,
+            'item_category3' => (string) $childcategoryName,
             'quantity' => (int) ($item['qty'] ?? 1),
             'price' => (float) ($item['main_price'] ?? $item['price'] ?? 0),
             'google_business_vertical' => 'retail'

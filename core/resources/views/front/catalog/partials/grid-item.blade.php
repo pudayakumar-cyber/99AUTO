@@ -2,7 +2,10 @@
     <div class="product-card" 
         data-item-id="{{ $item->id ?? $item->prod_number }}"
         data-item-name="{{ $item->name }}"
+        data-item-brand="{{ optional($item->brand)->name }}"
         data-item-category="{{ optional($item->category)->name }}"
+        data-item-category2="{{ optional($item->subcategory)->name }}"
+        data-item-category3="{{ optional($item->childcategory)->name }}"
         data-item-price="{{ (float) ($item->discount_price ?? $item->previous_price ?? 0) }}"
         data-fitment-rows='@json($extractItemFitmentRows($item))'>
         @if ($item->is_stock())

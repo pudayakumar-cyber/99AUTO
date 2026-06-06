@@ -1,4 +1,5 @@
 @extends('master.front')
+@section('page_type', 'account')
 @section('title')
     {{__('Password Reset')}}
 @endsection
