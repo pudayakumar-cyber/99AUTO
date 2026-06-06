@@ -1,4 +1,5 @@
 @extends('master.front')
+@section('page_type', 'content')
 @section('title')
     {{ __('Blog Details') }}
 @endsection

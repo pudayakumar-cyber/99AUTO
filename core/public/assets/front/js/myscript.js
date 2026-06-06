@@ -1456,7 +1456,10 @@ $(function ($) {
                     items: [{
                         item_id: String(itemId),
                         item_name: String(btn.attr('data-item-name') || ''),
+                        item_brand: String(btn.attr('data-item-brand') || ''),
                         item_category: String(btn.attr('data-item-category') || ''),
+                        item_category2: String(btn.attr('data-item-category2') || ''),
+                        item_category3: String(btn.attr('data-item-category3') || ''),
                         price: parseFloat(btn.attr('data-item-price') || 0),
                         quantity: parseInt(btn.attr('data-item-qty') || 1, 10),
                         google_business_vertical: 'retail'
@@ -1479,7 +1482,10 @@ $(function ($) {
                     items: [{
                         item_id: String(card.attr('data-item-id') || ''),
                         item_name: String(card.attr('data-item-name') || ''),
+                        item_brand: String(card.attr('data-item-brand') || ''),
                         item_category: String(card.attr('data-item-category') || ''),
+                        item_category2: String(card.attr('data-item-category2') || ''),
+                        item_category3: String(card.attr('data-item-category3') || ''),
                         price: parseFloat(card.attr('data-item-price') || 0),
                         google_business_vertical: 'retail'
                     }]

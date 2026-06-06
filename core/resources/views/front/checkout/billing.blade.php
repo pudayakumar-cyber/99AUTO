@@ -187,13 +187,19 @@
         $checkoutQty = (int) ($line['qty'] ?? 1);
         $checkoutContentIds[] = $checkoutItemId;
         
-        $dbItem = \App\Models\Item::with('category')->find($checkoutItemId);
+        $dbItem = \App\Models\Item::with(['category', 'subcategory', 'childcategory', 'brand'])->find($checkoutItemId);
         $categoryName = $dbItem && $dbItem->category ? $dbItem->category->name : '';
+        $subcategoryName = $dbItem && $dbItem->subcategory ? $dbItem->subcategory->name : '';
+        $childcategoryName = $dbItem && $dbItem->childcategory ? $dbItem->childcategory->name : '';
+        $brandName = $dbItem && $dbItem->brand ? $dbItem->brand->name : '';
 
         $checkoutItems[] = [
             'item_id' => $checkoutItemId,
             'item_name' => $line['name'] ?? '',
+            'item_brand' => $brandName,
             'item_category' => $categoryName,
+            'item_category2' => $subcategoryName,
+            'item_category3' => $childcategoryName,
             'quantity' => $checkoutQty,
             'price' => (float) ($line['main_price'] ?? 0),
             'google_business_vertical' => 'retail'
