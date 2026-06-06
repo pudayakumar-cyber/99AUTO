@@ -77,7 +77,7 @@
                             <td class="text-center text-lg">{{ PriceHelper::setCurrencyPrice($item['main_price']) }}</td>
 
                             <td class="text-center">
-                                @if (\PriceHelper::CheckDigitalItemId($key))
+                                @if ($item['item_type'] != 'normal')
                                     1
                                 @else
                                     <div class="qtyNum cartqtyclick">
