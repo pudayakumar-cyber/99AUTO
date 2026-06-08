@@ -1072,6 +1072,21 @@ src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&e
                                 item.vehicle_model = String(activeVehicle.model).trim();
                             }
                         }
+                        if (!item.vehicle_trim) {
+                            item.vehicle_trim = (activeVehicle && activeVehicle.trim) ? String(activeVehicle.trim).trim() : '';
+                        }
+                        if (!item.manufacturer && item.item_brand) {
+                            item.manufacturer = String(item.item_brand).trim();
+                        }
+                        if (!item.part_typefitment) {
+                            item.part_typefitment = String(item.item_category3 || item.item_category2 || item.item_category || '').trim();
+                        }
+                        if (!item.mpn && item.item_id) {
+                            item.mpn = String(item.item_id).trim();
+                        }
+                        if (!item.sku && item.item_id) {
+                            item.sku = String(item.item_id).trim();
+                        }
                     }
                 });
             }

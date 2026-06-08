@@ -123,7 +123,11 @@
             'item_category3' => (string) $childcategoryName,
             'quantity' => (int) ($item['qty'] ?? 1),
             'price' => (float) ($item['main_price'] ?? $item['price'] ?? 0),
-            'google_business_vertical' => 'retail'
+            'google_business_vertical' => 'retail',
+            'sku' => (string) ($dbItem && $dbItem->sku ? $dbItem->sku : ($dbItem && $dbItem->prod_number ? $dbItem->prod_number : $itemId)),
+            'mpn' => (string) ($dbItem && $dbItem->prod_number ? $dbItem->prod_number : ''),
+            'manufacturer' => $brandName,
+            'part_typefitment' => (string) ($childcategoryName ?: ($subcategoryName ?: $categoryName)),
         ];
     }
 @endphp

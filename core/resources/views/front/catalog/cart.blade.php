@@ -73,7 +73,11 @@
             'item_category3' => (string)$childcategoryName,
             'quantity' => $cartQty,
             'price' => $price,
-            'google_business_vertical' => 'retail'
+            'google_business_vertical' => 'retail',
+            'sku' => (string) ($dbItem && $dbItem->sku ? $dbItem->sku : ($dbItem && $dbItem->prod_number ? $dbItem->prod_number : $itemId)),
+            'mpn' => (string) ($dbItem && $dbItem->prod_number ? $dbItem->prod_number : ''),
+            'manufacturer' => (string)$brandName,
+            'part_typefitment' => (string) ($childcategoryName ?: ($subcategoryName ?: $categoryName)),
         ];
         $cartValue += $price * $cartQty;
     }
