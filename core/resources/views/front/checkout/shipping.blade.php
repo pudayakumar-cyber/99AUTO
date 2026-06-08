@@ -168,7 +168,11 @@
             'item_category3' => $childcategoryName,
             'quantity' => $checkoutQty,
             'price' => (float) ($line['main_price'] ?? 0),
-            'google_business_vertical' => 'retail'
+            'google_business_vertical' => 'retail',
+            'sku' => (string) ($dbItem && $dbItem->sku ? $dbItem->sku : ($dbItem && $dbItem->prod_number ? $dbItem->prod_number : $checkoutItemId)),
+            'mpn' => (string) ($dbItem && $dbItem->prod_number ? $dbItem->prod_number : ''),
+            'manufacturer' => $brandName,
+            'part_typefitment' => (string) ($childcategoryName ?: ($subcategoryName ?: $categoryName)),
         ];
         $checkoutNumItems += $checkoutQty;
         $cartTotal += ($line['main_price'] + ($line['attribute_price'] ?? 0)) * $checkoutQty;

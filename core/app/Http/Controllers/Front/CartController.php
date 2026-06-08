@@ -87,6 +87,10 @@ class CartController extends Controller
                             'item_category3' => (string) optional($item->childcategory)->name,
                             'price' => $price,
                             'quantity' => $quantity,
+                            'sku' => (string) ($item->sku ?: ($item->prod_number ?: $item->id)),
+                            'mpn' => (string) ($item->prod_number ?: ''),
+                            'manufacturer' => (string) (optional($item->brand)->name ?? ''),
+                            'part_typefitment' => (string) (optional($item->childcategory)->name ?: (optional($item->subcategory)->name ?: optional($item->category)->name)),
                         ]],
                     ],
                 ];

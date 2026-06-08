@@ -1155,7 +1155,11 @@ document.addEventListener('DOMContentLoaded', function () {
             item_category: @json(optional($item->category)->name ?? ''),
             item_category2: @json(optional($item->subcategory)->name ?? ''),
             item_category3: @json(optional($item->childcategory)->name ?? ''),
-            price: {{ (float) ($item->discount_price ?? $item->previous_price ?? 0) }}
+            price: {{ (float) ($item->discount_price ?? $item->previous_price ?? 0) }},
+            sku: @json((string) ($item->sku ?: ($item->prod_number ?: $item->id))),
+            mpn: @json((string) ($item->prod_number ?: '')),
+            manufacturer: @json(optional($item->brand)->name ?? ''),
+            part_typefitment: @json((string) (optional($item->childcategory)->name ?: (optional($item->subcategory)->name ?: optional($item->category)->name)))
         }]
     };
 
