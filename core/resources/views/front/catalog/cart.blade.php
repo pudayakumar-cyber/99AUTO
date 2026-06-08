@@ -64,6 +64,15 @@
         $brandName = $dbItem && $dbItem->brand ? $dbItem->brand->name : '';
         $cartQty = (int) ($line['qty'] ?? 1);
         $price = (float) ($line['main_price'] ?? 0);
+
+        $attributeNames = [];
+        if (isset($line['attribute']['option_name']) && is_array($line['attribute']['option_name'])) {
+            foreach ($line['attribute']['option_name'] as $optName) {
+                $attributeNames[] = $optName;
+            }
+        }
+        $itemVariant = implode(', ', $attributeNames);
+
         $cartItems[] = [
             'item_id' => (string)$itemId,
             'item_name' => (string)($line['name'] ?? ''),
@@ -71,6 +80,7 @@
             'item_category' => (string)$categoryName,
             'item_category2' => (string)$subcategoryName,
             'item_category3' => (string)$childcategoryName,
+            'item_variant' => (string)$itemVariant,
             'quantity' => $cartQty,
             'price' => $price,
             'google_business_vertical' => 'retail',

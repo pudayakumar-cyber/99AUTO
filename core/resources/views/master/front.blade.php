@@ -1044,12 +1044,12 @@ src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&e
         options = options || {};
 
         try {
-            if (payload && Array.isArray(payload.items)) {
-                var activeVehicle = null;
-                try {
-                    activeVehicle = JSON.parse(localStorage.getItem('selected_vehicle') || 'null');
-                } catch (e) {}
+            var activeVehicle = null;
+            try {
+                activeVehicle = JSON.parse(localStorage.getItem('selected_vehicle') || 'null');
+            } catch (e) {}
 
+            if (payload && Array.isArray(payload.items)) {
                 payload.items.forEach(function (item) {
                     if (item) {
                         if (!item.google_business_vertical) {
@@ -1078,6 +1078,9 @@ src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&e
                         if (!item.manufacturer && item.item_brand) {
                             item.manufacturer = String(item.item_brand).trim();
                         }
+                        if (!item.part_type) {
+                            item.part_type = String(item.item_category3 || item.item_category2 || item.item_category || '').trim();
+                        }
                         if (!item.part_typefitment) {
                             item.part_typefitment = String(item.item_category3 || item.item_category2 || item.item_category || '').trim();
                         }
@@ -1091,18 +1094,39 @@ src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&e
                 });
             }
             window.dataLayer = window.dataLayer || [];
-            window.dataLayer.push({
+            var dataLayerObj = {
                 event: googleEvent || metaEvent,
                 meta_event: metaEvent,
                 google_ads_send_to: options.googleAdsSendTo || null,
                 ecommerce: payload
-            });
+            };
+            if (activeVehicle && activeVehicle.year && activeVehicle.make && activeVehicle.model) {
+                dataLayerObj.vehicle_year = String(activeVehicle.year).trim();
+                dataLayerObj.vehicle_make = String(activeVehicle.make).trim();
+                dataLayerObj.vehicle_model = String(activeVehicle.model).trim();
+                dataLayerObj.vehicle_trim = activeVehicle.trim ? String(activeVehicle.trim).trim() : '';
+            }
+            if (payload && Array.isArray(payload.items) && payload.items.length > 0) {
+                var firstItem = payload.items[0];
+                if (firstItem) {
+                    dataLayerObj.part_type = firstItem.part_type || firstItem.part_typefitment || '';
+                }
+            }
+            window.dataLayer.push(dataLayerObj);
         } catch (error) {
             console.warn('Tracking dataLayer push failed', error);
         }
 
         try {
-            var shouldSendDirectGoogleEvent = !window.google_tag_manager || options.forceGoogleDirect;
+            var hasGtmScript = false;
+            var scripts = document.getElementsByTagName('script');
+            for (var i = 0; i < scripts.length; i++) {
+                if (scripts[i].src && scripts[i].src.indexOf('gtm.js') !== -1) {
+                    hasGtmScript = true;
+                    break;
+                }
+            }
+            var shouldSendDirectGoogleEvent = !hasGtmScript && !window.google_tag_manager;
 
             if (shouldSendDirectGoogleEvent && googleEvent && typeof window.gtag === 'function') {
                 window.gtag('event', googleEvent, payload);

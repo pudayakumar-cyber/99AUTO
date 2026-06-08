@@ -96,6 +96,15 @@
     $subtotal = $subtotal - ($discountInfo['discount'] ?? 0);
     $subtotal = round($subtotal * $order->currency_value, 2);
 
+    $shippingDetails = json_decode((string) $order->shipping, true) ?: [];
+    $shippingPrice = (float) ($shippingDetails['price'] ?? 0);
+    $shippingPrice = round($shippingPrice * $order->currency_value, 2);
+    $shippingTier = $shippingDetails['title'] ?? '';
+
+    $taxVal = (float) ($order->tax ?? 0);
+    $stateTaxVal = (float) ($order->state_price ?? 0);
+    $totalTax = round(($taxVal + $stateTaxVal) * $order->currency_value, 2);
+
     $purchaseItems = [];
     $itemIds = [];
     foreach ($cart as $key => $item) {
@@ -114,6 +123,14 @@
         $childcategoryName = $dbItem && $dbItem->childcategory ? $dbItem->childcategory->name : '';
         $brandName = $dbItem && $dbItem->brand ? $dbItem->brand->name : '';
 
+        $attributeNames = [];
+        if (isset($item['attribute']['option_name']) && is_array($item['attribute']['option_name'])) {
+            foreach ($item['attribute']['option_name'] as $optName) {
+                $attributeNames[] = $optName;
+            }
+        }
+        $itemVariant = implode(', ', $attributeNames);
+
         $purchaseItems[] = [
             'item_id' => (string) $itemId,
             'item_name' => $item['name'] ?? '',
@@ -121,6 +138,7 @@
             'item_category' => (string) $categoryName,
             'item_category2' => (string) $subcategoryName,
             'item_category3' => (string) $childcategoryName,
+            'item_variant' => $itemVariant,
             'quantity' => (int) ($item['qty'] ?? 1),
             'price' => (float) ($item['main_price'] ?? $item['price'] ?? 0),
             'google_business_vertical' => 'retail',
@@ -148,15 +166,16 @@ document.addEventListener('DOMContentLoaded', function () {
         currency: '{{ $currency }}',
         num_items: {{ $num_items }},
         transaction_id: '{{ $order->transaction_number }}',
-        tax: {{ (float) ($order->tax ?? 0) }},
-        shipping: {{ (float) ($order->shipping_price ?? 0) }},
+        tax: {{ $totalTax }},
+        shipping: {{ $shippingPrice }},
+        shipping_tier: '{{ $shippingTier }}',
+        payment_type: '{{ $order->payment_method }}',
         event_id: '{{ $event_id }}',
         customer_data: @json($customerData),
         items: @json($purchaseItems)
     }, 'purchase', {
         eventId: '{{ $event_id }}',
-        googleAdsSendTo: '{{ $googleAdsPurchaseSendTo }}',
-        forceGoogleDirect: true
+        googleAdsSendTo: '{{ $googleAdsPurchaseSendTo }}'
     });
 });
 </script>
