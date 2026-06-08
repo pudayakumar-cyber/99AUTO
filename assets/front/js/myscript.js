@@ -1460,6 +1460,7 @@ $(function ($) {
                         item_category: String(btn.attr('data-item-category') || ''),
                         item_category2: String(btn.attr('data-item-category2') || ''),
                         item_category3: String(btn.attr('data-item-category3') || ''),
+                        item_variant: String(btn.attr('data-item-variant') || ''),
                         price: parseFloat(btn.attr('data-item-price') || 0),
                         quantity: parseInt(btn.attr('data-item-qty') || 1, 10),
                         google_business_vertical: 'retail'

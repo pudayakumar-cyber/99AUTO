@@ -98,7 +98,17 @@
                             <td class="text-center text-lg">
                                 {{ PriceHelper::setCurrencyPrice($item['main_price'] * $item['qty']) }}</td>
 
-                            <td class="text-center"><a class="remove-from-cart"
+                            <td class="text-center">
+                                @php
+                                    $attributeNames = [];
+                                    if (isset($item['attribute']['option_name']) && is_array($item['attribute']['option_name'])) {
+                                        foreach ($item['attribute']['option_name'] as $optName) {
+                                            $attributeNames[] = $optName;
+                                        }
+                                    }
+                                    $itemVariant = implode(', ', $attributeNames);
+                                @endphp
+                                <a class="remove-from-cart"
                                     href="{{ route('front.cart.destroy', $key) }}" data-toggle="tooltip"
                                     title="Remove item"
                                     data-item-id="{{ $itemId }}"
@@ -108,7 +118,8 @@
                                     data-item-category2="{{ $subcategoryName }}"
                                     data-item-category3="{{ $childcategoryName }}"
                                     data-item-price="{{ (float)$item['main_price'] }}"
-                                    data-item-qty="{{ $item['qty'] }}"><i class="icon-x"></i></a></td>
+                                    data-item-qty="{{ $item['qty'] }}"
+                                    data-item-variant="{{ $itemVariant }}"><i class="icon-x"></i></a></td>
                         </tr>
                     @endforeach
                     @php
@@ -188,25 +199,4 @@
         Session::put('checkout_event_id', $checkoutEventId);
     }
 @endphp
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    var el = document.getElementById('meta-pixel-checkout');
-    if (!el) return;
-
-    el.addEventListener('click', function () {
-        if (typeof window.paTrack !== 'function') {
-            return;
-        }
-
-        window.paTrack('InitiateCheckout', {
-            content_type: 'product',
-            content_ids: @json($checkoutContentIds),
-            num_items: {{ (int) $checkoutNumItems }},
-            value: {{ $checkoutValue }},
-            currency: 'CAD',
-            items: @json($checkoutItems)
-        }, 'begin_checkout', { eventId: '{{ $checkoutEventId }}' });
-    });
-});
-</script>
 @endif

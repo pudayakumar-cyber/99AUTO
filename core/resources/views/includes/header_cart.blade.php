@@ -23,11 +23,38 @@
 
         return url('/core/public/storage/images/' . $filename);
     };
+
+    $cartSession = Session::has('cart') ? Session::get('cart') : [];
+    $itemIds = [];
+    foreach ($cartSession as $key => $line) {
+        $itemId = \PriceHelper::GetItemId($key);
+        if ($itemId) {
+            $itemIds[] = $itemId;
+        }
+    }
+    $cartDbItems = \App\Models\Item::with(['category', 'subcategory', 'childcategory', 'brand'])->whereIn('id', $itemIds)->get()->keyBy('id');
 @endphp
 @if (Session::has('cart'))
 @foreach (Session::get('cart') as $key => $cart)
 @php
-    $grandSubtotal = ($cart['main_price'] + $grandSubtotal + $cart['attribute_price']) * $cart['qty'];
+    $itemId = \PriceHelper::GetItemId($key);
+    $dbItem = $cartDbItems->get($itemId);
+    $categoryName = $dbItem && $dbItem->category ? $dbItem->category->name : '';
+    $subcategoryName = $dbItem && $dbItem->subcategory ? $dbItem->subcategory->name : '';
+    $childcategoryName = $dbItem && $dbItem->childcategory ? $dbItem->childcategory->name : '';
+    $brandName = $dbItem && $dbItem->brand ? $dbItem->brand->name : '';
+    $cartPrice = (float)($cart['main_price'] ?? 0);
+    $cartQty = (int)($cart['qty'] ?? 1);
+
+    $attributeNames = [];
+    if (isset($cart['attribute']['option_name']) && is_array($cart['attribute']['option_name'])) {
+        foreach ($cart['attribute']['option_name'] as $optName) {
+            $attributeNames[] = $optName;
+        }
+    }
+    $itemVariant = implode(', ', $attributeNames);
+
+    $grandSubtotal += ($cart['main_price'] + $cart['attribute_price']) * $cart['qty'];
 @endphp
 <div class="entry">
   <div class="entry-thumb"><a href="{{route('front.product',$cart['slug'])}}"><img src="{{ $resolveCartImageUrl($cart['photo'] ?? '') }}" alt="{{ $cart['name'] }}"></a></div>
@@ -41,7 +68,20 @@
     @endforeach
 
  </div>
-  <div class="entry-delete"><a href="{{route('front.cart.destroy',$key)}}"><i class="icon-x"></i></a></div>
+  <div class="entry-delete">
+    <a class="remove-from-cart" href="{{route('front.cart.destroy',$key)}}"
+       data-item-id="{{ $itemId }}"
+       data-item-name="{{ $cart['name'] ?? '' }}"
+       data-item-brand="{{ $brandName }}"
+       data-item-category="{{ $categoryName }}"
+       data-item-category2="{{ $subcategoryName }}"
+       data-item-category3="{{ $childcategoryName }}"
+       data-item-price="{{ $cartPrice }}"
+       data-item-qty="{{ $cartQty }}"
+       data-item-variant="{{ $itemVariant }}">
+       <i class="icon-x"></i>
+    </a>
+  </div>
 </div>
 @endforeach
 <div class="text-right">

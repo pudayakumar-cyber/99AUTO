@@ -82,11 +82,15 @@
                                         @foreach ($checkout_shipping_services as $shipping)
                                             @if ($shipping->id == 1 && isset($free_shipping) &&  $free_shipping->minimum_price <= $cart_total)
                                                 <option value="{{ $shipping->id }}"
+                                                    data-title="{{ $shipping->title }}"
+                                                    data-price="{{ $shipping->price }}"
                                                     data-href="{{ route('front.shipping.setup') }}">{{ $shipping->title }}
                                                 </option>
                                             @else
                                                 @if ($shipping->id != 1)
                                                     <option value="{{ $shipping->id }}"
+                                                        data-title="{{ $shipping->title }}"
+                                                        data-price="{{ $shipping->price }}"
                                                         data-href="{{ route('front.shipping.setup') }}">{{ $shipping->title }}
                                                         ({{ PriceHelper::setCurrencyPrice($shipping->price) }})
                                                     </option>
@@ -195,6 +199,14 @@
         $childcategoryName = $dbItem && $dbItem->childcategory ? $dbItem->childcategory->name : '';
         $brandName = $dbItem && $dbItem->brand ? $dbItem->brand->name : '';
 
+        $attributeNames = [];
+        if (isset($line['attribute']['option_name']) && is_array($line['attribute']['option_name'])) {
+            foreach ($line['attribute']['option_name'] as $optName) {
+                $attributeNames[] = $optName;
+            }
+        }
+        $itemVariant = implode(', ', $attributeNames);
+
         $checkoutItems[] = [
             'item_id' => $checkoutItemId,
             'item_name' => $line['name'] ?? '',
@@ -202,6 +214,7 @@
             'item_category' => $categoryName,
             'item_category2' => $subcategoryName,
             'item_category3' => $childcategoryName,
+            'item_variant' => $itemVariant,
             'quantity' => $checkoutQty,
             'price' => (float) ($line['main_price'] ?? 0),
             'google_business_vertical' => 'retail',
@@ -214,18 +227,101 @@
         $cartTotal += ($line['main_price'] + ($line['attribute_price'] ?? 0)) * $checkoutQty;
     }
     $checkoutValue = (float) ($cartTotal - (Session::has('coupon') ? Session::get('coupon')['discount'] : 0));
+
+    $billingAddress = Session::get('billing_address') ?? [];
+    $shippingAddress = Session::get('shipping_address') ?? [];
+    $userEmail = Auth::check() ? Auth::user()->email : ($billingAddress['bill_email'] ?? $shippingAddress['ship_email'] ?? '');
+    $userPhone = Auth::check() ? Auth::user()->phone : ($billingAddress['bill_phone'] ?? $shippingAddress['ship_phone'] ?? '');
+    $userFirstName = Auth::check() ? Auth::user()->first_name : ($billingAddress['bill_first_name'] ?? $shippingAddress['ship_first_name'] ?? '');
+    $userLastName = Auth::check() ? Auth::user()->last_name : ($billingAddress['bill_last_name'] ?? $shippingAddress['ship_last_name'] ?? '');
+    $userCity = Auth::check() ? (Auth::user()->bill_city ?? Auth::user()->ship_city) : ($billingAddress['bill_city'] ?? $shippingAddress['ship_city'] ?? '');
+    $userState = Auth::check() ? (Auth::user()->bill_province ?? Auth::user()->ship_province) : ($billingAddress['bill_province'] ?? $shippingAddress['ship_province'] ?? '');
+    $userZip = Auth::check() ? (Auth::user()->bill_zip ?? Auth::user()->ship_zip) : ($billingAddress['bill_zip'] ?? $shippingAddress['ship_zip'] ?? '');
+    $userCountry = Auth::check() ? (Auth::user()->bill_country ?? Auth::user()->ship_country) : ($billingAddress['bill_country'] ?? $shippingAddress['ship_country'] ?? '');
+
+    $customerData = [
+        'email' => $userEmail,
+        'phone' => $userPhone,
+        'first_name' => $userFirstName,
+        'last_name' => $userLastName,
+        'city' => $userCity,
+        'state' => $userState,
+        'postal_code' => $userZip,
+        'country' => $userCountry
+    ];
 @endphp
 
 @section('script')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    var checkoutItems = @json($checkoutItems);
+    var customerData = @json($customerData);
+    var checkoutValue = {{ $checkoutValue }};
+
+    function trackShippingInfo(shippingTier, shippingPrice) {
+        if (typeof window.paTrack === 'function') {
+            window.paTrack('AddShippingInfo', {
+                value: checkoutValue,
+                currency: 'CAD',
+                shipping_tier: shippingTier,
+                shipping: parseFloat(shippingPrice || 0),
+                customer_data: customerData,
+                items: checkoutItems
+            }, 'add_shipping_info');
+        }
+    }
+
+    function trackPaymentInfo(paymentType) {
+        if (typeof window.paTrack === 'function') {
+            window.paTrack('AddPaymentInfo', {
+                value: checkoutValue,
+                currency: 'CAD',
+                payment_type: paymentType,
+                customer_data: customerData,
+                items: checkoutItems
+            }, 'add_payment_info');
+        }
+    }
+
+    // Fire default AddPaymentInfo on load
     if (typeof window.paTrack === 'function') {
         window.paTrack('AddPaymentInfo', {
-            value: {{ $checkoutValue }},
+            value: checkoutValue,
             currency: 'CAD',
-            items: @json($checkoutItems)
+            customer_data: customerData,
+            items: checkoutItems
         }, 'add_payment_info');
     }
+
+    // Check if shipping method is already selected on page load and track it
+    var initialSelectedOption = document.querySelector('#shipping_id_select option:selected') || document.querySelector('#shipping_id_select option[selected]');
+    if (!initialSelectedOption) {
+        var $selOpt = jQuery('#shipping_id_select option:selected');
+        if ($selOpt.length && $selOpt.val() !== "") {
+            initialSelectedOption = $selOpt[0];
+        }
+    }
+    if (initialSelectedOption && initialSelectedOption.value !== "") {
+        var initialTier = initialSelectedOption.getAttribute('data-title') || initialSelectedOption.textContent.split('(')[0].trim();
+        var initialPrice = initialSelectedOption.getAttribute('data-price') || 0;
+        trackShippingInfo(initialTier, initialPrice);
+    }
+
+    // Listen to changes on shipping method selection
+    jQuery(document).on('change', '#shipping_id_select', function () {
+        var selectedOption = jQuery(this).find('option:selected');
+        if (selectedOption.length && selectedOption.val() !== "") {
+            var tier = selectedOption.attr('data-title') || selectedOption.text().split('(')[0].trim();
+            var price = selectedOption.attr('data-price') || 0;
+            trackShippingInfo(tier, price);
+        }
+    });
+
+    // Listen to click on payment methods to trigger AddPaymentInfo with payment_type
+    jQuery(document).on('click', '.single-payment-method a', function () {
+        var gatewayName = jQuery(this).find('p').text().trim();
+        trackPaymentInfo(gatewayName);
+    });
 });
 </script>
 @endsection

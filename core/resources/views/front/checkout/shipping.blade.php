@@ -159,6 +159,14 @@
         $childcategoryName = $dbItem && $dbItem->childcategory ? $dbItem->childcategory->name : '';
         $brandName = $dbItem && $dbItem->brand ? $dbItem->brand->name : '';
 
+        $attributeNames = [];
+        if (isset($line['attribute']['option_name']) && is_array($line['attribute']['option_name'])) {
+            foreach ($line['attribute']['option_name'] as $optName) {
+                $attributeNames[] = $optName;
+            }
+        }
+        $itemVariant = implode(', ', $attributeNames);
+
         $checkoutItems[] = [
             'item_id' => $checkoutItemId,
             'item_name' => $line['name'] ?? '',
@@ -166,6 +174,7 @@
             'item_category' => $categoryName,
             'item_category2' => $subcategoryName,
             'item_category3' => $childcategoryName,
+            'item_variant' => $itemVariant,
             'quantity' => $checkoutQty,
             'price' => (float) ($line['main_price'] ?? 0),
             'google_business_vertical' => 'retail',
@@ -178,6 +187,28 @@
         $cartTotal += ($line['main_price'] + ($line['attribute_price'] ?? 0)) * $checkoutQty;
     }
     $checkoutValue = (float) ($cartTotal - (Session::has('coupon') ? Session::get('coupon')['discount'] : 0));
+
+    $billingAddress = Session::get('billing_address') ?? [];
+    $shippingAddress = Session::get('shipping_address') ?? [];
+    $userEmail = Auth::check() ? Auth::user()->email : ($billingAddress['bill_email'] ?? $shippingAddress['ship_email'] ?? '');
+    $userPhone = Auth::check() ? Auth::user()->phone : ($billingAddress['bill_phone'] ?? $shippingAddress['ship_phone'] ?? '');
+    $userFirstName = Auth::check() ? Auth::user()->first_name : ($billingAddress['bill_first_name'] ?? $shippingAddress['ship_first_name'] ?? '');
+    $userLastName = Auth::check() ? Auth::user()->last_name : ($billingAddress['bill_last_name'] ?? $shippingAddress['ship_last_name'] ?? '');
+    $userCity = Auth::check() ? (Auth::user()->bill_city ?? Auth::user()->ship_city) : ($billingAddress['bill_city'] ?? $shippingAddress['ship_city'] ?? '');
+    $userState = Auth::check() ? (Auth::user()->bill_province ?? Auth::user()->ship_province) : ($billingAddress['bill_province'] ?? $shippingAddress['ship_province'] ?? '');
+    $userZip = Auth::check() ? (Auth::user()->bill_zip ?? Auth::user()->ship_zip) : ($billingAddress['bill_zip'] ?? $shippingAddress['ship_zip'] ?? '');
+    $userCountry = Auth::check() ? (Auth::user()->bill_country ?? Auth::user()->ship_country) : ($billingAddress['bill_country'] ?? $shippingAddress['ship_country'] ?? '');
+
+    $customerData = [
+        'email' => $userEmail,
+        'phone' => $userPhone,
+        'first_name' => $userFirstName,
+        'last_name' => $userLastName,
+        'city' => $userCity,
+        'state' => $userState,
+        'postal_code' => $userZip,
+        'country' => $userCountry
+    ];
 @endphp
 
 @section('script')
@@ -187,6 +218,7 @@ document.addEventListener('DOMContentLoaded', function () {
         window.paTrack('AddShippingInfo', {
             value: {{ $checkoutValue }},
             currency: 'CAD',
+            customer_data: @json($customerData),
             items: @json($checkoutItems)
         }, 'add_shipping_info');
     }

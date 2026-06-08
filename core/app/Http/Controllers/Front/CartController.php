@@ -58,6 +58,14 @@ class CartController extends Controller
                     $facebookApi->trackAddToCart($item, $quantity, $eventId);
                 });
 
+                $optionNames = $request->input('option_name');
+                $itemVariant = '';
+                if (is_array($optionNames)) {
+                    $itemVariant = implode(', ', $optionNames);
+                } elseif (is_string($optionNames)) {
+                    $itemVariant = $optionNames;
+                }
+
                 $price = (float) ($item->discount_price ?? $item->previous_price ?? 0);
                 $msg['tracking'] = [
                     'event_id' => $eventId,
@@ -85,6 +93,7 @@ class CartController extends Controller
                             'item_category' => (string) optional($item->category)->name,
                             'item_category2' => (string) optional($item->subcategory)->name,
                             'item_category3' => (string) optional($item->childcategory)->name,
+                            'item_variant' => $itemVariant,
                             'price' => $price,
                             'quantity' => $quantity,
                             'sku' => (string) ($item->sku ?: ($item->prod_number ?: $item->id)),

@@ -193,6 +193,14 @@
         $childcategoryName = $dbItem && $dbItem->childcategory ? $dbItem->childcategory->name : '';
         $brandName = $dbItem && $dbItem->brand ? $dbItem->brand->name : '';
 
+        $attributeNames = [];
+        if (isset($line['attribute']['option_name']) && is_array($line['attribute']['option_name'])) {
+            foreach ($line['attribute']['option_name'] as $optName) {
+                $attributeNames[] = $optName;
+            }
+        }
+        $itemVariant = implode(', ', $attributeNames);
+
         $checkoutItems[] = [
             'item_id' => $checkoutItemId,
             'item_name' => $line['name'] ?? '',
@@ -200,6 +208,7 @@
             'item_category' => $categoryName,
             'item_category2' => $subcategoryName,
             'item_category3' => $childcategoryName,
+            'item_variant' => $itemVariant,
             'quantity' => $checkoutQty,
             'price' => (float) ($line['main_price'] ?? 0),
             'google_business_vertical' => 'retail',
