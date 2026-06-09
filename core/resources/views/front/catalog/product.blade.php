@@ -1167,6 +1167,11 @@ document.addEventListener('DOMContentLoaded', function () {
         var table = document.querySelector('.pa-fitment-table') || document.querySelector('#collapsePaFitting table');
         if (!table) return null;
         var trs = table.querySelectorAll('tbody tr, tr');
+        var yearsSet = new Set();
+        var makesSet = new Set();
+        var modelsSet = new Set();
+        var trimsSet = new Set();
+
         for (var i = 0; i < trs.length; i++) {
             var tds = trs[i].querySelectorAll('td, th');
             if (tds.length >= 3) {
@@ -1180,18 +1185,28 @@ document.addEventListener('DOMContentLoaded', function () {
                     continue;
                 }
 
-                var years = yearVal.split(/[-,\s]+/);
-                var year = years[0] || yearVal;
+                var parts = yearVal.split(',');
+                for (var j = 0; j < parts.length; j++) {
+                    var yr = parts[j].trim();
+                    if (yr) yearsSet.add(yr);
+                }
 
-                return {
-                    year: year,
-                    make: makeVal,
-                    model: modelVal,
-                    trim: trimVal
-                };
+                if (makeVal) makesSet.add(makeVal);
+                if (modelVal) modelsSet.add(modelVal);
+                if (trimVal) trimsSet.add(trimVal);
             }
         }
-        return null;
+
+        if (yearsSet.size === 0 && makesSet.size === 0 && modelsSet.size === 0) {
+            return null;
+        }
+
+        return {
+            year: Array.from(yearsSet).join(', '),
+            make: Array.from(makesSet).join(', '),
+            model: Array.from(modelsSet).join(', '),
+            trim: Array.from(trimsSet).join(', ')
+        };
     }
 
     var selectedVehicle = null;
