@@ -1163,6 +1163,54 @@ document.addEventListener('DOMContentLoaded', function () {
         }]
     };
 
+    function getFallbackVehicleFromDOM() {
+        var table = document.querySelector('.pa-fitment-table') || document.querySelector('#collapsePaFitting table');
+        if (!table) return null;
+        var trs = table.querySelectorAll('tbody tr, tr');
+        for (var i = 0; i < trs.length; i++) {
+            var tds = trs[i].querySelectorAll('td, th');
+            if (tds.length >= 3) {
+                var yearVal = tds[0].textContent.replace(/\s+/g, ' ').trim();
+                var makeVal = tds[1].textContent.replace(/\s+/g, ' ').trim();
+                var modelVal = tds[2].textContent.replace(/\s+/g, ' ').trim();
+                var trimVal = tds[3] ? tds[3].textContent.replace(/\s+/g, ' ').trim() : '';
+
+                var lowerYear = yearVal.toLowerCase();
+                if (lowerYear === 'year' || lowerYear === 'years' || lowerYear === 'fitment') {
+                    continue;
+                }
+
+                var years = yearVal.split(/[-,\s]+/);
+                var year = years[0] || yearVal;
+
+                return {
+                    year: year,
+                    make: makeVal,
+                    model: modelVal,
+                    trim: trimVal
+                };
+            }
+        }
+        return null;
+    }
+
+    var selectedVehicle = null;
+    try {
+        selectedVehicle = JSON.parse(localStorage.getItem('selected_vehicle') || 'null');
+    } catch(e) {}
+
+    if (!selectedVehicle || !selectedVehicle.year) {
+        var fallback = getFallbackVehicleFromDOM();
+        if (fallback) {
+            productPayload.items[0].vehicle_year = fallback.year;
+            productPayload.items[0].vehicle_make = fallback.make;
+            productPayload.items[0].vehicle_model = fallback.model;
+            productPayload.items[0].vehicle_trim = fallback.trim;
+        }
+    }
+    
+    productPayload.items[0].part_type = productPayload.items[0].part_typefitment;
+
     if (typeof window.paTrack === 'function') {
         window.paTrack('ViewContent', productPayload, 'view_item');
     }

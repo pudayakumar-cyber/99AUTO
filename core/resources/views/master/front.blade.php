@@ -1100,11 +1100,27 @@ src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&e
                 google_ads_send_to: options.googleAdsSendTo || null,
                 ecommerce: payload
             };
-            if (activeVehicle && activeVehicle.year && activeVehicle.make && activeVehicle.model) {
-                dataLayerObj.vehicle_year = String(activeVehicle.year).trim();
-                dataLayerObj.vehicle_make = String(activeVehicle.make).trim();
-                dataLayerObj.vehicle_model = String(activeVehicle.model).trim();
-                dataLayerObj.vehicle_trim = activeVehicle.trim ? String(activeVehicle.trim).trim() : '';
+
+            var eventYear = (activeVehicle && activeVehicle.year) ? String(activeVehicle.year).trim() : '';
+            var eventMake = (activeVehicle && activeVehicle.make) ? String(activeVehicle.make).trim() : '';
+            var eventModel = (activeVehicle && activeVehicle.model) ? String(activeVehicle.model).trim() : '';
+            var eventTrim = (activeVehicle && activeVehicle.trim) ? String(activeVehicle.trim).trim() : '';
+
+            if (!eventYear && payload && Array.isArray(payload.items) && payload.items.length > 0) {
+                var firstItem = payload.items[0];
+                if (firstItem && firstItem.vehicle_year) {
+                    eventYear = String(firstItem.vehicle_year).trim();
+                    eventMake = String(firstItem.vehicle_make || '').trim();
+                    eventModel = String(firstItem.vehicle_model || '').trim();
+                    eventTrim = String(firstItem.vehicle_trim || '').trim();
+                }
+            }
+
+            if (eventYear) {
+                dataLayerObj.vehicle_year = eventYear;
+                dataLayerObj.vehicle_make = eventMake;
+                dataLayerObj.vehicle_model = eventModel;
+                dataLayerObj.vehicle_trim = eventTrim;
             }
             if (payload && Array.isArray(payload.items) && payload.items.length > 0) {
                 var firstItem = payload.items[0];

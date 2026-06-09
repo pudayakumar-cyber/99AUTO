@@ -774,12 +774,12 @@ $(function ($) {
         }
 
         function initProductCardNavigation() {
-            var interactiveSelector = 'a, button, input, select, textarea, label, [role="button"], .product-button-group, .wishlist_store, .product_compare';
+            var ignoreSelector = 'button, input, select, textarea, label, [role="button"], .product-button-group, .wishlist_store, .product_compare, a:not(.product-title a)';
 
             $(document)
                 .off('click.productCardNavigation')
                 .on('click.productCardNavigation', '.product-card', function (event) {
-                    if ($(event.target).closest(interactiveSelector).length) {
+                    if ($(event.target).closest(ignoreSelector).length) {
                         return;
                     }
 
@@ -797,14 +797,19 @@ $(function ($) {
                             items: [{
                                 item_id: String(card.attr('data-item-id') || ''),
                                 item_name: String(card.attr('data-item-name') || ''),
+                                item_brand: String(card.attr('data-item-brand') || ''),
                                 item_category: String(card.attr('data-item-category') || ''),
+                                item_category2: String(card.attr('data-item-category2') || ''),
+                                item_category3: String(card.attr('data-item-category3') || ''),
                                 price: parseFloat(card.attr('data-item-price') || 0),
                                 google_business_vertical: 'retail'
                             }]
                         }, 'select_item');
                     }
 
-                    window.location.href = productLink;
+                    if (!$(event.target).closest('.product-title a').length) {
+                        window.location.href = productLink;
+                    }
                 });
         }
 
@@ -1472,27 +1477,7 @@ $(function ($) {
             }
         });
 
-        // select_item tracking (clicks on product title link or product image)
-        $(document).on('click', '.product-card .product-title a, .product-card .product-thumb > img', function (event) {
-            var card = $(this).closest('.product-card');
-            if (card.length && typeof window.paTrack === 'function') {
-                var isSearch = $('#search_form input[name="search"]').val();
-                window.paTrack('SelectItem', {
-                    item_list_id: isSearch ? 'search_results' : 'category_list',
-                    item_list_name: isSearch ? 'Search Results' : 'Category List',
-                    items: [{
-                        item_id: String(card.attr('data-item-id') || ''),
-                        item_name: String(card.attr('data-item-name') || ''),
-                        item_brand: String(card.attr('data-item-brand') || ''),
-                        item_category: String(card.attr('data-item-category') || ''),
-                        item_category2: String(card.attr('data-item-category2') || ''),
-                        item_category3: String(card.attr('data-item-category3') || ''),
-                        price: parseFloat(card.attr('data-item-price') || 0),
-                        google_business_vertical: 'retail'
-                    }]
-                }, 'select_item');
-            }
-        });
+        // select_item tracking (handled unified in initProductCardNavigation)
 
     });
 
