@@ -211,6 +211,10 @@
             if (!$item || empty($item->details)) return null;
             $details = html_entity_decode((string) $item->details, ENT_QUOTES, 'UTF-8');
             preg_match_all('/<tr>(.*?)<\/tr>/si', $details, $rows);
+            $yearsList = [];
+            $makesList = [];
+            $modelsList = [];
+            $trimsList = [];
             foreach ($rows[1] ?? [] as $rowHtml) {
                 preg_match_all('/<td[^>]*>(.*?)<\/td>/si', $rowHtml, $cols);
                 if (count($cols[1] ?? []) < 3) {
@@ -218,7 +222,7 @@
                 }
                 [$yearsCell, $makeCell, $modelCell] = array_map(
                     fn ($v) => trim(strip_tags((string) $v)),
-                    $cols[1]
+                    array_slice($cols[1], 0, 3)
                 );
                 if ($yearsCell === '' || $makeCell === '' || $modelCell === '') continue;
                 
@@ -226,21 +230,38 @@
                 if ($lowerYear === 'year' || $lowerYear === 'years' || $lowerYear === 'fitment') {
                     continue;
                 }
-                $years = array_values(array_filter(array_map('trim', explode(',', $yearsCell))));
-                $firstYear = $years[0] ?? $yearsCell;
-                $yearsRange = explode('-', $firstYear);
-                $year = trim($yearsRange[0]);
-
-                $trimCell = isset($cols[1][3]) ? trim(strip_tags((string) $cols[1][3])) : '';
-
-                return [
-                    'year' => $year,
-                    'make' => $makeCell,
-                    'model' => $modelCell,
-                    'trim' => $trimCell
-                ];
+                foreach (explode(',', $yearsCell) as $p) {
+                    $pTrim = trim($p);
+                    if ($pTrim !== '') {
+                        $yearsList[] = $pTrim;
+                    }
+                }
+                if ($makeCell !== '') {
+                    $makesList[] = $makeCell;
+                }
+                if ($modelCell !== '') {
+                    $modelsList[] = $modelCell;
+                }
+                if (isset($cols[1][3])) {
+                    $trimCell = trim(strip_tags((string) $cols[1][3]));
+                    if ($trimCell !== '') {
+                        $trimsList[] = $trimCell;
+                    }
+                }
             }
-            return null;
+            $yearsList = array_values(array_unique($yearsList));
+            $makesList = array_values(array_unique($makesList));
+            $modelsList = array_values(array_unique($modelsList));
+            $trimsList = array_values(array_unique($trimsList));
+            if (empty($yearsList) && empty($makesList) && empty($modelsList)) {
+                return null;
+            }
+            return [
+                'year' => implode(', ', $yearsList),
+                'make' => implode(', ', $makesList),
+                'model' => implode(', ', $modelsList),
+                'trim' => implode(', ', $trimsList)
+            ];
         };
 
         $fallbackVehicle = $getFallbackVehicle($dbItem);
@@ -378,7 +399,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        e.preventDefault();
+        form.paymentInfoTracked = true;
 
         var modal = jQuery(form).closest('.modal');
         var gatewayKeyword = modal.attr('id') || 'other';
@@ -409,11 +430,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 items: checkoutItems
             }, 'add_payment_info');
         }
-
-        form.paymentInfoTracked = true;
-        setTimeout(function () {
-            form.submit();
-        }, 200);
     });
 });
 </script>
