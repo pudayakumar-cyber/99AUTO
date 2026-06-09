@@ -25,7 +25,7 @@
     (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
     j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    '/metrics/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
     })(window,document,'script','dataLayer','{{ config('services.google.tag_manager_id') }}');</script>
     <!-- End Google Tag Manager -->
     @endif
@@ -948,7 +948,7 @@
     {{-- Facebook pixel End --}}
 @if (!($setting->is_google_analytics == '1' && trim((string) $setting->google_analytics) !== ''))
 <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id={{ config('services.google.analytics_id') }}"></script>
+<script async src="/metrics/gtag/js?id={{ config('services.google.analytics_id') }}"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
@@ -1212,7 +1212,7 @@ body_theme4 @endif
 ">
     @if (config('services.google.tag_manager_id'))
     <!-- Google Tag Manager (noscript) -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id={{ config('services.google.tag_manager_id') }}"
+    <noscript><iframe src="/metrics/ns.html?id={{ config('services.google.tag_manager_id') }}"
     height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
     @endif
