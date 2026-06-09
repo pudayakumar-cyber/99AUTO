@@ -182,6 +182,43 @@
     $checkoutItems = [];
     $checkoutNumItems = 0;
     $cartTotal = 0;
+
+    $getFallbackVehicle = function ($item) {
+        if (!$item || empty($item->details)) return null;
+        $details = html_entity_decode((string) $item->details, ENT_QUOTES, 'UTF-8');
+        preg_match_all('/<tr>(.*?)<\/tr>/si', $details, $rows);
+        foreach ($rows[1] ?? [] as $rowHtml) {
+            preg_match_all('/<td[^>]*>(.*?)<\/td>/si', $rowHtml, $cols);
+            if (count($cols[1] ?? []) < 3) {
+                continue;
+            }
+            [$yearsCell, $makeCell, $modelCell] = array_map(
+                fn ($v) => trim(strip_tags((string) $v)),
+                $cols[1]
+            );
+            if ($yearsCell === '' || $makeCell === '' || $modelCell === '') continue;
+            
+            $lowerYear = strtolower($yearsCell);
+            if ($lowerYear === 'year' || $lowerYear === 'years' || $lowerYear === 'fitment') {
+                continue;
+            }
+            $years = array_values(array_filter(array_map('trim', explode(',', $yearsCell))));
+            $firstYear = $years[0] ?? $yearsCell;
+            $yearsRange = explode('-', $firstYear);
+            $year = trim($yearsRange[0]);
+
+            $trimCell = isset($cols[1][3]) ? trim(strip_tags((string) $cols[1][3])) : '';
+
+            return [
+                'year' => $year,
+                'make' => $makeCell,
+                'model' => $modelCell,
+                'trim' => $trimCell
+            ];
+        }
+        return null;
+    };
+
     foreach ($cart as $key => $line) {
         $checkoutItemId = (string) ($line['id'] ?? $line['item_id'] ?? \PriceHelper::GetItemId($key) ?? $key);
         $checkoutQty = (int) ($line['qty'] ?? 1);
@@ -201,6 +238,8 @@
         }
         $itemVariant = implode(', ', $attributeNames);
 
+        $fallbackVehicle = $getFallbackVehicle($dbItem);
+
         $checkoutItems[] = [
             'item_id' => $checkoutItemId,
             'item_name' => $line['name'] ?? '',
@@ -216,6 +255,11 @@
             'mpn' => (string) ($dbItem && $dbItem->prod_number ? $dbItem->prod_number : ''),
             'manufacturer' => $brandName,
             'part_typefitment' => (string) ($childcategoryName ?: ($subcategoryName ?: $categoryName)),
+            'vehicle_year' => $fallbackVehicle ? (string) $fallbackVehicle['year'] : '',
+            'vehicle_make' => $fallbackVehicle ? (string) $fallbackVehicle['make'] : '',
+            'vehicle_model' => $fallbackVehicle ? (string) $fallbackVehicle['model'] : '',
+            'vehicle_trim' => $fallbackVehicle ? (string) $fallbackVehicle['trim'] : '',
+            'part_type' => (string) ($childcategoryName ?: ($subcategoryName ?: $categoryName)),
         ];
         $checkoutNumItems += $checkoutQty;
         $cartTotal += ($line['main_price'] + ($line['attribute_price'] ?? 0)) * $checkoutQty;
@@ -236,6 +280,74 @@ document.addEventListener('DOMContentLoaded', function () {
             items: @json($checkoutItems)
         }, 'begin_checkout', { eventId: '{{ Session::get('checkout_event_id') }}' });
     }
+
+    function googleNormalizeCountry(value) {
+        if (!value) return '';
+        var val = value.toLowerCase().trim();
+        var countries = {
+            'canada': 'CA',
+            'ca': 'CA',
+            'united states': 'US',
+            'united states of america': 'US',
+            'usa': 'US',
+            'us': 'US'
+        };
+        return countries[val] || value.toUpperCase().trim();
+    }
+
+    jQuery('#checkoutBilling').on('submit', function (e) {
+        var sameAddress = jQuery('#same_address').is(':checked');
+        if (!sameAddress) {
+            return;
+        }
+
+        var form = this;
+        if (form.shippingInfoTracked) {
+            return;
+        }
+
+        var email = jQuery('#checkout_email_billing').val() || '';
+        var phone = jQuery('#checkout-phone').val() || '';
+        var firstName = jQuery('#checkout-fn').val() || '';
+        var lastName = jQuery('#checkout-ln').val() || '';
+        var address1 = jQuery('#checkout-address1').val() || '';
+        var city = jQuery('#checkout-city').val() || '';
+        var zip = jQuery('#checkout-zip').val() || '';
+        var province = jQuery('#checkout-province').val() || '';
+        var country = jQuery('#billing-country').val() || '';
+
+        if (!email.trim() || !phone.trim() || !firstName.trim() || !lastName.trim() || !address1.trim() || !city.trim() || !zip.trim()) {
+            return;
+        }
+
+        e.preventDefault();
+
+        var customerData = {
+            email: email.toLowerCase().trim(),
+            phone_number: phone.replace(/\D+/g, ''),
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
+            street: address1.trim(),
+            city: city.trim(),
+            region: province.trim(),
+            postal_code: zip.trim(),
+            country: googleNormalizeCountry(country)
+        };
+
+        if (typeof window.paTrack === 'function') {
+            window.paTrack('AddShippingInfo', {
+                value: {{ $checkoutValue }},
+                currency: 'CAD',
+                customer_data: customerData,
+                items: @json($checkoutItems)
+            }, 'add_shipping_info');
+        }
+
+        form.shippingInfoTracked = true;
+        setTimeout(function () {
+            form.submit();
+        }, 200);
+    });
 });
 </script>
 @endsection
