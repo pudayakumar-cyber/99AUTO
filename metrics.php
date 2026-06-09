@@ -15,8 +15,8 @@ if (file_exists($envFile)) {
 $backendHost = $googleTagId . '.fps.goog';
 $path = isset($_GET['path']) ? $_GET['path'] : '';
 
-// Reconstruct GTM Gateway Target URL
-$targetUrl = 'https://' . $backendHost . '/' . $path;
+// Reconstruct GTM Gateway Target URL (Google Gateway expects the /metrics/ prefix)
+$targetUrl = 'https://' . $backendHost . '/metrics/' . $path;
 
 // Re-append query parameters (excluding 'path')
 $queryParams = $_GET;
