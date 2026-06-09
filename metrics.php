@@ -15,6 +15,8 @@ if (preg_match('/^gtm\.js$/i', $path)) {
     $targetUrl = 'https://www.googletagmanager.com/gtag/js';
 } elseif (preg_match('/^g\/collect$/i', $path)) {
     $targetUrl = 'https://www.google-analytics.com/g/collect';
+} elseif (strpos($path, '_/') === 0) {
+    $targetUrl = 'https://www.googletagmanager.com/' . $path;
 } else {
     header("HTTP/1.1 404 Not Found");
     echo "Not Found";
