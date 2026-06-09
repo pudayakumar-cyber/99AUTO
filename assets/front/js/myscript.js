@@ -1246,14 +1246,26 @@ $(function ($) {
             }
         });
 
-        $(document).on("click", "#add_to_cart", function () {
+        $(document).off("click", "#add_to_cart").on("click", "#add_to_cart", function () {
+            var btn = $(this);
+            if (btn.prop('disabled') || btn.data('clicked')) return;
+            btn.prop('disabled', true).data('clicked', true);
+            setTimeout(function() { btn.prop('disabled', false).data('clicked', false); }, 2000);
             getData(1);
         });
-        $(document).on("click", "#but_to_cart", function () {
+        $(document).off("click", "#but_to_cart").on("click", "#but_to_cart", function () {
+            var btn = $(this);
+            if (btn.prop('disabled') || btn.data('clicked')) return;
+            btn.prop('disabled', true).data('clicked', true);
+            setTimeout(function() { btn.prop('disabled', false).data('clicked', false); }, 2000);
             getData(1, 0, 0, 0, 1);
         });
-        $(document).on("click", ".add_to_single_cart", function () {
-            getData(1, $(this).attr("data-target"));
+        $(document).off("click", ".add_to_single_cart").on("click", ".add_to_single_cart", function () {
+            var btn = $(this);
+            if (btn.prop('disabled') || btn.data('clicked')) return;
+            btn.prop('disabled', true).data('clicked', true);
+            setTimeout(function() { btn.prop('disabled', false).data('clicked', false); }, 2000);
+            getData(1, btn.attr("data-target"));
         });
 
         function cartSubmit(item_key, item_id, cartQty, newOptionArray) {
