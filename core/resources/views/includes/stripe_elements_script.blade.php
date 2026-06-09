@@ -137,6 +137,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.warn('AddPaymentInfo CAPI preparation failed', trackingError);
                 }
 
+                if (window.checkoutCustomerData) {
+                    addPaymentPayload.customer_data = window.checkoutCustomerData;
+                }
+                if (window.checkoutItems) {
+                    addPaymentPayload.items = window.checkoutItems;
+                }
+
                 window.paTrack('AddPaymentInfo', addPaymentPayload, 'add_payment_info', { eventId: addPaymentEventId });
             }
 

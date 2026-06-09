@@ -105,6 +105,42 @@
     $stateTaxVal = (float) ($order->state_price ?? 0);
     $totalTax = round(($taxVal + $stateTaxVal) * $order->currency_value, 2);
 
+    $getFallbackVehicle = function ($item) {
+        if (!$item || empty($item->details)) return null;
+        $details = html_entity_decode((string) $item->details, ENT_QUOTES, 'UTF-8');
+        preg_match_all('/<tr>(.*?)<\/tr>/si', $details, $rows);
+        foreach ($rows[1] ?? [] as $rowHtml) {
+            preg_match_all('/<td[^>]*>(.*?)<\/td>/si', $rowHtml, $cols);
+            if (count($cols[1] ?? []) < 3) {
+                continue;
+            }
+            [$yearsCell, $makeCell, $modelCell] = array_map(
+                fn ($v) => trim(strip_tags((string) $v)),
+                $cols[1]
+            );
+            if ($yearsCell === '' || $makeCell === '' || $modelCell === '') continue;
+            
+            $lowerYear = strtolower($yearsCell);
+            if ($lowerYear === 'year' || $lowerYear === 'years' || $lowerYear === 'fitment') {
+                continue;
+            }
+            $years = array_values(array_filter(array_map('trim', explode(',', $yearsCell))));
+            $firstYear = $years[0] ?? $yearsCell;
+            $yearsRange = explode('-', $firstYear);
+            $year = trim($yearsRange[0]);
+
+            $trimCell = isset($cols[1][3]) ? trim(strip_tags((string) $cols[1][3])) : '';
+
+            return [
+                'year' => $year,
+                'make' => $makeCell,
+                'model' => $modelCell,
+                'trim' => $trimCell
+            ];
+        }
+        return null;
+    };
+
     $purchaseItems = [];
     $itemIds = [];
     foreach ($cart as $key => $item) {
@@ -131,6 +167,8 @@
         }
         $itemVariant = implode(', ', $attributeNames);
 
+        $fallbackVehicle = $getFallbackVehicle($dbItem);
+
         $purchaseItems[] = [
             'item_id' => (string) $itemId,
             'item_name' => $item['name'] ?? '',
@@ -146,6 +184,11 @@
             'mpn' => (string) ($dbItem && $dbItem->prod_number ? $dbItem->prod_number : ''),
             'manufacturer' => $brandName,
             'part_typefitment' => (string) ($childcategoryName ?: ($subcategoryName ?: $categoryName)),
+            'vehicle_year' => $fallbackVehicle ? (string) $fallbackVehicle['year'] : '',
+            'vehicle_make' => $fallbackVehicle ? (string) $fallbackVehicle['make'] : '',
+            'vehicle_model' => $fallbackVehicle ? (string) $fallbackVehicle['model'] : '',
+            'vehicle_trim' => $fallbackVehicle ? (string) $fallbackVehicle['trim'] : '',
+            'part_type' => (string) ($childcategoryName ?: ($subcategoryName ?: $categoryName)),
         ];
     }
 @endphp

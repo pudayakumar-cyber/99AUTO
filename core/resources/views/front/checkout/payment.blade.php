@@ -207,6 +207,44 @@
         }
         $itemVariant = implode(', ', $attributeNames);
 
+        $getFallbackVehicle = function ($item) {
+            if (!$item || empty($item->details)) return null;
+            $details = html_entity_decode((string) $item->details, ENT_QUOTES, 'UTF-8');
+            preg_match_all('/<tr>(.*?)<\/tr>/si', $details, $rows);
+            foreach ($rows[1] ?? [] as $rowHtml) {
+                preg_match_all('/<td[^>]*>(.*?)<\/td>/si', $rowHtml, $cols);
+                if (count($cols[1] ?? []) < 3) {
+                    continue;
+                }
+                [$yearsCell, $makeCell, $modelCell] = array_map(
+                    fn ($v) => trim(strip_tags((string) $v)),
+                    $cols[1]
+                );
+                if ($yearsCell === '' || $makeCell === '' || $modelCell === '') continue;
+                
+                $lowerYear = strtolower($yearsCell);
+                if ($lowerYear === 'year' || $lowerYear === 'years' || $lowerYear === 'fitment') {
+                    continue;
+                }
+                $years = array_values(array_filter(array_map('trim', explode(',', $yearsCell))));
+                $firstYear = $years[0] ?? $yearsCell;
+                $yearsRange = explode('-', $firstYear);
+                $year = trim($yearsRange[0]);
+
+                $trimCell = isset($cols[1][3]) ? trim(strip_tags((string) $cols[1][3])) : '';
+
+                return [
+                    'year' => $year,
+                    'make' => $makeCell,
+                    'model' => $modelCell,
+                    'trim' => $trimCell
+                ];
+            }
+            return null;
+        };
+
+        $fallbackVehicle = $getFallbackVehicle($dbItem);
+
         $checkoutItems[] = [
             'item_id' => $checkoutItemId,
             'item_name' => $line['name'] ?? '',
@@ -222,6 +260,11 @@
             'mpn' => (string) ($dbItem && $dbItem->prod_number ? $dbItem->prod_number : ''),
             'manufacturer' => $brandName,
             'part_typefitment' => (string) ($childcategoryName ?: ($subcategoryName ?: $categoryName)),
+            'vehicle_year' => $fallbackVehicle ? (string) $fallbackVehicle['year'] : '',
+            'vehicle_make' => $fallbackVehicle ? (string) $fallbackVehicle['make'] : '',
+            'vehicle_model' => $fallbackVehicle ? (string) $fallbackVehicle['model'] : '',
+            'vehicle_trim' => $fallbackVehicle ? (string) $fallbackVehicle['trim'] : '',
+            'part_type' => (string) ($childcategoryName ?: ($subcategoryName ?: $categoryName)),
         ];
         $checkoutNumItems += $checkoutQty;
         $cartTotal += ($line['main_price'] + ($line['attribute_price'] ?? 0)) * $checkoutQty;
@@ -230,25 +273,49 @@
 
     $billingAddress = Session::get('billing_address') ?? [];
     $shippingAddress = Session::get('shipping_address') ?? [];
-    $userEmail = Auth::check() ? Auth::user()->email : ($billingAddress['bill_email'] ?? $shippingAddress['ship_email'] ?? '');
-    $userPhone = Auth::check() ? Auth::user()->phone : ($billingAddress['bill_phone'] ?? $shippingAddress['ship_phone'] ?? '');
-    $userFirstName = Auth::check() ? Auth::user()->first_name : ($billingAddress['bill_first_name'] ?? $shippingAddress['ship_first_name'] ?? '');
-    $userLastName = Auth::check() ? Auth::user()->last_name : ($billingAddress['bill_last_name'] ?? $shippingAddress['ship_last_name'] ?? '');
-    $userCity = Auth::check() ? (Auth::user()->bill_city ?? Auth::user()->ship_city) : ($billingAddress['bill_city'] ?? $shippingAddress['ship_city'] ?? '');
-    $userState = Auth::check() ? (Auth::user()->bill_province ?? Auth::user()->ship_province) : ($billingAddress['bill_province'] ?? $shippingAddress['ship_province'] ?? '');
-    $userZip = Auth::check() ? (Auth::user()->bill_zip ?? Auth::user()->ship_zip) : ($billingAddress['bill_zip'] ?? $shippingAddress['ship_zip'] ?? '');
-    $userCountry = Auth::check() ? (Auth::user()->bill_country ?? Auth::user()->ship_country) : ($billingAddress['bill_country'] ?? $shippingAddress['ship_country'] ?? '');
+    
+    $googleNormalizeCountry = function ($value) {
+        $value = strtolower(trim((string) $value));
+        $countries = [
+            'canada' => 'ca',
+            'ca' => 'ca',
+            'united states' => 'us',
+            'united states of america' => 'us',
+            'usa' => 'us',
+            'us' => 'us',
+        ];
+        return strtoupper($countries[$value] ?? $value);
+    };
 
-    $customerData = [
-        'email' => $userEmail,
-        'phone' => $userPhone,
-        'first_name' => $userFirstName,
-        'last_name' => $userLastName,
-        'city' => $userCity,
-        'state' => $userState,
-        'postal_code' => $userZip,
-        'country' => $userCountry
-    ];
+    $rawEmail = $billingAddress['bill_email'] ?? $shippingAddress['ship_email'] ?? (Auth::check() ? Auth::user()->email : '');
+    $rawPhone = $billingAddress['bill_phone'] ?? $shippingAddress['ship_phone'] ?? (Auth::check() ? Auth::user()->phone : '');
+    $rawFirstName = $billingAddress['bill_first_name'] ?? $shippingAddress['ship_first_name'] ?? (Auth::check() ? Auth::user()->first_name : '');
+    $rawLastName = $billingAddress['bill_last_name'] ?? $shippingAddress['ship_last_name'] ?? (Auth::check() ? Auth::user()->last_name : '');
+    
+    $rawStreet = trim(($billingAddress['bill_address1'] ?? '') . ' ' . ($billingAddress['bill_address2'] ?? ''));
+    if (empty($rawStreet)) {
+        $rawStreet = trim(($shippingAddress['ship_address1'] ?? '') . ' ' . ($shippingAddress['ship_address2'] ?? ''));
+    }
+    if (empty($rawStreet) && Auth::check() && Auth::user()) {
+        $rawStreet = trim((Auth::user()->bill_address1 ?? '') . ' ' . (Auth::user()->bill_address2 ?? '') . ' ' . (Auth::user()->ship_address1 ?? '') . ' ' . (Auth::user()->ship_address2 ?? ''));
+    }
+
+    $rawCity = $billingAddress['bill_city'] ?? $shippingAddress['ship_city'] ?? (Auth::check() ? (Auth::user()->bill_city ?? Auth::user()->ship_city) : '');
+    $rawRegion = $billingAddress['bill_province'] ?? $shippingAddress['ship_province'] ?? (Auth::check() ? (Auth::user()->bill_province ?? Auth::user()->ship_province) : '');
+    $rawPostalCode = $billingAddress['bill_zip'] ?? $shippingAddress['ship_zip'] ?? (Auth::check() ? (Auth::user()->bill_zip ?? Auth::user()->ship_zip) : '');
+    $rawCountry = $billingAddress['bill_country'] ?? $shippingAddress['ship_country'] ?? (Auth::check() ? (Auth::user()->bill_country ?? Auth::user()->ship_country) : '');
+
+    $customerData = array_filter([
+        'email' => strtolower(trim($rawEmail)),
+        'phone_number' => preg_replace('/\D+/', '', $rawPhone),
+        'first_name' => trim($rawFirstName),
+        'last_name' => trim($rawLastName),
+        'street' => trim($rawStreet),
+        'city' => trim($rawCity),
+        'region' => trim($rawRegion),
+        'postal_code' => trim($rawPostalCode),
+        'country' => $googleNormalizeCountry($rawCountry),
+    ]);
 @endphp
 
 @section('script')
@@ -257,6 +324,11 @@ document.addEventListener('DOMContentLoaded', function () {
     var checkoutItems = @json($checkoutItems);
     var customerData = @json($customerData);
     var checkoutValue = {{ $checkoutValue }};
+
+    // Expose to window scope for Stripe Elements script to merge
+    window.checkoutItems = checkoutItems;
+    window.checkoutCustomerData = customerData;
+    window.checkoutValue = checkoutValue;
 
     function trackShippingInfo(shippingTier, shippingPrice) {
         if (typeof window.paTrack === 'function') {
@@ -269,28 +341,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 items: checkoutItems
             }, 'add_shipping_info');
         }
-    }
-
-    function trackPaymentInfo(paymentType) {
-        if (typeof window.paTrack === 'function') {
-            window.paTrack('AddPaymentInfo', {
-                value: checkoutValue,
-                currency: 'CAD',
-                payment_type: paymentType,
-                customer_data: customerData,
-                items: checkoutItems
-            }, 'add_payment_info');
-        }
-    }
-
-    // Fire default AddPaymentInfo on load
-    if (typeof window.paTrack === 'function') {
-        window.paTrack('AddPaymentInfo', {
-            value: checkoutValue,
-            currency: 'CAD',
-            customer_data: customerData,
-            items: checkoutItems
-        }, 'add_payment_info');
     }
 
     // Check if shipping method is already selected on page load and track it
@@ -317,10 +367,53 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Listen to click on payment methods to trigger AddPaymentInfo with payment_type
-    jQuery(document).on('click', '.single-payment-method a', function () {
-        var gatewayName = jQuery(this).find('p').text().trim();
-        trackPaymentInfo(gatewayName);
+    // Listen to form submit in payment modals to trigger AddPaymentInfo (excluding Stripe)
+    jQuery(document).on('submit', '.modal form', function (e) {
+        var form = this;
+        if (form.id === 'stripe-payment-form') {
+            return;
+        }
+
+        if (form.paymentInfoTracked) {
+            return;
+        }
+
+        e.preventDefault();
+
+        var modal = jQuery(form).closest('.modal');
+        var gatewayKeyword = modal.attr('id') || 'other';
+
+        var gatewayNames = {
+            'paypal': 'PayPal',
+            'stripe': 'Stripe',
+            'authorize': 'Authorize.net',
+            'mollie': 'Mollie',
+            'paystack': 'Paystack',
+            'razorpay': 'Razorpay',
+            'flutterwave': 'Flutterwave',
+            'paytm': 'Paytm',
+            'sslcommerz': 'SSLCommerz',
+            'mercadopago': 'MercadoPago',
+            'paytabs': 'Paytabs',
+            'cod': 'Cash On Delivery',
+            'bank': 'Bank Transfer'
+        };
+        var paymentType = gatewayNames[gatewayKeyword.toLowerCase()] || gatewayKeyword;
+
+        if (typeof window.paTrack === 'function') {
+            window.paTrack('AddPaymentInfo', {
+                value: checkoutValue,
+                currency: 'CAD',
+                payment_type: paymentType,
+                customer_data: customerData,
+                items: checkoutItems
+            }, 'add_payment_info');
+        }
+
+        form.paymentInfoTracked = true;
+        setTimeout(function () {
+            form.submit();
+        }, 200);
     });
 });
 </script>
