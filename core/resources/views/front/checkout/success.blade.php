@@ -226,7 +226,8 @@ document.addEventListener('DOMContentLoaded', function () {
     window.paTrack('Purchase', {
         content_type: 'product',
         content_ids: @json($cart_content_ids),
-        value: {{ $subtotal }},
+        item_price: {{ $subtotal }},
+        value: {{ round($subtotal + $totalTax + $shippingPrice, 2) }},
         currency: '{{ $currency }}',
         num_items: {{ $num_items }},
         transaction_id: '{{ $order->transaction_number }}',
