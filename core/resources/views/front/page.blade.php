@@ -2,7 +2,7 @@
 @section('page_type', 'content')
 
 @section('title')
-    {{__('Page')}}
+    {{ $page->title }}
 @endsection
 
 @section('content')

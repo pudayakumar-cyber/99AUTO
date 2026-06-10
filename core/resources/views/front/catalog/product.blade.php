@@ -3,15 +3,15 @@
 @section('page_type', 'product')
 
 @section('title')
-    {{ $item->name }}
+    @php
+        $displayProductName = collect([
+            optional($item->brand)->name ?: null,
+            $item->product_part_number ?: $item->prod_number ?: null,
+            $item->name,
+        ])->filter(fn ($v) => trim((string) $v) !== '')->implode(' - ');
+    @endphp
+    {{ $displayProductName }}
 @endsection
-
-@php
-    $displayProductName = collect([
-        optional($item->brand)->name ?: null,
-        $item->product_part_number ?: $item->prod_number ?: null,
-        $item->name,
-    ])->filter(fn ($v) => trim((string) $v) !== '')->implode(' - ');
 
     $resolveProductImageUrl = function (?string $rawPath): string {
         $rawPath = trim((string) $rawPath);

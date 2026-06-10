@@ -1,7 +1,7 @@
 @extends('master.front')
 @section('page_type', 'content')
 @section('title')
-    {{ __('Blog Details') }}
+    {{ $post->title }}
 @endsection
 @php
     if ($post->meta_keywords) {
