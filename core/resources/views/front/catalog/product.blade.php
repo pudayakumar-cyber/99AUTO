@@ -13,6 +13,7 @@
     {{ $displayProductName }}
 @endsection
 
+@php
     $resolveProductImageUrl = function (?string $rawPath): string {
         $rawPath = trim((string) $rawPath);
         if ($rawPath === '') {
