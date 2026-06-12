@@ -447,6 +447,6 @@ document.addEventListener('DOMContentLoaded', function () {
     @endif
 });
 </script>
-@endsection
+@append
 
 @endsection
