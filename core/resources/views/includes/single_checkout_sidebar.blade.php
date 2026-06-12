@@ -4,12 +4,12 @@
 
     <section class="card widget widget-featured-posts widget-order-summary p-4">
         <h3 class="widget-title">{{ __('Order Summary') }}</h3>
-        <!-- @if ($free_shipping)
+         @if ($free_shipping)
             @if ($free_shipping->minimum_price >= $cart_total)
                 <p class="free-shippin-aa"><em>{{ __('Free Shipping After Order') }}
                         {{ PriceHelper::setCurrencyPrice($free_shipping->minimum_price) }}</em></p>
             @endif
-        @endif -->
+        @endif
 
         <table class="table">
             <tr>
@@ -60,11 +60,11 @@
         <div class="row">
             <div class="col-sm-12 mb-3">
                 @if (PriceHelper::CheckDigital() == true)
-                    <select {{ (isset($free_shipping) && $free_shipping->minimum_price <= $cart_total) ? 'disabled' : '' }} name="shipping_id" class="form-control" id="shipping_id_select" required>
-                        <option value="" {{ (isset($free_shipping) && $free_shipping->minimum_price <= $cart_total) ? '' : 'selected' }} disabled>{{ __('Select Shipping Method') }}*</option>
+                    <select name="shipping_id" class="form-control" id="shipping_id_select" required>
+                        <option value="" selected disabled>{{ __('Select Shipping Method') }}*</option>
                         @foreach ($checkout_shipping_services as $shipping)
                             @if ($shipping->id == 1 && isset($free_shipping) && $free_shipping->minimum_price <= $cart_total)
-                                <option {{ (isset($free_shipping) && $free_shipping->minimum_price <= $cart_total) ? 'selected' : '' }} value="{{ $shipping->id }}" data-href="{{ route('front.shipping.setup') }}">
+                                <option value="{{ $shipping->id }}" data-href="{{ route('front.shipping.setup') }}">
                                     {{ $shipping->title }}
                                 </option>
                             @else
@@ -202,14 +202,10 @@
         });
         $(document).ready(function() {
             @if (isset($free_shipping) && $free_shipping->minimum_price <= $cart_total)
-            // Auto-select Free Delivery (value 1) and trigger change to sync session and populate hidden inputs.
-            // We temporarily enable the element so that jQuery's trigger('change') event handler executes successfully, then re-disable it in the next tick.
+            // Auto-select Free Delivery (value 1), trigger change to sync session and populate hidden inputs, and disable dropdown natively
             var $shippingSelect = $('#shipping_id_select');
             if ($shippingSelect.length) {
-                $shippingSelect.prop('disabled', false).val('1').trigger('change');
-                setTimeout(function() {
-                    $shippingSelect.prop('disabled', true);
-                }, 150);
+                $shippingSelect.val('1').trigger('change').prop('disabled', true);
             }
             @endif
         });

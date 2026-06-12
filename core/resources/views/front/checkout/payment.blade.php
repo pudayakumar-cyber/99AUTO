@@ -77,11 +77,11 @@
                                  @if (PriceHelper::CheckDigital() == true)
                                     
                             
-                                    <select {{ (isset($free_shipping) && $free_shipping->minimum_price <= $cart_total) ? 'disabled' : '' }} name="shipping_id" class="form-control" id="shipping_id_select" required>
-                                        <option value="" {{ (isset($free_shipping) && $free_shipping->minimum_price <= $cart_total) ? '' : 'selected' }} disabled>{{ __('Select Shipping Method') }}</option>
+                                    <select name="shipping_id" class="form-control" id="shipping_id_select" required>
+                                        <option value="" selected disabled>{{ __('Select Shipping Method') }}</option>
                                         @foreach ($checkout_shipping_services as $shipping)
                                             @if ($shipping->id == 1 && isset($free_shipping) &&  $free_shipping->minimum_price <= $cart_total)
-                                                <option {{ (isset($free_shipping) && $free_shipping->minimum_price <= $cart_total) ? 'selected' : '' }} value="{{ $shipping->id }}"
+                                                <option value="{{ $shipping->id }}"
                                                     data-title="{{ $shipping->title }}"
                                                     data-price="{{ $shipping->price }}"
                                                     data-href="{{ route('front.shipping.setup') }}">{{ $shipping->title }}
@@ -389,14 +389,10 @@ jQuery(document).ready(function ($) {
     });
 
     @if (isset($free_shipping) && $free_shipping->minimum_price <= $cart_total)
-    // Auto-select Free Delivery (value 1) and trigger change to sync session and populate hidden inputs.
-    // We temporarily enable the element so that jQuery's trigger('change') event handler executes successfully, then re-disable it in the next tick.
+    // Auto-select Free Delivery (value 1), trigger change to sync session and populate hidden inputs, and disable dropdown natively
     var $shippingSelect = jQuery('#shipping_id_select');
     if ($shippingSelect.length) {
-        $shippingSelect.prop('disabled', false).val('1').trigger('change');
-        setTimeout(function() {
-            $shippingSelect.prop('disabled', true);
-        }, 150);
+        $shippingSelect.val('1').trigger('change').prop('disabled', true);
     }
     @endif
 
