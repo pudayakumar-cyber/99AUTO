@@ -78,15 +78,19 @@
                                     
                             
                                     <select name="shipping_id" class="form-control" id="shipping_id_select" required>
-                                        <option value="" selected disabled>{{ __('Select Shipping Method') }}</option>
-                                        @foreach ($checkout_shipping_services as $shipping)
-                                            @if ($shipping->id == 1 && isset($free_shipping) &&  $free_shipping->minimum_price <= $cart_total)
-                                                <option value="{{ $shipping->id }}"
-                                                    data-title="{{ $shipping->title }}"
-                                                    data-price="{{ $shipping->price }}"
-                                                    data-href="{{ route('front.shipping.setup') }}">{{ $shipping->title }}
-                                                </option>
-                                            @else
+                                        @if (isset($free_shipping) && $free_shipping->minimum_price <= $cart_total)
+                                            @foreach ($checkout_shipping_services as $shipping)
+                                                @if ($shipping->id == 1)
+                                                    <option selected value="{{ $shipping->id }}"
+                                                        data-title="{{ $shipping->title }}"
+                                                        data-price="{{ $shipping->price }}"
+                                                        data-href="{{ route('front.shipping.setup') }}">{{ $shipping->title }}
+                                                    </option>
+                                                @endif
+                                            @endforeach
+                                        @else
+                                            <option value="" selected disabled>{{ __('Select Shipping Method') }}</option>
+                                            @foreach ($checkout_shipping_services as $shipping)
                                                 @if ($shipping->id != 1)
                                                     <option value="{{ $shipping->id }}"
                                                         data-title="{{ $shipping->title }}"
@@ -95,8 +99,8 @@
                                                         ({{ PriceHelper::setCurrencyPrice($shipping->price) }})
                                                     </option>
                                                 @endif
-                                            @endif
-                                        @endforeach
+                                            @endforeach
+                                        @endif
                                     </select>
 
                                     <small class="text-primary shipping_message">{{ __('Please select shipping method') }}</small>
@@ -389,10 +393,10 @@ jQuery(document).ready(function ($) {
     });
 
     @if (isset($free_shipping) && $free_shipping->minimum_price <= $cart_total)
-    // Auto-select Free Delivery (value 1), trigger change to sync session and populate hidden inputs, and disable dropdown natively
+    // Auto-trigger change on page load to sync session and update sidebar totals
     var $shippingSelect = jQuery('#shipping_id_select');
     if ($shippingSelect.length) {
-        $shippingSelect.val('1').trigger('change').prop('disabled', true);
+        $shippingSelect.trigger('change');
     }
     @endif
 

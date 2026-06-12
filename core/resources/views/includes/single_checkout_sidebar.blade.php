@@ -4,12 +4,12 @@
 
     <section class="card widget widget-featured-posts widget-order-summary p-4">
         <h3 class="widget-title">{{ __('Order Summary') }}</h3>
-         @if ($free_shipping)
+        <!--  @if ($free_shipping)
             @if ($free_shipping->minimum_price >= $cart_total)
                 <p class="free-shippin-aa"><em>{{ __('Free Shipping After Order') }}
                         {{ PriceHelper::setCurrencyPrice($free_shipping->minimum_price) }}</em></p>
             @endif
-        @endif
+        @endif -->
 
         <table class="table">
             <tr>
@@ -61,21 +61,25 @@
             <div class="col-sm-12 mb-3">
                 @if (PriceHelper::CheckDigital() == true)
                     <select name="shipping_id" class="form-control" id="shipping_id_select" required>
-                        <option value="" selected disabled>{{ __('Select Shipping Method') }}*</option>
-                        @foreach ($checkout_shipping_services as $shipping)
-                            @if ($shipping->id == 1 && isset($free_shipping) && $free_shipping->minimum_price <= $cart_total)
-                                <option value="{{ $shipping->id }}" data-href="{{ route('front.shipping.setup') }}">
-                                    {{ $shipping->title }}
-                                </option>
-                            @else
+                        @if (isset($free_shipping) && $free_shipping->minimum_price <= $cart_total)
+                            @foreach ($checkout_shipping_services as $shipping)
+                                @if ($shipping->id == 1)
+                                    <option selected value="{{ $shipping->id }}" data-href="{{ route('front.shipping.setup') }}">
+                                        {{ $shipping->title }}
+                                    </option>
+                                @endif
+                            @endforeach
+                        @else
+                            <option value="" selected disabled>{{ __('Select Shipping Method') }}*</option>
+                            @foreach ($checkout_shipping_services as $shipping)
                                 @if ($shipping->id != 1)
                                     <option value="{{ $shipping->id }}"
                                         data-href="{{ route('front.shipping.setup') }}">{{ $shipping->title }}
                                         ({{ PriceHelper::setCurrencyPrice($shipping->price) }})
                                     </option>
                                 @endif
-                            @endif
-                        @endforeach
+                            @endforeach
+                        @endif
                     </select>
                     @error('shipping_id')
                         <p class="text-danger shipping_message">{{ $message }}</p>
@@ -202,10 +206,10 @@
         });
         $(document).ready(function() {
             @if (isset($free_shipping) && $free_shipping->minimum_price <= $cart_total)
-            // Auto-select Free Delivery (value 1), trigger change to sync session and populate hidden inputs, and disable dropdown natively
+            // Auto-trigger change on page load to sync session and update sidebar totals
             var $shippingSelect = $('#shipping_id_select');
             if ($shippingSelect.length) {
-                $shippingSelect.val('1').trigger('change').prop('disabled', true);
+                $shippingSelect.trigger('change');
             }
             @endif
         });
