@@ -78,10 +78,11 @@
                                     
                             
                                     <select name="shipping_id" class="form-control" id="shipping_id_select" required>
+                                        <option value="" selected disabled>{{ __('Select Shipping Method') }}</option>
                                         @if (isset($free_shipping) && $free_shipping->minimum_price <= $cart_total)
                                             @foreach ($checkout_shipping_services as $shipping)
                                                 @if ($shipping->id == 1)
-                                                    <option selected value="{{ $shipping->id }}"
+                                                    <option  value="{{ $shipping->id }}"
                                                         data-title="{{ $shipping->title }}"
                                                         data-price="{{ $shipping->price }}"
                                                         data-href="{{ route('front.shipping.setup') }}">{{ $shipping->title }}
@@ -393,10 +394,10 @@ jQuery(document).ready(function ($) {
     });
 
     @if (isset($free_shipping) && $free_shipping->minimum_price <= $cart_total)
-    // Auto-trigger change on page load to sync session and update sidebar totals
+    // Auto-select Free Delivery (value 1) and trigger change on page load to sync session and update sidebar totals
     var $shippingSelect = jQuery('#shipping_id_select');
     if ($shippingSelect.length) {
-        $shippingSelect.trigger('change');
+        $shippingSelect.val('1').trigger('change');
     }
     @endif
 

@@ -61,6 +61,7 @@
             <div class="col-sm-12 mb-3">
                 @if (PriceHelper::CheckDigital() == true)
                     <select name="shipping_id" class="form-control" id="shipping_id_select" required>
+                        <option value="" selected disabled>{{ __('Select Shipping Method') }}*</option>
                         @if (isset($free_shipping) && $free_shipping->minimum_price <= $cart_total)
                             @foreach ($checkout_shipping_services as $shipping)
                                 @if ($shipping->id == 1)
@@ -70,7 +71,6 @@
                                 @endif
                             @endforeach
                         @else
-                            <option value="" selected disabled>{{ __('Select Shipping Method') }}*</option>
                             @foreach ($checkout_shipping_services as $shipping)
                                 @if ($shipping->id != 1)
                                     <option value="{{ $shipping->id }}"
@@ -206,10 +206,10 @@
         });
         $(document).ready(function() {
             @if (isset($free_shipping) && $free_shipping->minimum_price <= $cart_total)
-            // Auto-trigger change on page load to sync session and update sidebar totals
+            // Auto-select Free Delivery (value 1) and trigger change on page load to sync session and update sidebar totals
             var $shippingSelect = $('#shipping_id_select');
             if ($shippingSelect.length) {
-                $shippingSelect.trigger('change');
+                $shippingSelect.val('1').trigger('change');
             }
             @endif
         });
