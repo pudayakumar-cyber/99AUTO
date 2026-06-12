@@ -614,7 +614,7 @@
                      return false;
                  });
              </script>
-         @endsection
+         @append
      </div>
 
      <!-- Modal bank -->
