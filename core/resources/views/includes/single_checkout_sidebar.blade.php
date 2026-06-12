@@ -202,5 +202,21 @@
                 $('.single_checkout_payment').attr('disabled', true);
             }
         });
+
+        // Auto-select free shipping if order total is >= $150 threshold
+        $(document).ready(function() {
+            @if (isset($free_shipping) && $free_shipping->minimum_price <= $cart_total)
+                var $shippingSelect = $('#shipping_id_select');
+                if ($shippingSelect.length) {
+                    var freeShippingId = '{{ $free_shipping->id }}';
+                    if ($shippingSelect.val() !== freeShippingId) {
+                        $shippingSelect.val(freeShippingId).trigger('change');
+                    } else {
+                        $('.shipping_id_setup').val(freeShippingId);
+                    }
+                    $shippingSelect.prop('disabled', true);
+                }
+            @endif
+        });
     </script>
 @endsection
