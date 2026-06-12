@@ -78,7 +78,7 @@
                                     
                             
                                     <select {{ (isset($free_shipping) && $free_shipping->minimum_price <= $cart_total) ? 'disabled' : '' }} name="shipping_id" class="form-control" id="shipping_id_select" required>
-                                        <option value="" selected disabled>{{ __('Select Shipping Method') }}</option>
+                                        <option value="" {{ (isset($free_shipping) && $free_shipping->minimum_price <= $cart_total) ? '' : 'selected' }} disabled>{{ __('Select Shipping Method') }}</option>
                                         @foreach ($checkout_shipping_services as $shipping)
                                             @if ($shipping->id == 1 && isset($free_shipping) &&  $free_shipping->minimum_price <= $cart_total)
                                                 <option {{ (isset($free_shipping) && $free_shipping->minimum_price <= $cart_total) ? 'selected' : '' }} value="{{ $shipping->id }}"
@@ -389,14 +389,11 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     @if (isset($free_shipping) && $free_shipping->minimum_price <= $cart_total)
-    // Auto-select Free Delivery (value 1) and trigger change to sync session and populate hidden inputs
+    // Auto-select Free Delivery (value 1) and trigger change to sync session and populate hidden inputs.
+    // We temporarily enable the element so that jQuery's trigger('change') event handler executes successfully, then re-disable it.
     var $shippingSelect = jQuery('#shipping_id_select');
     if ($shippingSelect.length) {
-        $shippingSelect.val('1').trigger('change');
-        $shippingSelect.css({
-            'pointer-events': 'none',
-            'background-color': '#e9ecef'
-        }).attr('tabindex', '-1');
+        $shippingSelect.prop('disabled', false).val('1').trigger('change').prop('disabled', true);
     }
     @endif
 
