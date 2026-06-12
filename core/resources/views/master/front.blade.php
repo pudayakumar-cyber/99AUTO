@@ -33,7 +33,7 @@
     @if (url()->current() == route('front.index'))
         <title>@yield('hometitle')</title>
     @else
-        <title>{{ $setting->title }} -@yield('title')</title>
+        <title>@yield('title') - {{ $setting->title }}</title>
     @endif
 
     <!-- SEO Meta Tags-->
