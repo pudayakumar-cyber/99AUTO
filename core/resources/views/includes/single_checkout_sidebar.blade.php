@@ -219,4 +219,4 @@
             @endif
         });
     </script>
-@append
+@endsection
