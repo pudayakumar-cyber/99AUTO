@@ -5,7 +5,7 @@
 <meta name="description" content="{{$category->meta_descriptions}}">
 @endsection
 @section('title')
-    {{__('FAQ')}}
+    {{ $category->name }}
 @endsection
 
 @section('content')

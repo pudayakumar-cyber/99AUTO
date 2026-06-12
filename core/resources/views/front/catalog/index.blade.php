@@ -5,7 +5,34 @@
 <meta name="description" content="{{$setting->meta_description}}">
 @endsection
 @section('title')
-    {{__('Products')}}
+    @php
+        $titleParts = [];
+        if (request()->filled('search')) {
+            $titleParts[] = __('Search results for: ') . request()->input('search');
+        } elseif (isset($childcategory) && $childcategory) {
+            $titleParts[] = $childcategory->name;
+        } elseif (isset($subcategory) && $subcategory) {
+            $titleParts[] = $subcategory->name;
+        } elseif (isset($category) && $category) {
+            $titleParts[] = $category->name;
+        } elseif (isset($brand) && $brand) {
+            $titleParts[] = $brand->name;
+        } else {
+            $titleParts[] = __('Products');
+        }
+        
+        if (request()->filled('year') || request()->filled('make') || request()->filled('model')) {
+            $ymm = array_filter([
+                request()->input('year'),
+                request()->input('make'),
+                request()->input('model')
+            ]);
+            if (!empty($ymm)) {
+                $titleParts[] = __('for') . ' ' . implode(' ', $ymm);
+            }
+        }
+    @endphp
+    {{ implode(' ', $titleParts) }}
 @endsection
 
 @section('styleplugins')
