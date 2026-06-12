@@ -388,6 +388,20 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    @if (isset($free_shipping) && $free_shipping->minimum_price <= $cart_total)
+    // Auto-select Free Delivery (value 1) and disable the dropdown visually
+    var $shippingSelect = jQuery('#shipping_id_select');
+    if ($shippingSelect.length) {
+        if ($shippingSelect.val() !== "1") {
+            $shippingSelect.val('1').trigger('change');
+        }
+        $shippingSelect.css({
+            'pointer-events': 'none',
+            'background-color': '#e9ecef'
+        }).attr('tabindex', '-1');
+    }
+    @endif
+
     // Listen to form submit in payment modals to trigger AddPaymentInfo (excluding Stripe)
     jQuery(document).on('submit', '.modal form', function (e) {
         var form = this;

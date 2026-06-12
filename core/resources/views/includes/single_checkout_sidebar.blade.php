@@ -203,19 +203,19 @@
             }
         });
 
-        // Auto-select free shipping if order total is >= $150 threshold
         $(document).ready(function() {
             @if (isset($free_shipping) && $free_shipping->minimum_price <= $cart_total)
-                var $shippingSelect = $('#shipping_id_select');
-                if ($shippingSelect.length) {
-                    var freeShippingId = '{{ $free_shipping->id }}';
-                    if ($shippingSelect.val() !== freeShippingId) {
-                        $shippingSelect.val(freeShippingId).trigger('change');
-                    } else {
-                        $('.shipping_id_setup').val(freeShippingId);
-                    }
-                    $shippingSelect.prop('disabled', true);
+            // Auto-select Free Delivery (value 1) and disable the dropdown visually
+            var $shippingSelect = $('#shipping_id_select');
+            if ($shippingSelect.length) {
+                if ($shippingSelect.val() !== "1") {
+                    $shippingSelect.val('1').trigger('change');
                 }
+                $shippingSelect.css({
+                    'pointer-events': 'none',
+                    'background-color': '#e9ecef'
+                }).attr('tabindex', '-1');
+            }
             @endif
         });
     </script>
