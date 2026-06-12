@@ -203,10 +203,13 @@
         $(document).ready(function() {
             @if (isset($free_shipping) && $free_shipping->minimum_price <= $cart_total)
             // Auto-select Free Delivery (value 1) and trigger change to sync session and populate hidden inputs.
-            // We temporarily enable the element so that jQuery's trigger('change') event handler executes successfully, then re-disable it.
+            // We temporarily enable the element so that jQuery's trigger('change') event handler executes successfully, then re-disable it in the next tick.
             var $shippingSelect = $('#shipping_id_select');
             if ($shippingSelect.length) {
-                $shippingSelect.prop('disabled', false).val('1').trigger('change').prop('disabled', true);
+                $shippingSelect.prop('disabled', false).val('1').trigger('change');
+                setTimeout(function() {
+                    $shippingSelect.prop('disabled', true);
+                }, 150);
             }
             @endif
         });
