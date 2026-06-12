@@ -93,6 +93,15 @@
     @endif
     <style>
         {{ $setting->custom_css }}
+        .top-announcement-bar {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e3e6e8;
+            padding: 7px 0;
+            font-size: 12px;
+            font-weight: 600;
+            color: #222;
+            width: 100%;
+        }
         .product-card {
             cursor: pointer;
         }
@@ -1230,6 +1239,11 @@ body_theme4 @endif
     <!-- Header-->
 
     <header class="site-header navbar-sticky">
+        <div class="top-announcement-bar">
+            <div class="container d-flex justify-content-center justify-content-md-end">
+                <span>🇨🇦 We're Canadian — so is Parts Pioneer 🇨🇦</span>
+            </div>
+        </div>
         <div class="menu-top-area">
             <div class="container">
                 <div class="row">
