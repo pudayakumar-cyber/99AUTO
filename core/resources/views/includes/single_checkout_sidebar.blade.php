@@ -62,11 +62,11 @@
         <div class="row">
             <div class="col-sm-12 mb-3">
                 @if (PriceHelper::CheckDigital() == true)
-                    <select name="shipping_id" class="form-control" id="shipping_id_select" required>
+                    <select {{ (isset($free_shipping) && $free_shipping->minimum_price <= $cart_total) ? 'disabled' : '' }} name="shipping_id" class="form-control" id="shipping_id_select" required>
                         <option value="" selected disabled>{{ __('Select Shipping Method') }}*</option>
                         @foreach ($checkout_shipping_services as $shipping)
                             @if ($shipping->id == 1 && isset($free_shipping) && $free_shipping->minimum_price <= $cart_total)
-                                <option value="{{ $shipping->id }}" data-href="{{ route('front.shipping.setup') }}">
+                                <option {{ (isset($free_shipping) && $free_shipping->minimum_price <= $cart_total) ? 'selected' : '' }} value="{{ $shipping->id }}" data-href="{{ route('front.shipping.setup') }}">
                                     {{ $shipping->title }}
                                 </option>
                             @else
@@ -204,12 +204,10 @@
         });
         $(document).ready(function() {
             @if (isset($free_shipping) && $free_shipping->minimum_price <= $cart_total)
-            // Auto-select Free Delivery (value 1) and disable the dropdown visually
+            // Auto-select Free Delivery (value 1) and trigger change to sync session and populate hidden inputs
             var $shippingSelect = $('#shipping_id_select');
             if ($shippingSelect.length) {
-                if ($shippingSelect.val() !== "1") {
-                    $shippingSelect.val('1').trigger('change');
-                }
+                $shippingSelect.val('1').trigger('change');
                 $shippingSelect.css({
                     'pointer-events': 'none',
                     'background-color': '#e9ecef'
