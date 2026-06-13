@@ -59,9 +59,12 @@ class PostRepository
     {
 
         $storeData = [];
-        if ($photos = $request->file('photo')) {
+        if ($request->hasFile('photo')) {
+            $photos = $request->file('photo');
             foreach ($photos as $key => $photo) {
-                $storeData[$key] = ImageHelper::handleUploadedImage($photo, 'images');
+                if ($photo && $photo->isValid()) {
+                    $storeData[$key] = ImageHelper::handleUploadedImage($photo, 'images');
+                }
             }
         }
         return $storeData;
@@ -70,11 +73,14 @@ class PostRepository
     public function UpdateImageData($request, $post)
     {
 
-        $storeData = json_decode($post->photo, true);
+        $storeData = json_decode($post->photo, true) ?: [];
 
-        if ($photos = $request->file('photo')) {
+        if ($request->hasFile('photo')) {
+            $photos = $request->file('photo');
             foreach ($photos as $key => $photo) {
-                array_push($storeData, ImageHelper::handleUploadedImage($photo, 'images'));
+                if ($photo && $photo->isValid()) {
+                    array_push($storeData, ImageHelper::handleUploadedImage($photo, 'images'));
+                }
             }
         }
 

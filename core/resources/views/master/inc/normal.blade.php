@@ -314,7 +314,7 @@
 
 
     @if (in_array('Manage Blogs',$section))
-    <!-- <li class="nav-item">
+    <li class="nav-item">
         <a data-toggle="collapse" href="#post">
             <i class="fas fa-rss-square"></i>
             <p>{{ __('Manage Blogs') }}</p>
@@ -334,7 +334,7 @@
                 </li>
             </ul>
         </div>
-    </li> -->
+    </li>
     @endif
 
     @if (in_array('Manages Pages',$section))

@@ -279,7 +279,7 @@
         </div>
     </li> -->
 
-    <!-- <li class="nav-item">
+    <li class="nav-item">
         <a data-toggle="collapse" href="#post">
             <i class="fas fa-rss-square"></i>
             <p>{{ __('Manage Blogs') }}</p>
@@ -299,7 +299,7 @@
                 </li>
             </ul>
         </div>
-    </li> -->
+    </li>
     <li class="nav-item">
         <a href="{{ route('back.page.index') }}">
             <i class="fas fa-book"></i>
