@@ -93,14 +93,34 @@
     @endif
     <style>
         {{ $setting->custom_css }}
+        .top-shipping-bar {
+            background-color: #1a2530;
+            color: #ffffff;
+            padding: 6px 0;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            width: 100%;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            letter-spacing: 0.03em;
+        }
         .top-announcement-bar {
             background-color: #f8f9fa;
             border-bottom: 1px solid #e3e6e8;
-            padding: 7px 0;
+            padding: 5px 0;
             font-size: 12px;
             font-weight: 600;
             color: #222;
             width: 100%;
+        }
+        .ca-flag-icon {
+            width: 22px;
+            height: auto;
+            vertical-align: middle;
+            display: inline-block;
+            margin: 0 8px;
+            border-radius: 2px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
         }
         .product-card {
             cursor: pointer;
@@ -1239,9 +1259,20 @@ body_theme4 @endif
     <!-- Header-->
 
     <header class="site-header navbar-sticky">
+        @php
+            $free_shipping_service = DB::table('shipping_services')->where('id', 1)->first();
+            $min_price_val = $free_shipping_service ? $free_shipping_service->minimum_price : 150;
+        @endphp
+        <div class="top-shipping-bar">
+            <div class="container text-center">
+                <span>{{ __('Fast FREE Shipping in Canada over') }} {{ \PriceHelper::setCurrencyPrice($min_price_val) }}!</span>
+            </div>
+        </div>
         <div class="top-announcement-bar">
-            <div class="container d-flex justify-content-center justify-content-md-end">
-                <span>🇨🇦 We're Canadian — so is Parts Pioneer 🇨🇦</span>
+            <div class="container d-flex align-items-center justify-content-center">
+                <img src="{{ asset('assets/front/ca-flag.gif') }}" alt="Canada Flag" class="ca-flag-icon">
+                <span>{{ __("We're Canadian — so is Parts Pioneer") }}</span>
+                <img src="{{ asset('assets/front/ca-flag.gif') }}" alt="Canada Flag" class="ca-flag-icon">
             </div>
         </div>
         <div class="menu-top-area">
