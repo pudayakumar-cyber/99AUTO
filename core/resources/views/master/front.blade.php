@@ -1263,7 +1263,7 @@ body_theme4 @endif
             $free_shipping_service = DB::table('shipping_services')->where('id', 1)->first();
             $min_price_val = $free_shipping_service ? $free_shipping_service->minimum_price : 150;
         @endphp
-        <div style="background-color: #D71F23!important;" class="top-shipping-bar">
+        <div style="" class="top-shipping-bar">
             <div class="container text-center">
                 <span>{{ __('FREE SHIPPING ON ORDERS OVER') }} {{ \PriceHelper::setCurrencyPrice($min_price_val) }}!</span>
             </div>
