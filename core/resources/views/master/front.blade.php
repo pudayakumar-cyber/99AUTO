@@ -1263,16 +1263,16 @@ body_theme4 @endif
             $free_shipping_service = DB::table('shipping_services')->where('id', 1)->first();
             $min_price_val = $free_shipping_service ? $free_shipping_service->minimum_price : 150;
         @endphp
-        <div class="top-shipping-bar">
+        <div style="background-color: #D71F23!important;" class="top-shipping-bar">
             <div class="container text-center">
-                <span>{{ __('Fast FREE Shipping in Canada over') }} {{ \PriceHelper::setCurrencyPrice($min_price_val) }}!</span>
+                <span>{{ __('FREE SHIPPING ON ORDERS OVER') }} {{ \PriceHelper::setCurrencyPrice($min_price_val) }}!</span>
             </div>
         </div>
         <div class="top-announcement-bar">
             <div class="container d-flex align-items-center justify-content-center">
-                <img src="{{ asset('assets/front/ca-flag.gif') }}" alt="Canada Flag" class="ca-flag-icon">
+                <img src="https://cdn.shopify.com/static/images/flags/ca.svg?width=24" alt="Canada Flag" class="ca-flag-icon">
                 <span>{{ __("We're Canadian — so is Parts Pioneer") }}</span>
-                <img src="{{ asset('assets/front/ca-flag.gif') }}" alt="Canada Flag" class="ca-flag-icon">
+                <img src="https://cdn.shopify.com/static/images/flags/ca.svg?width=24" alt="Canada Flag" class="ca-flag-icon">
             </div>
         </div>
         <div class="menu-top-area">
