@@ -112,6 +112,10 @@
             font-weight: 600;
             color: #222;
             width: 100%;
+            text-align: center;
+        }
+        .top-announcement-bar span {
+            text-align: center;
         }
         .ca-flag-icon {
             width: 22px;
