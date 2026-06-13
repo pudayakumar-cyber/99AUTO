@@ -1271,7 +1271,7 @@ body_theme4 @endif
         <div class="top-announcement-bar">
             <div class="container d-flex align-items-center justify-content-center">
                 <img src="https://cdn.shopify.com/static/images/flags/ca.svg?width=24" alt="Canada Flag" class="ca-flag-icon">
-                <span>{{ __("We're Canadian — so is Parts Pioneer") }}</span>
+                <span>{{ __("Proudly 100% Canadian Owned and Operated — Serving Drivers from Coast to Coast.") }}</span>
                 <img src="https://cdn.shopify.com/static/images/flags/ca.svg?width=24" alt="Canada Flag" class="ca-flag-icon">
             </div>
         </div>
