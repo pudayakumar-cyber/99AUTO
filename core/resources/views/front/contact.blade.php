@@ -54,7 +54,16 @@
 
           <div>
             @foreach ($links as $link_key => $link)
-            <a class="social-button shape-circle sb-facebook" href="{{$link}}" data-toggle="tooltip" data-placement="top"><i class="{{$icons[$link_key]}}"></i></a>
+            @php
+                $label = 'Social Media';
+                foreach (['facebook', 'twitter', 'instagram', 'youtube', 'linkedin', 'pinterest'] as $platform) {
+                    if (strpos($icons[$link_key], $platform) !== false) {
+                        $label = ucfirst($platform);
+                        break;
+                    }
+                }
+            @endphp
+            <a class="social-button shape-circle sb-facebook" href="{{$link}}" data-toggle="tooltip" data-placement="top" aria-label="{{$label}}"><i class="{{$icons[$link_key]}}"></i></a>
             @endforeach
           </div>
         </section>

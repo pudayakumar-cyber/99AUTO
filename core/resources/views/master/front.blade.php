@@ -84,19 +84,19 @@
     <link rel="apple-touch-icon" href="{{ asset('storage/images/' . $setting->favicon) }}">
     <link rel="apple-touch-icon" sizes="152x152" href="{{ asset('storage/images/' . $setting->favicon) }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('storage/images/' . $setting->favicon) }}">
-    <link rel="apple-touch-icon" sizes="167x167" href="{{ asset('storage/images/' . $setting->favicon) }}">
-
-    <!-- Preload critical stylesheets -->
+    <link rel="apple-touch-icon" sizes="167x167" href="{{ asset('storage/images/' . $setting->favicon) }}">    <!-- Preload critical stylesheets -->
     <link rel="preload" href="{{ asset('assets/front/css/plugins.min.css') }}" as="style">
     <link rel="preload" href="{{ asset('assets/front/css/styles.min.css') }}" as="style">
+    <link rel="preload" href="{{ asset('assets/front/css/responsive.css') }}" as="style">
 
     <!-- Vendor Styles including: Bootstrap, Font Icons, Plugins, etc.-->
-    <link rel="stylesheet" media="screen" href="{{ asset('assets/front/css/plugins.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/front/css/plugins.min.css') }}" media="print" onload="this.media='all'; this.onload=null;">
     @yield('styleplugins')
 
-    <link id="mainStyles" rel="stylesheet" media="screen" href="{{ asset('assets/front/css/styles.min.css') }}">
+    <link id="mainStyles" rel="stylesheet" href="{{ asset('assets/front/css/styles.min.css') }}" media="print" onload="this.media='all'; this.onload=null;">
 
-    <link id="mainStyles" rel="stylesheet" media="screen" href="{{ asset('assets/front/css/responsive.css') }}">
+    <link id="mainStyles" rel="stylesheet" href="{{ asset('assets/front/css/responsive.css') }}" media="print" onload="this.media='all'; this.onload=null;">
+
     <!-- Color css -->
     <link
         href="{{ asset('assets/front/css/color.php?primary_color=') . str_replace('#', '', $setting->primary_color) }}"
@@ -1717,7 +1717,16 @@ body_theme4 @endif
                         @endphp
                         <div class="footer-social-links">
                             @foreach ($links as $link_key => $link)
-                                <a href="{{ $link }}"><span><i
+                                @php
+                                    $label = 'Social Media';
+                                    foreach (['facebook', 'twitter', 'instagram', 'youtube', 'linkedin', 'pinterest'] as $platform) {
+                                        if (strpos($icons[$link_key], $platform) !== false) {
+                                            $label = ucfirst($platform);
+                                            break;
+                                        }
+                                    }
+                                @endphp
+                                <a href="{{ $link }}" aria-label="{{ $label }}"><span><i
                                             class="{{ $icons[$link_key] }}"></i></span></a>
                             @endforeach
                         </div>
