@@ -3,7 +3,7 @@
 
 <head>
     @if (config('services.google.tag_manager_id'))
-    <!-- Google Tag Manager -->
+    <!-- Google Tag Manager Stub -->
     <script>
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push({
@@ -22,12 +22,9 @@
       user_id: {{ Auth::check() ? Auth::id() : 'null' }}
     });
     @endif
-    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    '/metrics/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','{{ config('services.google.tag_manager_id') }}');</script>
-    <!-- End Google Tag Manager -->
+    window.dataLayer.push({'gtm.start': new Date().getTime(), event:'gtm.js'});
+    </script>
+    <!-- End Google Tag Manager Stub -->
     @endif
     <meta charset="UTF-8">
     @if (url()->current() == route('front.index'))
@@ -997,11 +994,10 @@
     @endif
     {{-- Facebook pixel End --}}
 @if (!($setting->is_google_analytics == '1' && trim((string) $setting->google_analytics) !== ''))
-<!-- Google tag (gtag.js) -->
-<script async src="/metrics/gtag/js?id={{ config('services.google.analytics_id') }}"></script>
+<!-- Google tag (gtag.js) Stub -->
 <script>
   window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
+  window.gtag = window.gtag || function(){window.dataLayer.push(arguments);}
   gtag('js', new Date());
 
   gtag('config', '{{ config('services.google.analytics_id') }}');
@@ -1067,23 +1063,20 @@
         }
     }
 @endphp
-<!-- Meta Pixel Base Code -->
+<!-- Meta Pixel Stub -->
 <script>
-!function(f,b,e,v,n,t,s)
-{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-n.queue=[];t=b.createElement(e);t.async=!0;
-t.src=v;s=b.getElementsByTagName(e)[0];
-s.parentNode.insertBefore(t,s)}(window, document,'script',
-'https://connect.facebook.net/en_US/fbevents.js');
+if(!window.fbq) {
+  window.fbq = function(){window.fbq.callMethod?window.fbq.callMethod.apply(window.fbq,arguments):window.fbq.queue.push(arguments)};
+  if(!window._fbq)window._fbq=window.fbq;
+  window.fbq.push=window.fbq;window.fbq.loaded=!0;window.fbq.version='2.0';window.fbq.queue=[];
+}
 fbq('init', '{{ config('services.facebook.pixel_id') }}'@if(!empty($metaAdvancedMatching)), @json($metaAdvancedMatching)@endif);
 fbq('track', 'PageView');
 </script>
 <noscript><img height="1" width="1" style="display:none"
 src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&ev=PageView&noscript=1"
 /></noscript>
-<!-- End Meta Pixel Base Code -->
+<!-- End Meta Pixel Stub -->
 @endif
 
 <!-- #metapixelscript -->
@@ -1843,6 +1836,62 @@ body_theme4 @endif
     <script type="text/javascript" src="{{ asset('assets/front/js/lazy.plugin.js') }}" defer></script>
     <script type="text/javascript" src="{{ asset('assets/front/js/myscript.js') }}" defer></script>
     @yield('script')
+
+    <!-- Lazy load tracking scripts (GTM, GA, Facebook Pixel) on first user interaction -->
+    <script>
+        window.addEventListener('load', function() {
+            var loadThirdPartyScripts = function() {
+                // 1. Google Tag Manager
+                @if (config('services.google.tag_manager_id'))
+                (function() {
+                    if (document.querySelector('script[src*="/metrics/gtm.js"]')) return;
+                    var js = document.createElement('script');
+                    js.async = true;
+                    js.src = '/metrics/gtm.js?id={{ config('services.google.tag_manager_id') }}';
+                    var s = document.getElementsByTagName('script')[0];
+                    s.parentNode.insertBefore(js, s);
+                })();
+                @endif
+
+                // 2. Google Analytics (gtag.js)
+                @if (!($setting->is_google_analytics == '1' && trim((string) $setting->google_analytics) !== ''))
+                (function() {
+                    if (document.querySelector('script[src*="/metrics/gtag/js"]')) return;
+                    var js = document.createElement('script');
+                    js.async = true;
+                    js.src = '/metrics/gtag/js?id={{ config('services.google.analytics_id') }}';
+                    var s = document.getElementsByTagName('script')[0];
+                    s.parentNode.insertBefore(js, s);
+                })();
+                @endif
+
+                // 3. Meta Pixel
+                @if (!($setting->is_facebook_pixel == '1' && trim((string) $setting->facebook_pixel) !== ''))
+                (function() {
+                    if (document.querySelector('script[src*="connect.facebook.net/en_US/fbevents.js"]')) return;
+                    var js = document.createElement('script');
+                    js.async = true;
+                    js.src = 'https://connect.facebook.net/en_US/fbevents.js';
+                    var s = document.getElementsByTagName('script')[0];
+                    s.parentNode.insertBefore(js, s);
+                })();
+                @endif
+            };
+
+            var trackingTriggered = false;
+            var triggerTrackingLoad = function() {
+                if (trackingTriggered) return;
+                trackingTriggered = true;
+                loadThirdPartyScripts();
+                window.removeEventListener('scroll', triggerTrackingLoad);
+                window.removeEventListener('mousemove', triggerTrackingLoad);
+                window.removeEventListener('touchstart', triggerTrackingLoad);
+            };
+            window.addEventListener('scroll', triggerTrackingLoad, {passive: true});
+            window.addEventListener('mousemove', triggerTrackingLoad, {passive: true});
+            window.addEventListener('touchstart', triggerTrackingLoad, {passive: true});
+        });
+    </script>
 
     @if ($setting->is_facebook_messenger == '1')
         <!-- Messenger Chat Plugin Code -->
