@@ -183,19 +183,19 @@
                                                 alt="{{ $compaign_item->item->name }}">
                                             <div class="product-button-group"><a class="product-button wishlist_store"
                                                     href="{{ route('user.wishlist.store', $compaign_item->item->id) }}"
-                                                    title="{{ __('Wishlist') }}"><i class="icon-heart"></i></a>
+                                                    title="{{ __('Wishlist') }}" aria-label="{{ __('Wishlist') }}"><i class="icon-heart"></i></a>
                                                 <a data-target="{{ route('fornt.compare.product', $compaign_item->item->id) }}"
                                                     class="product-button product_compare" href="javascript:;"
-                                                    title="{{ __('Compare') }}"><i class="icon-repeat"></i></a>
+                                                    title="{{ __('Compare') }}" aria-label="{{ __('Compare') }}"><i class="icon-repeat"></i></a>
                                                 @if ($compaign_item->item->is_stock())
                                                     <a class="product-button add_to_single_cart"
                                                         data-target="{{ $compaign_item->item->id }}" href="javascript:;"
-                                                        title="{{ __('To Cart') }}"><i class="icon-shopping-cart"></i>
+                                                        title="{{ __('To Cart') }}" aria-label="{{ __('To Cart') }}"><i class="icon-shopping-cart"></i>
                                                     </a>
                                                 @else
                                                     <a class="product-button"
                                                         href="{{ route('front.product', $compaign_item->item->slug) }}"
-                                                        title="{{ __('Details') }}"><i class="icon-arrow-right"></i></a>
+                                                        title="{{ __('Details') }}" aria-label="{{ __('Details') }}"><i class="icon-arrow-right"></i></a>
                                                 @endif
                                             </div>
                                         </div>
@@ -350,10 +350,10 @@
                                             <div class="product-button-group">
                                                 <a class="product-button wishlist_store"
                                                     href="{{ route('user.wishlist.store', $popular_category_item->id) }}"
-                                                    title="{{ __('Wishlist') }}"><i class="icon-heart"></i></a>
+                                                    title="{{ __('Wishlist') }}" aria-label="{{ __('Wishlist') }}"><i class="icon-heart"></i></a>
                                                 <a data-target="{{ route('fornt.compare.product', $popular_category_item->id) }}"
                                                     class="product-button product_compare" href="javascript:;"
-                                                    title="{{ __('Compare') }}"><i class="icon-repeat"></i></a>
+                                                    title="{{ __('Compare') }}" aria-label="{{ __('Compare') }}"><i class="icon-repeat"></i></a>
                                                 @include('includes.item_footer', [
                                                     'sitem' => $popular_category_item,
                                                 ])
@@ -508,10 +508,10 @@
                                                     alt="{{ $item->name }}">
                                                 <div class="product-button-group"><a class="product-button wishlist_store"
                                                         href="{{ route('user.wishlist.store', $item->id) }}"
-                                                        title="{{ __('Wishlist') }}"><i class="icon-heart"></i></a>
+                                                        title="{{ __('Wishlist') }}" aria-label="{{ __('Wishlist') }}"><i class="icon-heart"></i></a>
                                                     <a data-target="{{ route('fornt.compare.product', $item->id) }}"
                                                         class="product-button product_compare" href="javascript:;"
-                                                        title="{{ __('Compare') }}"><i class="icon-repeat"></i></a>
+                                                        title="{{ __('Compare') }}" aria-label="{{ __('Compare') }}"><i class="icon-repeat"></i></a>
                                                     @include('includes.item_footer', ['sitem' => $item])
                                                 </div>
                                             </div>
@@ -583,10 +583,10 @@
                                                     <div class="product-button-group"><a
                                                             class="product-button wishlist_store"
                                                             href="{{ route('user.wishlist.store', $item->id) }}"
-                                                            title="{{ __('Wishlist') }}"><i class="icon-heart"></i></a>
+                                                            title="{{ __('Wishlist') }}" aria-label="{{ __('Wishlist') }}"><i class="icon-heart"></i></a>
                                                         <a data-target="{{ route('fornt.compare.product', $item->id) }}"
                                                             class="product-button product_compare" href="javascript:;"
-                                                            title="{{ __('Compare') }}"><i class="icon-repeat"></i></a>
+                                                            title="{{ __('Compare') }}" aria-label="{{ __('Compare') }}"><i class="icon-repeat"></i></a>
                                                         @include('includes.item_footer', [
                                                             'sitem' => $item,
                                                         ])
@@ -785,10 +785,10 @@
                                         alt="{{ $feature_category_item->name }}">
                                     <div class="product-button-group"><a class="product-button wishlist_store"
                                             href="{{ route('user.wishlist.store', $feature_category_item->id) }}"
-                                            title="{{ __('Wishlist') }}"><i class="icon-heart"></i></a>
+                                            title="{{ __('Wishlist') }}" aria-label="{{ __('Wishlist') }}"><i class="icon-heart"></i></a>
                                         <a data-target="{{ route('fornt.compare.product', $feature_category_item->id) }}"
                                             class="product-button product_compare" href="javascript:;"
-                                            title="{{ __('Compare') }}"><i class="icon-repeat"></i></a>
+                                            title="{{ __('Compare') }}" aria-label="{{ __('Compare') }}"><i class="icon-repeat"></i></a>
 
                                         @include('includes.item_footer', [
                                             'sitem' => $feature_category_item,

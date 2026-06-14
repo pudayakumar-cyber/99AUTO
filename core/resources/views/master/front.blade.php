@@ -78,7 +78,7 @@
     @endif
 
     <!-- Mobile Specific Meta Tag-->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- Favicon Icons-->
     <link rel="dns-prefetch" href="//www.googletagmanager.com">
@@ -348,6 +348,17 @@
             .brand-slider:not(.owl-loaded) > * {
                 width: 50% !important;
             }
+        /* Accessibility color contrast improvements */
+        .text-muted {
+            color: #6f6f6f !important;
+        }
+        .footer-copyright > a {
+            color: #d71f23 !important;
+            transition: color 0.25s;
+        }
+        .footer-copyright > a:hover {
+            color: #1a2530 !important;
+            text-decoration: underline !important;
         }
 
         .whatsapp-float {
@@ -1590,7 +1601,7 @@ body_theme4 @endif
                                         </a>
                                     </div>
                                 @endif
-                                <div class="toolbar-item cart-toolbar-item"><a href="{{ route('front.cart') }}" class="mobile-cart-toggle">
+                                <div class="toolbar-item cart-toolbar-item"><a href="{{ route('front.cart') }}" class="mobile-cart-toggle" aria-label="{{ __('Cart') }}">
                                         <div><span class="cart-icon"><i class="icon-shopping-cart"></i><span
                                                     class="count-label cart_count">{{ Session::has('cart') ? count(Session::get('cart')) : '0' }}
                                                 </span></span><span class="text-label">{{ __('Cart') }}</span>
@@ -1775,7 +1786,9 @@ body_theme4 @endif
     </div>
 
     <!-- Page Content-->
-    @yield('content')
+    <main id="main-content">
+        @yield('content')
+    </main>
 
     <!--    announcement banner section start   -->
     <a class="announcement-banner" href="#announcement-modal"></a>
