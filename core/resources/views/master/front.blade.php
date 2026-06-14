@@ -348,6 +348,8 @@
             .brand-slider:not(.owl-loaded) > * {
                 width: 50% !important;
             }
+        }
+
         /* Accessibility color contrast improvements */
         .text-muted {
             color: #6f6f6f !important;
@@ -359,6 +361,21 @@
         .footer-copyright > a:hover {
             color: #1a2530 !important;
             text-decoration: underline !important;
+        }
+
+        /* Fix image aspect ratio scaling and stretching issues due to added width/height attributes */
+        .single-service img {
+            width: auto !important;
+        }
+        .slider-area-wrapper .item-inner .brand-logo {
+            width: auto !important;
+            height: auto !important;
+        }
+        .brand-slider .slider-item a img {
+            width: auto !important;
+        }
+        .brand-grid-item img {
+            width: auto !important;
         }
 
         .whatsapp-float {
