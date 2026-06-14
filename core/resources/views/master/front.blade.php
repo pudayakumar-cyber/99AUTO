@@ -87,22 +87,32 @@
     <link rel="dns-prefetch" href="//static.addtoany.com">
     <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin>
     <link rel="preconnect" href="https://connect.facebook.net" crossorigin>
-    <link rel="icon" type="image/png" href="{{ asset('storage/images/' . $setting->favicon) }}">
-    <link rel="apple-touch-icon" href="{{ asset('storage/images/' . $setting->favicon) }}">
-    <link rel="apple-touch-icon" sizes="152x152" href="{{ asset('storage/images/' . $setting->favicon) }}">
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('storage/images/' . $setting->favicon) }}">
-    <link rel="apple-touch-icon" sizes="167x167" href="{{ asset('storage/images/' . $setting->favicon) }}">    <!-- Preload critical stylesheets -->
+    <link rel="icon" type="image/x-icon" href="{{ asset('core/public/storage/images/OM_1766839819RuvjmNdh.png') }}" />
+    <link rel="apple-touch-icon" href="{{ asset('core/public/storage/images/OM_1766839819RuvjmNdh.png') }}">
+    <link rel="apple-touch-icon" sizes="152x152" href="{{ asset('core/public/storage/images/OM_1766839819RuvjmNdh.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('core/public/storage/images/OM_1766839819RuvjmNdh.png') }}">
+    <link rel="apple-touch-icon" sizes="167x167" href="{{ asset('core/public/storage/images/OM_1766839819RuvjmNdh.png') }}">
+
+    <!-- Preconnect Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Preload critical stylesheets -->
     <link rel="preload" href="{{ asset('assets/front/css/plugins.min.css') }}" as="style">
     <link rel="preload" href="{{ asset('assets/front/css/styles.min.css') }}" as="style">
     <link rel="preload" href="{{ asset('assets/front/css/responsive.css') }}" as="style">
 
     <!-- Vendor Styles including: Bootstrap, Font Icons, Plugins, etc.-->
-    <link rel="stylesheet" href="{{ asset('assets/front/css/plugins.min.css') }}" media="print" onload="this.media='all'; this.onload=null;">
+    <link rel="stylesheet" href="{{ asset('assets/front/css/plugins.min.css') }}">
     @yield('styleplugins')
 
-    <link id="mainStyles" rel="stylesheet" href="{{ asset('assets/front/css/styles.min.css') }}" media="print" onload="this.media='all'; this.onload=null;">
+    <link id="mainStyles" rel="stylesheet" href="{{ asset('assets/front/css/styles.min.css') }}">
 
-    <link id="mainStyles" rel="stylesheet" href="{{ asset('assets/front/css/responsive.css') }}" media="print" onload="this.media='all'; this.onload=null;">
+    <link id="mainStyles" rel="stylesheet" href="{{ asset('assets/front/css/responsive.css') }}">
+
+    <!-- Non-critical Stylesheet Loaded Asynchronously -->
+    <link rel="stylesheet" href="{{ asset('assets/front/css/paymentfont.min.css') }}" media="print" onload="this.media='all'; this.onload=null;">
 
     <!-- Color css -->
     <link
@@ -259,7 +269,7 @@
             padding-bottom: 96px;
         }
 
-        /* Eliminate CLS on home page hero slider */
+        /* Eliminate CLS on home page hero slider and all other Owl Carousels */
         .hero-slider,
         .hero-slider-main {
             min-height: 582px;
@@ -277,6 +287,66 @@
             .hero-slider,
             .hero-slider-main {
                 min-height: 340px;
+            }
+        }
+
+        /* Prevent CLS globally by keeping carousel items horizontal before JS loads */
+        .owl-carousel:not(.owl-loaded) {
+            display: flex !important;
+            overflow: hidden !important;
+            flex-wrap: nowrap !important;
+        }
+        .owl-carousel:not(.owl-loaded) > * {
+            flex: 0 0 auto !important;
+        }
+        /* Match responsive item widths to their loaded states */
+        .popular-category-slider:not(.owl-loaded) > *,
+        .features-slider:not(.owl-loaded) > *,
+        .flash-deal-slider:not(.owl-loaded) > *,
+        .newproduct-slider:not(.owl-loaded) > *,
+        .home-blog-slider:not(.owl-loaded) > * {
+            width: 25% !important;
+        }
+        .brand-slider:not(.owl-loaded) > * {
+            width: 16.66% !important;
+        }
+        .hero-slider-main:not(.owl-loaded) > * {
+            width: 100% !important;
+        }
+        @media (max-width: 991px) {
+            .popular-category-slider:not(.owl-loaded) > *,
+            .features-slider:not(.owl-loaded) > *,
+            .flash-deal-slider:not(.owl-loaded) > *,
+            .newproduct-slider:not(.owl-loaded) > *,
+            .home-blog-slider:not(.owl-loaded) > * {
+                width: 33.33% !important;
+            }
+            .brand-slider:not(.owl-loaded) > * {
+                width: 25% !important;
+            }
+        }
+        @media (max-width: 768px) {
+            .popular-category-slider:not(.owl-loaded) > *,
+            .features-slider:not(.owl-loaded) > *,
+            .flash-deal-slider:not(.owl-loaded) > *,
+            .newproduct-slider:not(.owl-loaded) > *,
+            .home-blog-slider:not(.owl-loaded) > * {
+                width: 50% !important;
+            }
+            .brand-slider:not(.owl-loaded) > * {
+                width: 33.33% !important;
+            }
+        }
+        @media (max-width: 575px) {
+            .popular-category-slider:not(.owl-loaded) > *,
+            .features-slider:not(.owl-loaded) > *,
+            .flash-deal-slider:not(.owl-loaded) > *,
+            .newproduct-slider:not(.owl-loaded) > *,
+            .home-blog-slider:not(.owl-loaded) > * {
+                width: 100% !important;
+            }
+            .brand-slider:not(.owl-loaded) > * {
+                width: 50% !important;
             }
         }
 

@@ -23,8 +23,21 @@
                                         <div class="item-inner">
                                             <div class="from-bottom">
                                                 @if ($slider->logo)
+                                                    @php
+                                                        $sliderLogoWidth = 100; // default/fallback
+                                                        $sliderLogoHeight = 100;
+                                                        $sliderLogoPath = public_path('storage/images/' . $slider->logo);
+                                                        if (file_exists($sliderLogoPath)) {
+                                                            $sliderLogoInfo = @getimagesize($sliderLogoPath);
+                                                            if ($sliderLogoInfo) {
+                                                                $sliderLogoWidth = $sliderLogoInfo[0];
+                                                                $sliderLogoHeight = $sliderLogoInfo[1];
+                                                            }
+                                                        }
+                                                    @endphp
                                                     <img class="d-inline-block brand-logo"
-                                                        src="{{ url('/core/public/storage/images/' . $slider->logo) }}" alt="logo">
+                                                        src="{{ url('/core/public/storage/images/' . $slider->logo) }}" alt="logo"
+                                                        width="{{ $sliderLogoWidth }}" height="{{ $sliderLogoHeight }}">
                                                 @endif
                                                 <div class="title text-body">{{ $slider->title }}</div>
                                                 <div class="subtitle text-body">{{ $slider->details }}</div>
@@ -101,9 +114,21 @@
             <div class="container">
                 <div class="row">
                     @foreach ($services as $service)
+                        @php
+                            $serviceWidth = 60; // default/fallback
+                            $serviceHeight = 60;
+                            $servicePath = public_path('storage/images/' . $service->photo);
+                            if (file_exists($servicePath)) {
+                                $serviceInfo = @getimagesize($servicePath);
+                                if ($serviceInfo) {
+                                    $serviceWidth = $serviceInfo[0];
+                                    $serviceHeight = $serviceInfo[1];
+                                }
+                            }
+                        @endphp
                         <div class="col-lg-3 col-sm-6 text-center mb-30">
                             <div class="single-service single-service2">
-                                <img src="{{ url('/core/public/storage/images/' . $service->photo) }}" alt="Shipping">
+                                <img src="{{ url('/core/public/storage/images/' . $service->photo) }}" alt="Shipping" width="{{ $serviceWidth }}" height="{{ $serviceHeight }}" loading="lazy">
                                 <div class="content">
                                     <h6 class="mb-2">{{ $service->title }}</h6>
                                     <p class="text-sm text-muted mb-0">{{ $service->details }}</p>
@@ -897,32 +922,58 @@
                         @endphp
                         <div class="brand-slider owl-carousel">
                             @foreach ($brands as $brand)
-                                @php($brandPhotoUrl = $resolveBrandPhotoUrl($brand->photo))
+                                @php
+                                    $brandPhotoUrl = $resolveBrandPhotoUrl($brand->photo);
+                                    $brandWidth = 120; // default/fallback
+                                    $brandHeight = 50;
+                                    $brandPath = public_path('storage/images/' . $brand->photo);
+                                    if (file_exists($brandPath)) {
+                                        $brandInfo = @getimagesize($brandPath);
+                                        if ($brandInfo) {
+                                            $brandWidth = $brandInfo[0];
+                                            $brandHeight = $brandInfo[1];
+                                        }
+                                    }
+                                @endphp
                                 <div class="slider-item">
-                                    <a class="text-center"
-                                        href="{{ route('front.catalog') . '?brand=' . $brand->slug }}">
-                                        @if ($brandPhotoUrl)
-                                            <img class="d-block hi-50"
-                                                src="{{ $brandPhotoUrl }}"
-                                                alt="{{ $brand->name }}" title="{{ $brand->name }}" loading="lazy">
-                                        @else
-                                            <span class="brand-name-fallback">{{ $brand->name }}</span>
-                                        @endif
-                                    </a>
+                                     <a class="text-center"
+                                         href="{{ route('front.catalog') . '?brand=' . $brand->slug }}">
+                                         @if ($brandPhotoUrl)
+                                             <img class="d-block hi-50"
+                                                 src="{{ $brandPhotoUrl }}"
+                                                 alt="{{ $brand->name }}" title="{{ $brand->name }}" loading="lazy"
+                                                 width="{{ $brandWidth }}" height="{{ $brandHeight }}">
+                                         @else
+                                             <span class="brand-name-fallback">{{ $brand->name }}</span>
+                                         @endif
+                                     </a>
                                 </div>
                             @endforeach
                         </div>
-<div class="all-brands-grid">
-                            @foreach ($brands as $brand)
-                                @php($brandPhotoUrl = $resolveBrandPhotoUrl($brand->photo))
-                                <a class="brand-grid-item"
-                                    href="{{ route('front.catalog') . '?brand=' . $brand->slug }}">
-                                    @if ($brandPhotoUrl)
-                                        <img src="{{ $brandPhotoUrl }}"
-                                            alt="{{ $brand->name }}" title="{{ $brand->name }}" loading="lazy">
-                                    @else
-                                        <span class="brand-name-fallback">{{ $brand->name }}</span>
-                                    @endif
+                        <div class="all-brands-grid">
+                             @foreach ($brands as $brand)
+                                @php
+                                    $brandPhotoUrl = $resolveBrandPhotoUrl($brand->photo);
+                                    $brandWidth = 120; // default/fallback
+                                    $brandHeight = 50;
+                                    $brandPath = public_path('storage/images/' . $brand->photo);
+                                    if (file_exists($brandPath)) {
+                                        $brandInfo = @getimagesize($brandPath);
+                                        if ($brandInfo) {
+                                            $brandWidth = $brandInfo[0];
+                                            $brandHeight = $brandInfo[1];
+                                        }
+                                    }
+                                @endphp
+                                 <a class="brand-grid-item"
+                                     href="{{ route('front.catalog') . '?brand=' . $brand->slug }}">
+                                     @if ($brandPhotoUrl)
+                                         <img src="{{ $brandPhotoUrl }}"
+                                             alt="{{ $brand->name }}" title="{{ $brand->name }}" loading="lazy"
+                                             width="{{ $brandWidth }}" height="{{ $brandHeight }}">
+                                     @else
+                                         <span class="brand-name-fallback">{{ $brand->name }}</span>
+                                     @endif
                                 </a>
                             @endforeach
                         </div>
