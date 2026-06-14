@@ -1853,7 +1853,6 @@ body_theme4 @endif
                     version: 'v11.0'
                 });
             };
-
             window.addEventListener('load', function() {
                 var loadMessenger = function() {
                     if (document.getElementById('facebook-jssdk')) {
@@ -1867,11 +1866,18 @@ body_theme4 @endif
                     document.body.appendChild(js);
                 };
 
-                if ('requestIdleCallback' in window) {
-                    requestIdleCallback(loadMessenger, { timeout: 3000 });
-                } else {
-                    setTimeout(loadMessenger, 2000);
-                }
+                var triggered = false;
+                var triggerLoad = function() {
+                    if (triggered) return;
+                    triggered = true;
+                    loadMessenger();
+                    window.removeEventListener('scroll', triggerLoad);
+                    window.removeEventListener('mousemove', triggerLoad);
+                    window.removeEventListener('touchstart', triggerLoad);
+                };
+                window.addEventListener('scroll', triggerLoad, {passive: true});
+                window.addEventListener('mousemove', triggerLoad, {passive: true});
+                window.addEventListener('touchstart', triggerLoad, {passive: true});
             });
         </script>
     @endif
