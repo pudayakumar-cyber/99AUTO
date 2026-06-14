@@ -42,9 +42,29 @@
                     </div>
 
                     @if (isset($hero_banner))
+                        @php
+                            $hero1Width = 400; $hero1Height = 280;
+                            $hero1Path = public_path('storage/images/' . $hero_banner['img1']);
+                            if (file_exists($hero1Path)) {
+                                $hero1Info = @getimagesize($hero1Path);
+                                if ($hero1Info) {
+                                    $hero1Width = $hero1Info[0];
+                                    $hero1Height = $hero1Info[1];
+                                }
+                            }
+                            $hero2Width = 400; $hero2Height = 280;
+                            $hero2Path = public_path('storage/images/' . $hero_banner['img2']);
+                            if (file_exists($hero2Path)) {
+                                $hero2Info = @getimagesize($hero2Path);
+                                if ($hero2Info) {
+                                    $hero2Width = $hero2Info[0];
+                                    $hero2Height = $hero2Info[1];
+                                }
+                            }
+                        @endphp
                         <div class="col-lg-4 d-none d-lg-block">
                             <a href="{{ $hero_banner['url1'] }}" class="sright-image">
-                                <img src="{{ url('/core/public/storage/images/' . $hero_banner['img1']) }}" alt="">
+                                <img src="{{ url('/core/public/storage/images/' . $hero_banner['img1']) }}" alt="" width="{{ $hero1Width }}" height="{{ $hero1Height }}">
                                 <div class="inner-content">
 
                                     @if (isset($hero_banner['subtitle1']))
@@ -57,7 +77,7 @@
                                 </div>
                             </a>
                             <a href="{{ $hero_banner['url2'] }}" class="sright-image mb-0">
-                                <img src="{{ url('/core/public/storage/images/' . $hero_banner['img2']) }}" alt="">
+                                <img src="{{ url('/core/public/storage/images/' . $hero_banner['img2']) }}" alt="" width="{{ $hero2Width }}" height="{{ $hero2Height }}">
                                 <div class="inner-content">
                                     @if (isset($hero_banner['subtitle2']))
                                         <p>{{ $hero_banner['subtitle2'] }}</p>
@@ -193,9 +213,29 @@
         <div class="bannner-section mt-60">
             <div class="container ">
                 <div class="row gx-3">
+                    @php
+                        $b1Width = 400; $b1Height = 200;
+                        $b1Path = public_path('storage/images/' . $banner_first['img1']);
+                        if (file_exists($b1Path)) {
+                            $b1Info = @getimagesize($b1Path);
+                            if ($b1Info) { $b1Width = $b1Info[0]; $b1Height = $b1Info[1]; }
+                        }
+                        $b2Width = 400; $b2Height = 200;
+                        $b2Path = public_path('storage/images/' . $banner_first['img2']);
+                        if (file_exists($b2Path)) {
+                            $b2Info = @getimagesize($b2Path);
+                            if ($b2Info) { $b2Width = $b2Info[0]; $b2Height = $b2Info[1]; }
+                        }
+                        $b3Width = 400; $b3Height = 200;
+                        $b3Path = public_path('storage/images/' . $banner_first['img3']);
+                        if (file_exists($b3Path)) {
+                            $b3Info = @getimagesize($b3Path);
+                            if ($b3Info) { $b3Width = $b3Info[0]; $b3Height = $b3Info[1]; }
+                        }
+                    @endphp
                     <div class="col-md-4">
                         <a href="{{ $banner_first['firsturl1'] }}" class="genius-banner">
-                            <img src="{{ url('/core/public/storage/images/' . $banner_first['img1']) }}" alt="">
+                            <img src="{{ url('/core/public/storage/images/' . $banner_first['img1']) }}" alt="" width="{{ $b1Width }}" height="{{ $b1Height }}" loading="lazy">
                             <div class="inner-content">
                                 @if (isset($banner_first['subtitle1']))
                                     <p>{{ $banner_first['subtitle1'] }}</p>
@@ -208,7 +248,7 @@
                     </div>
                     <div class="col-md-4">
                         <a href="{{ $banner_first['firsturl2'] }}" class="genius-banner">
-                            <img src="{{ url('/core/public/storage/images/' . $banner_first['img2']) }}" alt="">
+                            <img src="{{ url('/core/public/storage/images/' . $banner_first['img2']) }}" alt="" width="{{ $b2Width }}" height="{{ $b2Height }}" loading="lazy">
                             <div class="inner-content">
                                 @if (isset($banner_first['subtitle2']))
                                     <p>{{ $banner_first['subtitle2'] }}</p>
@@ -221,7 +261,7 @@
                     </div>
                     <div class="col-md-4">
                         <a href="{{ $banner_first['firsturl3'] }}" class="genius-banner">
-                            <img src="{{ url('/core/public/storage/images/' . $banner_first['img3']) }}" alt="">
+                            <img src="{{ url('/core/public/storage/images/' . $banner_first['img3']) }}" alt="" width="{{ $b3Width }}" height="{{ $b3Height }}" loading="lazy">
                             <div class="inner-content">
                                 @if (isset($banner_first['subtitle3']))
                                     <p>{{ $banner_first['subtitle3'] }} </p>
@@ -327,10 +367,30 @@
         <div class="bannner-section mt-60">
             <div class="container ">
                 <div class="row gx-3">
+                    @php
+                        $bSec1Width = 400; $bSec1Height = 200;
+                        $bSec1Path = public_path('storage/images/' . $banner_secend['img1']);
+                        if (file_exists($bSec1Path)) {
+                            $bSec1Info = @getimagesize($bSec1Path);
+                            if ($bSec1Info) { $bSec1Width = $bSec1Info[0]; $bSec1Height = $bSec1Info[1]; }
+                        }
+                        $bSec2Width = 400; $bSec2Height = 200;
+                        $bSec2Path = public_path('storage/images/' . $banner_secend['img2']);
+                        if (file_exists($bSec2Path)) {
+                            $bSec2Info = @getimagesize($bSec2Path);
+                            if ($bSec2Info) { $bSec2Width = $bSec2Info[0]; $bSec2Height = $bSec2Info[1]; }
+                        }
+                        $bSec3Width = 400; $bSec3Height = 200;
+                        $bSec3Path = public_path('storage/images/' . $banner_secend['img3']);
+                        if (file_exists($bSec3Path)) {
+                            $bSec3Info = @getimagesize($bSec3Path);
+                            if ($bSec3Info) { $bSec3Width = $bSec3Info[0]; $bSec3Height = $bSec3Info[1]; }
+                        }
+                    @endphp
                     <div class="col-md-4">
                         <a href="{{ $banner_secend['url1'] }}" class="genius-banner">
                             <img class="lazy" data-src="{{ url('/core/public/storage/images/' . $banner_secend['img1']) }}"
-                                alt="">
+                                alt="" width="{{ $bSec1Width }}" height="{{ $bSec1Height }}">
                             <div class="inner-content">
                                 @if (isset($banner_secend['subtitle1']))
                                     <p>{{ $banner_secend['subtitle1'] }}</p>
@@ -345,7 +405,7 @@
                     <div class="col-md-4">
                         <a href="{{ $banner_secend['url2'] }}" class="genius-banner">
                             <img class="lazy" data-src="{{ url('/core/public/storage/images/' . $banner_secend['img2']) }}"
-                                alt="">
+                                alt="" width="{{ $bSec2Width }}" height="{{ $bSec2Height }}">
                             <div class="inner-content">
                                 @if (isset($banner_secend['subtitle2']))
                                     <p>{{ $banner_secend['subtitle2'] }}</p>
@@ -360,7 +420,7 @@
                     <div class="col-md-4">
                         <a href="{{ $banner_secend['url3'] }}" class="genius-banner">
                             <img class="lazy" data-src="{{ url('/core/public/storage/images/' . $banner_secend['img3']) }}"
-                                alt="">
+                                alt="" width="{{ $bSec3Width }}" height="{{ $bSec3Height }}">
                             <div class="inner-content">
                                 @if (isset($banner_secend['subtitle3']))
                                     <p>{{ $banner_secend['subtitle3'] }} </p>
@@ -610,10 +670,24 @@
         <div class="bannner-section mt-50">
             <div class="container ">
                 <div class="row gx-3">
+                    @php
+                        $bThird1Width = 600; $bThird1Height = 300;
+                        $bThird1Path = public_path('storage/images/' . $banner_third['img1']);
+                        if (file_exists($bThird1Path)) {
+                            $bThird1Info = @getimagesize($bThird1Path);
+                            if ($bThird1Info) { $bThird1Width = $bThird1Info[0]; $bThird1Height = $bThird1Info[1]; }
+                        }
+                        $bThird2Width = 600; $bThird2Height = 300;
+                        $bThird2Path = public_path('storage/images/' . $banner_third['img2']);
+                        if (file_exists($bThird2Path)) {
+                            $bThird2Info = @getimagesize($bThird2Path);
+                            if ($bThird2Info) { $bThird2Width = $bThird2Info[0]; $bThird2Height = $bThird2Info[1]; }
+                        }
+                    @endphp
                     <div class="col-md-6">
                         <a href="{{ $banner_third['url1'] }}" class="genius-banner">
                             <img class="lazy" data-src="{{ url('/core/public/storage/images/' . $banner_third['img1']) }}"
-                                alt="">
+                                alt="" width="{{ $bThird1Width }}" height="{{ $bThird1Height }}">
                             <div class="inner-content">
                                 @if (isset($banner_third['subtitle1']))
                                     <p>{{ $banner_third['subtitle1'] }}</p>
@@ -627,7 +701,7 @@
                     <div class="col-md-6">
                         <a href="{{ $banner_third['url2'] }}" class="genius-banner">
                             <img class="lazy" data-src="{{ url('/core/public/storage/images/' . $banner_third['img2']) }}"
-                                alt="">
+                                alt="" width="{{ $bThird2Width }}" height="{{ $bThird2Height }}">
                             <div class="inner-content">
                                 @if (isset($banner_third['subtitle2']))
                                     <p>{{ $banner_third['subtitle2'] }} </p>

@@ -35,6 +35,16 @@
 
     <link rel="canonical" href="{{ url()->current() }}">
 
+    <!-- Preload first home page slider image for LCP improvement -->
+    @if (url()->current() == route('front.index'))
+        @php
+            $firstSlider = DB::table('sliders')->where('home_page', $setting->theme ?? 'theme1')->first();
+        @endphp
+        @if ($firstSlider)
+            <link rel="preload" href="{{ url('/core/public/storage/images/' . $firstSlider->photo) }}" as="image">
+        @endif
+    @endif
+
     <!-- SEO Meta Tags-->
     @if (url()->current() == route('front.index'))
         <meta name="author" content="GeniusDevs">
@@ -247,6 +257,27 @@
 
         body {
             padding-bottom: 96px;
+        }
+
+        /* Eliminate CLS on home page hero slider */
+        .hero-slider,
+        .hero-slider-main {
+            min-height: 582px;
+        }
+        .hero-slider-main:not(.owl-loaded) > .item:not(:first-child) {
+            display: none !important;
+        }
+        @media (max-width: 991px) {
+            .hero-slider,
+            .hero-slider-main {
+                min-height: 430px;
+            }
+        }
+        @media (max-width: 576px) {
+            .hero-slider,
+            .hero-slider-main {
+                min-height: 340px;
+            }
         }
 
         .whatsapp-float {
