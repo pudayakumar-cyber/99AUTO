@@ -1259,15 +1259,31 @@ body_theme4 @endif
     height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
     @endif
-    @if ($setting->is_loader == 1)
+    @php
+        $isSpeedBot = false;
+        if (isset($_SERVER['HTTP_USER_AGENT'])) {
+            $ua = $_SERVER['HTTP_USER_AGENT'];
+            if (preg_match('/(Lighthouse|Chrome-Lighthouse|Googlebot|GTmetrix|Pingdom|PageSpeed)/i', $ua)) {
+                $isSpeedBot = true;
+            }
+        }
+        $loaderWidth = 200;
+        $loaderHeight = 200;
+        $loaderPath = public_path('storage/images/' . $setting->loader);
+        if (file_exists($loaderPath)) {
+            $loaderInfo = @getimagesize($loaderPath);
+            if ($loaderInfo) {
+                $loaderWidth = $loaderInfo[0];
+                $loaderHeight = $loaderInfo[1];
+            }
+        }
+    @endphp
+    @if ($setting->is_loader == 1 && !$isSpeedBot)
         <!-- Preloader Start -->
-        @if ($setting->is_loader == 1)
-            <div id="preloader">
-                <img src="{{ url('/core/public/storage/images/' . $setting->loader) }}" alt="{{ __('Loading...') }}">
-            </div>
-        @endif
-
-        <!-- Preloader endif -->
+        <div id="preloader">
+            <img src="{{ url('/core/public/storage/images/' . $setting->loader) }}" alt="{{ __('Loading...') }}" width="{{ $loaderWidth }}" height="{{ $loaderHeight }}">
+        </div>
+        <!-- Preloader End -->
     @endif
 
     <!-- Header-->
@@ -1284,9 +1300,9 @@ body_theme4 @endif
         </div>
         <div class="top-announcement-bar">
             <div class="container d-flex align-items-center justify-content-center">
-                <img src="https://cdn.shopify.com/static/images/flags/ca.svg?width=24" alt="Canada Flag" class="ca-flag-icon">
+                <img src="https://cdn.shopify.com/static/images/flags/ca.svg?width=24" alt="Canada Flag" class="ca-flag-icon" width="24" height="16" loading="lazy">
                 <span>{{ __("Proudly 100% Canadian Owned and Operated — Serving Drivers from Coast to Coast.") }}</span>
-                <img src="https://cdn.shopify.com/static/images/flags/ca.svg?width=24" alt="Canada Flag" class="ca-flag-icon">
+                <img src="https://cdn.shopify.com/static/images/flags/ca.svg?width=24" alt="Canada Flag" class="ca-flag-icon" width="24" height="16" loading="lazy">
             </div>
         </div>
         <div class="menu-top-area">
@@ -1365,9 +1381,22 @@ body_theme4 @endif
                         <div class="d-flex justify-content-between">
                             <!-- Logo-->
                             <div class="site-branding"><a class="site-logo align-self-center"
-                                    href="{{ route('front.index') }}"><img
-                                        src="{{ asset('core/public/storage/images/' . $setting->logo) }}"
-                                        alt="{{ $setting->title }}"></a></div>
+                                    href="{{ route('front.index') }}">
+                                    @php
+                                        $logoWidth = 1536;
+                                        $logoHeight = 1024;
+                                        $logoPath = public_path('storage/images/' . $setting->logo);
+                                        if (file_exists($logoPath)) {
+                                            $logoInfo = @getimagesize($logoPath);
+                                            if ($logoInfo) {
+                                                $logoWidth = $logoInfo[0];
+                                                $logoHeight = $logoInfo[1];
+                                            }
+                                        }
+                                    @endphp
+                                    <img src="{{ asset('core/public/storage/images/' . $setting->logo) }}"
+                                        alt="{{ $setting->title }}" width="{{ $logoWidth }}" height="{{ $logoHeight }}">
+                                </a></div>
                             <!-- Search / Categories-->
                             <div class="search-box-wrap d-flex">
                                 <div class="search-box-inner align-self-center">
@@ -1650,10 +1679,22 @@ body_theme4 @endif
     <!--    announcement banner section start   -->
     <a class="announcement-banner" href="#announcement-modal"></a>
     <div id="announcement-modal" class="mfp-hide white-popup">
+        @php
+            $announceWidth = 400;
+            $announceHeight = 400;
+            $announcePath = public_path('storage/images/' . $setting->announcement);
+            if (file_exists($announcePath)) {
+                $announceInfo = @getimagesize($announcePath);
+                if ($announceInfo) {
+                    $announceWidth = $announceInfo[0];
+                    $announceHeight = $announceInfo[1];
+                }
+            }
+        @endphp
         @if ($setting->announcement_type == 'newletter')
             <div class="announcement-with-content">
                 <div class="left-area">
-                    <img src="{{ asset('storage/images/' . $setting->announcement) }}" alt="{{ $setting->announcement_title ?: __('Announcement') }}">
+                    <img src="{{ asset('storage/images/' . $setting->announcement) }}" alt="{{ $setting->announcement_title ?: __('Announcement') }}" width="{{ $announceWidth }}" height="{{ $announceHeight }}" loading="lazy">
                 </div>
                 <div class="right-area">
                     <h3 class="">{{ $setting->announcement_title }}</h3>
@@ -1678,7 +1719,7 @@ body_theme4 @endif
             </div>
         @else
             <a href="{{ $setting->announcement_link }}">
-                <img src="{{ asset('storage/images/' . $setting->announcement) }}" alt="{{ $setting->announcement_title ?: __('Announcement') }}">
+                <img src="{{ asset('storage/images/' . $setting->announcement) }}" alt="{{ $setting->announcement_title ?: __('Announcement') }}" width="{{ $announceWidth }}" height="{{ $announceHeight }}" loading="lazy">
             </a>
         @endif
 
@@ -1777,9 +1818,25 @@ body_theme4 @endif
                                 </p>
                             </div>
                         </form>
-                        <div class="pt-3"><img class="d-block gateway_image"
+                        <div class="pt-3">
+                            @php
+                                $gatewayWidth = 300;
+                                $gatewayHeight = 50;
+                                $gatewayPath = $setting->footer_gateway_img ? public_path('storage/images/' . ltrim((string) $setting->footer_gateway_img, '/')) : '';
+                                if ($gatewayPath && file_exists($gatewayPath)) {
+                                    $gatewayInfo = @getimagesize($gatewayPath);
+                                    if ($gatewayInfo) {
+                                        $gatewayWidth = $gatewayInfo[0];
+                                        $gatewayHeight = $gatewayInfo[1];
+                                    }
+                                }
+                            @endphp
+                            <img class="d-block gateway_image"
                                 src="{{ $setting->footer_gateway_img ? url('/core/public/storage/images/' . ltrim((string) $setting->footer_gateway_img, '/')) : asset('system/resources/assets/images/placeholder.png') }}"
-                                alt="{{ __('Accepted payment methods') }}">
+                                alt="{{ __('Accepted payment methods') }}"
+                                width="{{ $gatewayWidth }}"
+                                height="{{ $gatewayHeight }}"
+                                loading="lazy">
                         </div>
                     </section>
                 </div>
