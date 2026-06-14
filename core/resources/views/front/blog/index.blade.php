@@ -1,5 +1,9 @@
 @extends('master.front')
 @section('page_type', 'content')
+@section('meta')
+<meta name="keywords" content="car maintenance tips Canada, auto parts blog, DIY car repair guides, aftermarket parts advice, car parts tutorial">
+<meta name="description" content="Read the 99AutoParts blog for expert DIY car repair guides, auto parts replacement tutorials, and vehicle maintenance tips tailored for Canadian drivers.">
+@endsection
 
 @section('title')
     {{ __('Blog') }}
@@ -32,7 +36,7 @@
                                 <div class="post-thumb">
                                     <img class="lazy"
                                         data-src="{{ url('/core/public/storage/images/' . json_decode($post->photo, true)[array_key_first(json_decode($post->photo, true))]) }}"
-                                        alt="Blog Post">
+                                        alt="Blog Post" loading="lazy">
                                 </div>
                                 <div class="post-body">
 
@@ -99,7 +103,7 @@
                             <div class="entry">
                                 <div class="entry-thumb"><a href="{{ route('front.blog.details', $recent->slug) }}"><img
                                             src="{{ url('/core/public/storage/images/' . json_decode($recent->photo, true)[array_key_first(json_decode($recent->photo, true))]) }}"
-                                            alt="Post"></a></div>
+                                            alt="Post" loading="lazy"></a></div>
                                 <div class="entry-content">
                                     <h4 class="entry-title"><a href="{{ route('front.blog.details', $recent->slug) }}">
                                             {{ Str::limit($recent->title, 55) }}

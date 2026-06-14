@@ -36,6 +36,8 @@
         <title>@yield('title') - {{ $setting->title }}</title>
     @endif
 
+    <link rel="canonical" href="{{ url()->current() }}">
+
     <!-- SEO Meta Tags-->
     @if (url()->current() == route('front.index'))
         <meta name="author" content="GeniusDevs">
@@ -54,7 +56,18 @@
         <meta property="og:site_name" content="{{ $setting->title }}">
         <meta property="og:type" content="website">
     @else
-        @yield('meta')
+        @if (View::hasSection('meta'))
+            @yield('meta')
+        @else
+            <meta name="author" content="GeniusDevs">
+            <meta name="description" content="{{ $setting->meta_description }}">
+            <meta name="keywords" content="{{ $setting->meta_keywords }}">
+            <meta property="og:title" content="@yield('title') - {{ $setting->title }}">
+            <meta property="og:description" content="{{ $setting->meta_description }}">
+            <meta property="og:url" content="{{ url()->current() }}">
+            <meta property="og:site_name" content="{{ $setting->title }}">
+            <meta property="og:type" content="website">
+        @endif
     @endif
 
     <!-- Mobile Specific Meta Tag-->
@@ -72,6 +85,10 @@
     <link rel="apple-touch-icon" sizes="152x152" href="{{ asset('storage/images/' . $setting->favicon) }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('storage/images/' . $setting->favicon) }}">
     <link rel="apple-touch-icon" sizes="167x167" href="{{ asset('storage/images/' . $setting->favicon) }}">
+
+    <!-- Preload critical stylesheets -->
+    <link rel="preload" href="{{ asset('assets/front/css/plugins.min.css') }}" as="style">
+    <link rel="preload" href="{{ asset('assets/front/css/styles.min.css') }}" as="style">
 
     <!-- Vendor Styles including: Bootstrap, Font Icons, Plugins, etc.-->
     <link rel="stylesheet" media="screen" href="{{ asset('assets/front/css/plugins.min.css') }}">
@@ -1810,13 +1827,12 @@ body_theme4 @endif
 
 
     <!-- JavaScript (jQuery) libraries, plugins and custom scripts-->
-    <script type="text/javascript" src="{{ asset('assets/front/js/plugins.min.js') }}"></script>
-    <script type="text/javascript" src="{{ asset('assets/back/js/plugin/bootstrap-notify/bootstrap-notify.min.js') }}">
-    </script>
-    <script type="text/javascript" src="{{ asset('assets/front/js/scripts.min.js') }}"></script>
-    <script type="text/javascript" src="{{ asset('assets/front/js/lazy.min.js') }}"></script>
-    <script type="text/javascript" src="{{ asset('assets/front/js/lazy.plugin.js') }}"></script>
-    <script type="text/javascript" src="{{ asset('assets/front/js/myscript.js') }}"></script>
+    <script type="text/javascript" src="{{ asset('assets/front/js/plugins.min.js') }}" defer></script>
+    <script type="text/javascript" src="{{ asset('assets/back/js/plugin/bootstrap-notify/bootstrap-notify.min.js') }}" defer></script>
+    <script type="text/javascript" src="{{ asset('assets/front/js/scripts.min.js') }}" defer></script>
+    <script type="text/javascript" src="{{ asset('assets/front/js/lazy.min.js') }}" defer></script>
+    <script type="text/javascript" src="{{ asset('assets/front/js/lazy.plugin.js') }}" defer></script>
+    <script type="text/javascript" src="{{ asset('assets/front/js/myscript.js') }}" defer></script>
     @yield('script')
 
     @if ($setting->is_facebook_messenger == '1')
@@ -1943,16 +1959,16 @@ body_theme4 @endif
 
     @if (Session::has('error'))
         <script>
-            $(document).ready(function() {
-                DangerNotification('{{ Session::get('error') }}')
-            })
+            document.addEventListener("DOMContentLoaded", function() {
+                DangerNotification('{{ Session::get('error') }}');
+            });
         </script>
     @endif
     @if (Session::has('success'))
         <script>
-            $(document).ready(function() {
+            document.addEventListener("DOMContentLoaded", function() {
                 SuccessNotification('{{ Session::get('success') }}');
-            })
+            });
         </script>
     @endif
     <!-- WhatsApp Popup -->

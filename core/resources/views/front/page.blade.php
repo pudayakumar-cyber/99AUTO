@@ -1,5 +1,9 @@
 @extends('master.front')
 @section('page_type', 'content')
+@section('meta')
+<meta name="keywords" content="{{ $page->meta_keywords }}">
+<meta name="description" content="{{ $page->meta_descriptions }}">
+@endsection
 
 @section('title')
     {{ $page->title }}

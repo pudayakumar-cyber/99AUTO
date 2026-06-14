@@ -1,5 +1,10 @@
 @extends('master.front')
 @section('page_type', 'content')
+@section('meta')
+<meta name="keywords" content="track order 99autoparts, track car parts delivery canada, vehicle parts shipping tracking">
+<meta name="description" content="Track your 99AutoParts order shipping and delivery status online. Enter your order tracking details to see real-time updates for auto parts shipped in Canada.">
+@endsection
+
 @section('title')
     {{__('Order Track')}}
 @endsection

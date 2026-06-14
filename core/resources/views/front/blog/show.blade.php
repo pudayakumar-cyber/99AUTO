@@ -9,6 +9,8 @@
     } else {
         $keyword = $post->title;
     }
+    $photos = json_decode($post->photo, true);
+    $postImage = isset($photos[0]) ? url('/core/public/storage/images/' . $photos[0]) : url('/core/public/storage/images/placeholder.png');
 @endphp
 @section('meta')
     <meta name="title" content="{{ $post->title }}">
@@ -16,13 +18,17 @@
     <meta name="description" content="{{ $post->meta_descriptions }}">
 
     <meta name="twitter:title" content="{{ $post->title }}">
-    <meta name="twitter:image" content="{{ url('/core/public/storage/images/' . json_decode($post->photo, true)[0]) }}">
+    <meta name="twitter:image" content="{{ $postImage }}">
     <meta name="twitter:description" content="{{ $post->meta_descriptions }}">
+    <meta name="twitter:card" content="summary_large_image">
 
     <meta name="og:title" content="{{ $post->title }}">
-    <meta name="og:image" content="{{ url('/core/public/storage/images/' . json_decode($post->photo, true)[0]) }}">
+    <meta name="og:image" content="{{ $postImage }}">
     <meta name="og:description" content="{{ $post->meta_descriptions }}">
-
+    <meta name="og:type" content="article">
+    @if ($post->created_at)
+        <meta property="article:published_time" content="{{ $post->created_at->toIso8601String() }}">
+    @endif
 @endsection
 
 

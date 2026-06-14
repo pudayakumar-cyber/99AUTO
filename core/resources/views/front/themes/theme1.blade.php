@@ -830,7 +830,7 @@
                                         @if ($brandPhotoUrl)
                                             <img class="d-block hi-50"
                                                 src="{{ $brandPhotoUrl }}"
-                                                alt="{{ $brand->name }}" title="{{ $brand->name }}">
+                                                alt="{{ $brand->name }}" title="{{ $brand->name }}" loading="lazy">
                                         @else
                                             <span class="brand-name-fallback">{{ $brand->name }}</span>
                                         @endif
@@ -845,7 +845,7 @@
                                     href="{{ route('front.catalog') . '?brand=' . $brand->slug }}">
                                     @if ($brandPhotoUrl)
                                         <img src="{{ $brandPhotoUrl }}"
-                                            alt="{{ $brand->name }}" title="{{ $brand->name }}">
+                                            alt="{{ $brand->name }}" title="{{ $brand->name }}" loading="lazy">
                                     @else
                                         <span class="brand-name-fallback">{{ $brand->name }}</span>
                                     @endif
