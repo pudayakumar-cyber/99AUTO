@@ -15,12 +15,12 @@ function makeTagifyJson($commaSeparatedString) {
     return json_encode($tags);
 }
 
-echo "Updating SEO configuration...\n";
+echo "Starting Dynamic SEO configuration update...\n";
 
 // 1. Update global Site Settings
 $setting = Setting::first();
 if ($setting) {
-    $setting->meta_keywords = "99AutoParts Canada, Canadian online auto parts store, buy aftermarket car parts Canada, 99AutoParts reviews, car parts delivery Canada, shipping car parts province-wide, cheap auto parts Canada, discount car parts Canada";
+    $setting->meta_keywords = "99AutoParts Canada, Canadian online auto parts store, buy aftermarket car parts Canada, 99AutoParts reviews, car parts delivery Canada, shipping car parts province-wide, cheap auto parts Canada, discount auto parts Canada";
     $setting->meta_description = "Shop 99AutoParts Canada for premium aftermarket car parts online. Enjoy fast province-wide delivery, reliable customer reviews, and discount auto parts.";
     $setting->save();
     echo "✔ Global site settings SEO updated successfully.\n";
@@ -28,45 +28,45 @@ if ($setting) {
     echo "❌ Global site settings row not found.\n";
 }
 
-// 2. Update Categories SEO Metadata
-$categoryData = [
-    '99auto-suspension-parts' => [
-        'name' => '99Auto Suspension Parts',
-        'keywords' => '99Auto Suspension Parts, auto suspension parts Canada, car suspension kits online, buy control arms Canada, struts and shocks Canada, sway bar links Canada, ball joints Canada',
-        'description' => 'Shop premium aftermarket suspension parts at 99AutoParts. Buy control arms, struts, shocks, sway bar links, and complete suspension kits online in Canada.'
-    ],
-    'brm' => [
-        'name' => 'BRM',
-        'keywords' => 'brm brake parts, bremsen brake pads, buy brake rotors Canada, aftermarket brake kits, brake calipers Canada, cheap brake pads Canada, braking parts Canada',
-        'description' => 'Upgrade your stopping power with premium BRM/Bremsen brake parts from 99AutoParts. Get brake pads, rotors, and calipers with fast delivery in Canada.'
-    ],
-    'rot' => [
-        'name' => 'ROT',
-        'keywords' => 'rotors Canada, buy brake rotors online, aftermarket brake rotors, performance rotors Canada, cheap rotors Canada, replacement rotors Canada',
-        'description' => 'Shop high-quality aftermarket brake rotors at 99AutoParts. Find premium passenger and heavy-duty rotors with fast shipping across Canada.'
-    ],
-    '99' => [
-        'name' => '99',
-        'keywords' => '99 autoparts, replacement car parts Canada, aftermarket auto parts online, cheap car parts Canada, auto accessories online Canada',
-        'description' => 'Buy discount auto parts online at 99AutoParts Canada. Browse thousands of aftermarket parts for all vehicle makes and models.'
-    ],
-    'Vehicles--Accessories' => [
-        'name' => 'Vehicles & Accessories',
-        'keywords' => 'car accessories Canada, vehicle parts online, automotive accessories Canada, aftermarket car accessories, buy car parts Canada',
-        'description' => 'Shop high-quality vehicle accessories and auto parts online at 99AutoParts. Get discount car accessories with province-wide shipping.'
-    ]
-];
+// 2. Dynamically Update Category SEO Metadata based on name matching
+$categories = Category::all();
+foreach ($categories as $category) {
+    $name = $category->name;
+    $slug = $category->slug;
+    $lowerName = strtolower($name);
 
-foreach ($categoryData as $slug => $data) {
-    $category = Category::where('slug', $slug)->first();
-    if ($category) {
-        $category->meta_keywords = makeTagifyJson($data['keywords']);
-        $category->meta_descriptions = $data['description'];
-        $category->save();
-        echo "✔ Category '{$data['name']}' (Slug: {$slug}) SEO updated successfully.\n";
+    $keywords = "";
+    $description = "";
+
+    if (strpos($lowerName, 'ignition') !== false || strpos($lowerName, 'spark') !== false || strpos($lowerName, 'coil') !== false) {
+        $keywords = "{$name} Canada, buy ignition parts Canada, replacement spark plugs online, ignition coils Canada, {$name} online store, 99autoparts";
+        $description = "Shop premium {$name} at 99AutoParts Canada. Find ignition coils, modules, spark plugs, and tune-up components with fast province-wide delivery.";
+    } elseif (strpos($lowerName, 'brake') !== false || strpos($lowerName, 'pad') !== false || strpos($lowerName, 'rotor') !== false || strpos($lowerName, 'shoe') !== false) {
+        $keywords = "{$name} Canada, buy brake pads online Canada, aftermarket brake shoes, brake rotors Canada, {$name} replacement parts, 99autoparts";
+        $description = "Upgrade your stopping power with high-quality {$name} from 99AutoParts. Enjoy fast shipping on brake pads, shoes, rotors, and calipers in Canada.";
+    } elseif (strpos($lowerName, 'shock') !== false || strpos($lowerName, 'strut') !== false || strpos($lowerName, 'suspension') !== false) {
+        $keywords = "{$name} Canada, auto suspension parts online, buy struts and shocks Canada, control arms Canada, sway bar links Canada, 99autoparts";
+        $description = "Shop premium {$name} at 99AutoParts Canada. Get shocks, struts, hardware, and replacement suspension parts online at discount prices.";
+    } elseif (strpos($lowerName, 'oil') !== false || strpos($lowerName, 'fluid') !== false || strpos($lowerName, 'lubricant') !== false || strpos($lowerName, 'grease') !== false) {
+        $keywords = "{$name} Canada, buy engine oil online, transfer case oil Canada, automotive lubricants online, high-performance car fluids, 99autoparts";
+        $description = "Keep your vehicle running smoothly with premium {$name} from 99AutoParts Canada. Fast shipping on motor oils, greases, and transmission fluids.";
+    } elseif (strpos($lowerName, 'filter') !== false || strpos($lowerName, 'pcv') !== false) {
+        $keywords = "{$name} Canada, car engine filters online, buy engine air filters, cabin air filters Canada, PCV valves online, 99autoparts";
+        $description = "Find high-quality replacement {$name} at 99AutoParts Canada. Keep your engine clean with air filters, oil filters, and cabin filters.";
+    } elseif (strpos($lowerName, 'shaft') !== false || strpos($lowerName, 'axle') !== false || strpos($lowerName, 'cv') !== false) {
+        $keywords = "{$name} Canada, buy cv shafts online, replacement drive axles, drivetrain parts Canada, front axles online, 99autoparts";
+        $description = "Shop premium {$name} at 99AutoParts Canada. Enjoy fast shipping on replacement CV shafts, half axles, and drivetrain parts.";
     } else {
-        echo "⚠ Category '{$data['name']}' (Slug: {$slug}) not found in database.\n";
+        // Fallback for general categories
+        $keywords = "{$name} Canada, replacement auto parts online, cheap car parts Canada, {$name} aftermarket parts, 99autoparts";
+        $description = "Shop high-quality {$name} at 99AutoParts Canada. Explore thousands of discount aftermarket auto parts with fast delivery.";
     }
+
+    $category->meta_keywords = makeTagifyJson($keywords);
+    $category->meta_descriptions = $description;
+    $category->save();
+    
+    echo "✔ Category '{$name}' (Slug: {$slug}) SEO updated successfully.\n";
 }
 
 echo "SEO database update completed successfully!\n";
