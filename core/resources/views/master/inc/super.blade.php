@@ -176,7 +176,7 @@
           <p>{{ __('Manages Tickets') }}</p></a>
     </li> -->
     
-    <!-- <li class="nav-item">
+     <li class="nav-item">
         <a data-toggle="collapse" href="#content">
             <i class="fas fa-tasks"></i>
             <p>{{ __('Manage Site') }}</p>
@@ -189,7 +189,7 @@
                         <span class="sub-item">{{ __('General Settings') }}</span>
                     </a>
                 </li>
-                <li>
+                <!--<li>
                     <a class="sub-link" href="{{ route('back.menu.index') }}">
                         <span class="sub-item">{{ __('Menu Builder') }}</span>
                     </a>
@@ -252,10 +252,10 @@
                 <li>
                     <a class="sub-link" href="{{ route('back.language.index') }}">
                       <span class="sub-item">{{ __('Language') }}</span></a>
-                </li>
+                </li>-->
             </ul>
         </div>
-    </li> -->
+    </li> 
 
     <!-- <li class="nav-item">
         <a data-toggle="collapse" href="#faqs">
