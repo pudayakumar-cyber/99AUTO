@@ -30,42 +30,42 @@ if ($setting) {
 
 // 2. Update Categories SEO Metadata
 $categoryData = [
-    32 => [
+    '99auto-suspension-parts' => [
         'name' => '99Auto Suspension Parts',
         'keywords' => '99Auto Suspension Parts, auto suspension parts Canada, car suspension kits online, buy control arms Canada, struts and shocks Canada, sway bar links Canada, ball joints Canada',
         'description' => 'Shop premium aftermarket suspension parts at 99AutoParts. Buy control arms, struts, shocks, sway bar links, and complete suspension kits online in Canada.'
     ],
-    30 => [
+    'brm' => [
         'name' => 'BRM',
         'keywords' => 'brm brake parts, bremsen brake pads, buy brake rotors Canada, aftermarket brake kits, brake calipers Canada, cheap brake pads Canada, braking parts Canada',
         'description' => 'Upgrade your stopping power with premium BRM/Bremsen brake parts from 99AutoParts. Get brake pads, rotors, and calipers with fast delivery in Canada.'
     ],
-    29 => [
+    'rot' => [
         'name' => 'ROT',
         'keywords' => 'rotors Canada, buy brake rotors online, aftermarket brake rotors, performance rotors Canada, cheap rotors Canada, replacement rotors Canada',
         'description' => 'Shop high-quality aftermarket brake rotors at 99AutoParts. Find premium passenger and heavy-duty rotors with fast shipping across Canada.'
     ],
-    31 => [
+    '99' => [
         'name' => '99',
         'keywords' => '99 autoparts, replacement car parts Canada, aftermarket auto parts online, cheap car parts Canada, auto accessories online Canada',
         'description' => 'Buy discount auto parts online at 99AutoParts Canada. Browse thousands of aftermarket parts for all vehicle makes and models.'
     ],
-    23 => [
+    'Vehicles--Accessories' => [
         'name' => 'Vehicles & Accessories',
         'keywords' => 'car accessories Canada, vehicle parts online, automotive accessories Canada, aftermarket car accessories, buy car parts Canada',
         'description' => 'Shop high-quality vehicle accessories and auto parts online at 99AutoParts. Get discount car accessories with province-wide shipping.'
     ]
 ];
 
-foreach ($categoryData as $id => $data) {
-    $category = Category::find($id);
+foreach ($categoryData as $slug => $data) {
+    $category = Category::where('slug', $slug)->first();
     if ($category) {
         $category->meta_keywords = makeTagifyJson($data['keywords']);
         $category->meta_descriptions = $data['description'];
         $category->save();
-        echo "✔ Category '{$data['name']}' (ID: {$id}) SEO updated successfully.\n";
+        echo "✔ Category '{$data['name']}' (Slug: {$slug}) SEO updated successfully.\n";
     } else {
-        echo "⚠ Category '{$data['name']}' (ID: {$id}) not found in database.\n";
+        echo "⚠ Category '{$data['name']}' (Slug: {$slug}) not found in database.\n";
     }
 }
 
