@@ -51,7 +51,7 @@
                 </div>
             </a>
         </div>
-        <div class="col-sm-6 col-md-6">
+        <!-- <div class="col-sm-6 col-md-6">
             <a href="{{ route('back.digital.item.create') }}" class="card card-stats card-round">
                 <div class="card-body">
                     <div class="text-center py-3">
@@ -68,8 +68,8 @@
                     </div>
                 </div>
             </a>
-        </div>
-        <div class="col-sm-6 col-md-6">
+        </div>-->
+       <!--  <div class="col-sm-6 col-md-6">
             <a href="{{ route('back.license.item.create') }}" class="card card-stats card-round">
                 <div class="card-body">
                     <div class="text-center py-3">
@@ -86,8 +86,8 @@
                     </div>
                 </div>
             </a>
-        </div>
-        <div class="col-sm-6 col-md-6">
+        </div> -->
+        <!-- <div class="col-sm-6 col-md-6">
             <a href="{{ route('back.affiliate.create') }}" class="card card-stats card-round">
                 <div class="card-body">
                     <div class="text-center py-3">
@@ -104,7 +104,7 @@
                     </div>
                 </div>
             </a>
-        </div>
+        </div> -->
     </div>
 @endif
 
