@@ -42,21 +42,21 @@
                                 <div class="col-xl-3 col-lg-3">
                                     <div class="nav flex-column m-3 nav-pills nav-secondary" id="v-pills-tab" role="tablist"
                                         aria-orientation="vertical">
-                                        <a class="nav-link active" data-toggle="pill"
+                                        <!--<a class="nav-link active" data-toggle="pill"
                                             href="#basic">{{ __('Basic Information') }}</a>
                                         <a class="nav-link" data-toggle="pill"
                                             href="#theme">{{ __('Home Page Themes') }}</a>
-                                        <a class="nav-link" data-toggle="pill" href="#media">{{ __('Media') }}</a>
+                                        <a class="nav-link" data-toggle="pill" href="#media">{{ __('Media') }}</a> -->
                                         <a class="nav-link" data-toggle="pill" href="#seo">{{ __('Seo') }}</a>
                                        
-                                        <a class="nav-link" data-toggle="pill" href="#custom_css"
+                                       <!-- <a class="nav-link" data-toggle="pill" href="#custom_css"
                                             id="newcss">{{ __('Custom Css') }}</a>
                                         <a class="nav-link" data-toggle="pill"
                                             href="#google_recaptcha">{{ __('Scripts') }}</a>
                                         <a class="nav-link" data-toggle="pill"
                                             href="#shop">{{ __('Shop & Checkout Page') }}</a>
                                         <a class="nav-link" data-toggle="pill"
-                                            href="#footer">{{ __('Footer & Contact Page') }}</a>
+                                            href="#footer">{{ __('Footer & Contact Page') }}</a> -->
                                     </div>
                                 </div>
                                 <div class="col-xl-9 col-lg-9">
@@ -443,7 +443,7 @@
                                                                 <span>{{ __('Image Size Should Be 1200 x 627.') }}</span>
                                                             </div>
 
-                                                            <div class="form-group position-relative ">
+                                                           <!-- <div class="form-group position-relative ">
                                                                 <label class="file">
                                                                     <input type="file" accept="image/*"
                                                                         class="upload-photo"
@@ -452,9 +452,9 @@
                                                                     <span
                                                                         class="file-custom text-left">{{ __('Upload Image...') }}</span>
                                                                 </label>
-                                                            </div>
+                                                            </div> -->
 
-                                                        </div>
+                                                        </div> 
 
 
                                                         <div class="col-lg-12">
