@@ -6,6 +6,7 @@ $kernel->bootstrap();
 
 use App\Models\Setting;
 use App\Models\Category;
+use App\Models\Brand;
 
 // Helper to convert comma-separated string to Tagify JSON string
 function makeTagifyJson($commaSeparatedString) {
@@ -67,6 +68,23 @@ foreach ($categories as $category) {
     $category->save();
     
     echo "✔ Category '{$name}' (Slug: {$slug}) SEO updated successfully.\n";
+}
+
+// 3. Dynamically Update Brand SEO Metadata
+echo "Updating Brands SEO configuration...\n";
+$brands = Brand::all();
+foreach ($brands as $brand) {
+    $name = $brand->name;
+    $slug = $brand->slug;
+
+    $keywords = "{$name} Canada, buy {$name} parts, {$name} auto parts online, {$name} replacement parts Canada, 99AutoParts {$name}";
+    $description = "Shop premium {$name} replacement auto parts online at 99AutoParts Canada. Enjoy fast province-wide shipping and discount prices on all {$name} parts.";
+
+    $brand->meta_keywords = makeTagifyJson($keywords);
+    $brand->meta_descriptions = $description;
+    $brand->save();
+
+    echo "✔ Brand '{$name}' (Slug: {$slug}) SEO updated successfully.\n";
 }
 
 echo "SEO database update completed successfully!\n";

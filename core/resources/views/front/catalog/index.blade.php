@@ -15,8 +15,8 @@
         $metaKeywords = $childcategory->category->meta_keywords;
         $metaDescription = $childcategory->category->meta_descriptions;
     } elseif (isset($brand) && $brand) {
-        $metaKeywords = "{$brand->name} Canada, buy {$brand->name} parts, {$brand->name} auto parts online, {$brand->name} replacement parts Canada, 99AutoParts {$brand->name}";
-        $metaDescription = "Shop premium {$brand->name} replacement auto parts online at 99AutoParts Canada. Enjoy fast province-wide shipping and discount prices on all {$brand->name} parts.";
+        $metaKeywords = $brand->meta_keywords ?: "{$brand->name} Canada, buy {$brand->name} parts, {$brand->name} auto parts online, {$brand->name} replacement parts Canada, 99AutoParts {$brand->name}";
+        $metaDescription = $brand->meta_descriptions ?: "Shop premium {$brand->name} replacement auto parts online at 99AutoParts Canada. Enjoy fast province-wide shipping and discount prices on all {$brand->name} parts.";
     }
     
     // Clean Tagify JSON if present

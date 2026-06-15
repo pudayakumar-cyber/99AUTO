@@ -30,6 +30,8 @@ class BrandRequest extends FormRequest
             'photo'      => [$required,'mimes:jpeg,jpg,png,svg'],
             'name'      => 'required|max:255',
             'slug'      => [$required,'unique:brands,slug'. $id,'regex:/^[a-zA-Z0-9-]+$/'],
+            'meta_keywords' => 'nullable|max:255',
+            'meta_descriptions' => 'nullable|max:1000',
         ];
     }
 

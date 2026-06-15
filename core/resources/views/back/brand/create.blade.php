@@ -60,6 +60,22 @@
 											placeholder="{{ __('Enter Slug') }}" value="{{ old('slug') }}">
 									</div>
 
+									<div class="form-group">
+										<label for="meta_keywords">{{ __('Meta Keywords') }}</label>
+										<input type="text" name="meta_keywords" class="tags"
+											id="meta_keywords"
+											placeholder="{{ __('Enter Meta Keywords') }}"
+											value="{{ old('meta_keywords') }}">
+									</div>
+
+									<div class="form-group">
+										<label for="meta_description">{{ __('Meta Description') }}</label>
+										<textarea name="meta_descriptions" id="meta_description"
+											class="form-control" rows="5"
+											placeholder="{{ __('Enter Meta Description') }}"
+										>{{ old('meta_descriptions') }}</textarea>
+									</div>
+
 								<div class="form-group">
 										<button type="submit"
 											class="btn btn-secondary ">{{ __('Submit') }}</button>
