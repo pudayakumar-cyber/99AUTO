@@ -1,8 +1,28 @@
 @extends('master.front')
 @section('page_type', request()->input('search') ? 'search' : 'category')
 @section('meta')
-<meta name="keywords" content="{{$setting->meta_keywords}}">
-<meta name="description" content="{{$setting->meta_description}}">
+@php
+    $metaKeywords = $setting->meta_keywords;
+    $metaDescription = $setting->meta_description;
+    
+    if (isset($category) && $category && $category->meta_keywords) {
+        $metaKeywords = $category->meta_keywords;
+        $metaDescription = $category->meta_descriptions;
+    } elseif (isset($subcategory) && $subcategory && $subcategory->category && $subcategory->category->meta_keywords) {
+        $metaKeywords = $subcategory->category->meta_keywords;
+        $metaDescription = $subcategory->category->meta_descriptions;
+    } elseif (isset($childcategory) && $childcategory && $childcategory->category && $childcategory->category->meta_keywords) {
+        $metaKeywords = $childcategory->category->meta_keywords;
+        $metaDescription = $childcategory->category->meta_descriptions;
+    }
+    
+    // Clean Tagify JSON if present
+    if (strpos($metaKeywords, '[{') !== false) {
+        $metaKeywords = str_replace(["value","{","}","[","]",":","\""], '', $metaKeywords);
+    }
+@endphp
+<meta name="keywords" content="{{ $metaKeywords }}">
+<meta name="description" content="{{ $metaDescription }}">
 @endsection
 @section('title')
     @php
