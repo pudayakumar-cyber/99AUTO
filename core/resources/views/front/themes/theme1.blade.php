@@ -8,6 +8,18 @@
 @section('content')
 
     @if ($setting->is_slider == 1)
+        @php
+            $getImageSize = function($filename, $defaultWidth = 300, $defaultHeight = 300) {
+                $path = public_path('storage/images/' . $filename);
+                if ($filename && file_exists($path)) {
+                    $info = @getimagesize($path);
+                    if ($info) {
+                        return ['width' => $info[0], 'height' => $info[1]];
+                    }
+                }
+                return ['width' => $defaultWidth, 'height' => $defaultHeight];
+            };
+        @endphp
         <div class="slider-area-wrapper">
             <div class="container">
                 <div class="row">
@@ -16,10 +28,13 @@
                         <div class="hero-slider">
                             <div class="hero-slider-main owl-carousel dots-inside">
                                 @foreach ($sliders as $slider)
+                                    @php
+                                        $sliderSize = $getImageSize($slider->photo, 2100, 805);
+                                    @endphp
                                     <div class="item
                                     @if (DB::table('languages')->where('is_default', 1)->first()->rtl == 1) d-flex justify-content-end @endif
-                                    "
-                                        style="background: url('{{ url('/core/public/storage/images/' . $slider->photo) }}')">
+                                    ">
+                                        <img class="hero-slider-bg-img" src="{{ url('/core/public/storage/images/' . $slider->photo) }}" alt="Banner" width="{{ $sliderSize['width'] }}" height="{{ $sliderSize['height'] }}" {!! $loop->first ? 'fetchpriority="high" loading="eager"' : 'loading="lazy"' !!}>
                                         <div class="item-inner">
                                             <div class="from-bottom">
                                                 @if ($slider->logo)
@@ -178,9 +193,14 @@
                                                 <div class="product-badge product-badge2 bg-info">
                                                     -{{ PriceHelper::DiscountPercentage($compaign_item->item) }}</div>
                                             @endif
+                                            @php
+                                                $campaignItemSize = $getImageSize($compaign_item->item->thumbnail, 300, 300);
+                                            @endphp
                                             <img class="lazy"
                                                 data-src="{{ url('/core/public/storage/images/' . $compaign_item->item->thumbnail) }}"
-                                                alt="{{ $compaign_item->item->name }}">
+                                                alt="{{ $compaign_item->item->name }}"
+                                                width="{{ $campaignItemSize['width'] }}"
+                                                height="{{ $campaignItemSize['height'] }}">
                                             <div class="product-button-group"><a class="product-button wishlist_store"
                                                     href="{{ route('user.wishlist.store', $compaign_item->item->id) }}"
                                                     title="{{ __('Wishlist') }}" aria-label="{{ __('Wishlist') }}"><i class="icon-heart"></i></a>
@@ -323,7 +343,7 @@
                     </div>
                 </div>
                 <div class="popular_category_view d-none">
-                    <img src="{{ url('/core/public/storage/images/ajax_loader.gif') }}" alt="">
+                    <img src="{{ url('/core/public/storage/images/ajax_loader.gif') }}" alt="" width="200" height="200">
                 </div>
 
                 <div class="row" id="popular_category_view">
@@ -344,9 +364,14 @@
                                                 <div class="product-badge product-badge2 bg-info">
                                                     -{{ PriceHelper::DiscountPercentage($popular_category_item) }}</div>
                                             @endif
+                                            @php
+                                                $popCatItemSize = $getImageSize($popular_category_item->thumbnail, 300, 300);
+                                            @endphp
                                             <img class="lazy"
                                                 data-src="{{ url('/core/public/storage/images/' . $popular_category_item->thumbnail) }}"
-                                                alt="{{ $popular_category_item->name }}">
+                                                alt="{{ $popular_category_item->name }}"
+                                                width="{{ $popCatItemSize['width'] }}"
+                                                height="{{ $popCatItemSize['height'] }}">
                                             <div class="product-button-group">
                                                 <a class="product-button wishlist_store"
                                                     href="{{ route('user.wishlist.store', $popular_category_item->id) }}"
@@ -483,7 +508,7 @@
                 </div>
                 <div class="row">
                     <div class="type_product_view d-none">
-                        <img src="{{ url('/core/public/storage/images/ajax_loader.gif') }}" alt="">
+                        <img src="{{ url('/core/public/storage/images/ajax_loader.gif') }}" alt="" width="200" height="200">
                     </div>
                     <div class="col-lg-12" id="type_product_view">
 
@@ -503,9 +528,14 @@
                                                     <div class="product-badge product-badge2 bg-info">
                                                         -{{ PriceHelper::DiscountPercentage($item) }}</div>
                                                 @endif
+                                                @php
+                                                    $featItemSize = $getImageSize($item->thumbnail, 300, 300);
+                                                @endphp
                                                 <img class="lazy"
                                                     data-src="{{ url('/core/public/storage/images/' . $item->thumbnail) }}"
-                                                    alt="{{ $item->name }}">
+                                                    alt="{{ $item->name }}"
+                                                    width="{{ $featItemSize['width'] }}"
+                                                    height="{{ $featItemSize['height'] }}">
                                                 <div class="product-button-group"><a class="product-button wishlist_store"
                                                         href="{{ route('user.wishlist.store', $item->id) }}"
                                                         title="{{ __('Wishlist') }}" aria-label="{{ __('Wishlist') }}"><i class="icon-heart"></i></a>
@@ -577,9 +607,14 @@
                                                         <div class="product-badge product-badge2 bg-info">
                                                             -{{ PriceHelper::DiscountPercentage($item) }}</div>
                                                     @endif
+                                                    @php
+                                                        $flashItemSize = $getImageSize($item->thumbnail, 300, 300);
+                                                    @endphp
                                                     <img class="lazy"
                                                         data-src="{{ url('/core/public/storage/images/' . $item->thumbnail) }}"
-                                                        alt="{{ $item->name }}">
+                                                        alt="{{ $item->name }}"
+                                                        width="{{ $flashItemSize['width'] }}"
+                                                        height="{{ $flashItemSize['height'] }}">
                                                     <div class="product-button-group"><a
                                                             class="product-button wishlist_store"
                                                             href="{{ route('user.wishlist.store', $item->id) }}"
@@ -656,9 +691,14 @@
                                                                 {{ __('out of stock') }}</div>
                                                         @endif
 
+                                                        @php
+                                                            $twoColItemSize = $getImageSize($two_column_category_item->thumbnail, 300, 300);
+                                                        @endphp
                                                         <img class="lazy"
                                                             data-src="{{ url('/core/public/storage/images/' . $two_column_category_item->thumbnail) }}"
-                                                            alt="{{ $two_column_category_item->name }}">
+                                                            alt="{{ $two_column_category_item->name }}"
+                                                            width="{{ $twoColItemSize['width'] }}"
+                                                            height="{{ $twoColItemSize['height'] }}">
                                                     </a>
                                                     <div class="product-card-body">
                                                         <h3 class="product-title"><a
@@ -762,7 +802,7 @@
                     </div>
                 </div>
                 <div class="feature_category_view d-none">
-                    <img src="{{ url('/core/public/storage/images/ajax_loader.gif') }}" alt="">
+                    <img src="{{ url('/core/public/storage/images/ajax_loader.gif') }}" alt="" width="200" height="200">
                 </div>
                 <div class="row g-3" id="feature_category_view">
                     @foreach ($feature_category_items as $feature_category_item)
@@ -780,9 +820,14 @@
                                         <div class="product-badge product-badge2 bg-info">
                                             -{{ PriceHelper::DiscountPercentage($feature_category_item) }}</div>
                                     @endif
+                                    @php
+                                        $featCatItemSize = $getImageSize($feature_category_item->thumbnail, 300, 300);
+                                    @endphp
                                     <img class="lazy"
                                         data-src="{{ url('/core/public/storage/images/' . $feature_category_item->thumbnail) }}"
-                                        alt="{{ $feature_category_item->name }}">
+                                        alt="{{ $feature_category_item->name }}"
+                                        width="{{ $featCatItemSize['width'] }}"
+                                        height="{{ $featCatItemSize['height'] }}">
                                     <div class="product-button-group"><a class="product-button wishlist_store"
                                             href="{{ route('user.wishlist.store', $feature_category_item->id) }}"
                                             title="{{ __('Wishlist') }}" aria-label="{{ __('Wishlist') }}"><i class="icon-heart"></i></a>
@@ -841,9 +886,15 @@
                                 <div class="slider-item">
                                     <a href="{{ route('front.blog.details', $post->slug) }}" class="blog-post">
                                         <div class="post-thumb">
+                                            @php
+                                                $blogPhotoName = json_decode($post->photo, true)[array_key_first(json_decode($post->photo, true))];
+                                                $blogSize = $getImageSize($blogPhotoName, 370, 240);
+                                            @endphp
                                             <img class="lazy"
-                                                data-src="{{ url('/core/public/storage/images/' . json_decode($post->photo, true)[array_key_first(json_decode($post->photo, true))]) }}"
-                                                alt="Blog Post">
+                                                data-src="{{ url('/core/public/storage/images/' . $blogPhotoName) }}"
+                                                alt="Blog Post"
+                                                width="{{ $blogSize['width'] }}"
+                                                height="{{ $blogSize['height'] }}">
                                         </div>
                                         <div class="post-body">
 

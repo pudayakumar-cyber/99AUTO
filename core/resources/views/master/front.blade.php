@@ -41,7 +41,7 @@
             $firstSlider = DB::table('sliders')->where('home_page', $setting->theme ?? 'theme1')->first();
         @endphp
         @if ($firstSlider)
-            <link rel="preload" href="{{ url('/core/public/storage/images/' . $firstSlider->photo) }}" as="image">
+            <link rel="preload" href="{{ url('/core/public/storage/images/' . $firstSlider->photo) }}" as="image" fetchpriority="high">
         @endif
     @endif
 
@@ -120,7 +120,7 @@
         rel="stylesheet">
 
     <!-- Modernizr-->
-    <script src="{{ asset('assets/front/js/modernizr.min.js') }}"></script>
+    <script src="{{ asset('assets/front/js/modernizr.min.js') }}" defer></script>
 
     @if (optional($default_language)->rtl == 1)
         <link rel="stylesheet" href="{{ asset('assets/front/css/rtl.css') }}">
@@ -376,6 +376,21 @@
         }
         .brand-grid-item img {
             width: auto !important;
+        }
+
+        /* Hero slider background image conversion to DOM img tag */
+        .hero-slider .item {
+            position: relative;
+            background: transparent !important;
+        }
+        .hero-slider-bg-img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover;
+            z-index: -1;
         }
 
         .whatsapp-float {

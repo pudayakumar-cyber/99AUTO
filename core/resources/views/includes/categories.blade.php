@@ -7,7 +7,7 @@
             @foreach ($menu_categories as $key => $pcategory)
                 <div class="c-item">
                     <a class="d-block navi-link" href="{{route('front.catalog').'?category='.$pcategory->slug}}">
-                        <img class="lazy" data-src="{{url('/core/public/storage/images/'.$pcategory->photo)}}">
+                        <img class="lazy" data-src="{{url('/core/public/storage/images/'.$pcategory->photo)}}" width="40" height="40" alt="{{$pcategory->name}}">
                         <span class="text-gray-dark">{{$pcategory->name}}</span>
                         @if ($pcategory->subcategory->count() > 0)
                         <i class="icon-chevron-right"></i>
@@ -24,23 +24,23 @@
                                 @endif
                                 </a>
                                 @if ($scategory->childcategory->count() > 0)
-                              <div class="child-category">
-
-                                @foreach ($scategory->childcategory as $childcategory)
-                                <a href="{{route('front.catalog').'?childcategory='.$childcategory->slug}}">{{$childcategory->name}}</a>
-                                @endforeach
+                                <div class="child-category">
+ 
+                                  @foreach ($scategory->childcategory as $childcategory)
+                                  <a href="{{route('front.catalog').'?childcategory='.$childcategory->slug}}">{{$childcategory->name}}</a>
+                                  @endforeach
+                                </div>
+                                @endif
                               </div>
-                              @endif
-                            </div>
-                            @endforeach
-                    </div>
-                    @endif
-                </div>
-            @endforeach
-        <a href="{{route('front.catalog')}}" class="d-block navi-link view-all-category">
-            <img class="lazy" data-src="{{ url('/core/public/storage/images/category.jpg') }}" alt="">
-            <span class="text-gray-dark">{{ __('All Categories')}}</span>
-        </a>
+                              @endforeach
+                      </div>
+                      @endif
+                  </div>
+              @endforeach
+          <a href="{{route('front.catalog')}}" class="d-block navi-link view-all-category">
+              <img class="lazy" data-src="{{ url('/core/public/storage/images/category.jpg') }}" alt="" width="40" height="40">
+              <span class="text-gray-dark">{{ __('All Categories')}}</span>
+          </a>
     </div>
 
 
