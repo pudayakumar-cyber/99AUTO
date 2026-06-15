@@ -47,7 +47,7 @@
                                         <a class="nav-link" data-toggle="pill"
                                             href="#theme">{{ __('Home Page Themes') }}</a>
                                         <a class="nav-link" data-toggle="pill" href="#media">{{ __('Media') }}</a> -->
-                                        <a class="nav-link" data-toggle="pill" href="#seo">{{ __('Seo') }}</a>
+                                        <a class="nav-link active" data-toggle="pill" href="#seo">{{ __('Seo') }}</a>
                                        
                                        <!-- <a class="nav-link" data-toggle="pill" href="#custom_css"
                                             id="newcss">{{ __('Custom Css') }}</a>
@@ -68,7 +68,7 @@
                                         <div id="tabs">
                                             <!-- Tab panes -->
                                             <div class="tab-content">
-                                                <div id="basic" class="tab-pane active"><br>
+                                                <div id="basic" class="tab-pane "><br>
                                                     <div class="row justify-content-center">
                                                         <div class="col-lg-8">
                                                             <div class="form-group">
@@ -426,13 +426,13 @@
 
                                                 </div>
 
-                                                <div id="seo" class="tab-pane"><br>
+                                                <div id="seo" class="tab-pane active"><br>
 
                                                     <div class="row justify-content-center">
 
                                                         <div class="col-lg-12 ">
 
-                                                            <div class="form-group">
+                                                          <!--  <div class="form-group">
                                                                 <label
                                                                     for="name">{{ __('Meta Image') }}</label>
                                                                 <div class="col-lg-12 pb-1">
@@ -441,7 +441,7 @@
                                                                         alt="No Image Found">
                                                                 </div>
                                                                 <span>{{ __('Image Size Should Be 1200 x 627.') }}</span>
-                                                            </div>
+                                                            </div> -->
 
                                                            <!-- <div class="form-group position-relative ">
                                                                 <label class="file">
