@@ -1,7 +1,7 @@
 @extends('master.front')
 @section('meta')
-<meta name="keywords" content="{{$setting->meta_keywords}}">
-<meta name="description" content="{{$setting->meta_description}}">
+<meta name="keywords" content="car parts brands Canada, aftermarket auto brands, OEM auto parts brand directory, buy Dorman Canada, Moog suspension Canada, Bosch auto parts Canada">
+<meta name="description" content="Browse the full directory of aftermarket car parts brands at 99AutoParts Canada. Shop premium parts from Dorman, Moog, Bosch, Raybestos, and more.">
 @endsection
 @section('title')
     {{__('Brand')}}
