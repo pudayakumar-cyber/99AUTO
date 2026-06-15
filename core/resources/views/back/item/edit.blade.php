@@ -201,7 +201,7 @@
                     </div>
                 </div>
             </div>
-            <div class="card">
+            <!-- <div class="card">
                 <div class="card-body">
                     <div class="form-group">
                         <label for="meta_keywords">{{ __('Meta Keywords') }}
@@ -220,7 +220,7 @@
                             placeholder="{{ __('Enter Meta Description') }}">{{ $item->meta_description }}</textarea>
                     </div>
                 </div>
-            </div>
+            </div> -->
         </div>
         <div class="col-lg-4">
             <div class="card">
