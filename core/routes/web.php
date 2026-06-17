@@ -246,6 +246,12 @@ Route::group(['middleware' => ['adminlocalize', 'demo']], function () {
             Route::get('/setting/menu', 'Back\SettingController@menu')->name('back.setting.menu');
             Route::get('/setting/social', 'Back\SettingController@social')->name('back.setting.social');
             Route::get('/setting/system', 'Back\SettingController@system')->name('back.setting.system');
+            
+            //------------ PAGE SEO MODULE ------------
+            Route::get('/setting/page-seo', 'Back\PageSeoController@index')->name('back.page_seo.index');
+            Route::get('/setting/page-seo/edit/{id}', 'Back\PageSeoController@edit')->name('back.page_seo.edit');
+            Route::post('/setting/page-seo/update/{id}', 'Back\PageSeoController@update')->name('back.page_seo.update');
+
             Route::post('/setting/update', 'Back\SettingController@update')->name('back.setting.update');
             Route::post('/setting/update/visiable', 'Back\SettingController@visiable')->name('back.setting.visible.update');
             Route::get('/announcement', 'Back\SettingController@announcement')->name('back.subscribers.announcement');

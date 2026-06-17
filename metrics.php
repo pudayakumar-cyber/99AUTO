@@ -15,6 +15,19 @@ if (file_exists($envFile)) {
 $backendHost = $googleTagId . '.fps.goog';
 $path = isset($_GET['path']) ? $_GET['path'] : '';
 
+// Redirect data collection requests (g/collect) directly to Google Analytics 
+// to ensure the browser connects directly and GA4 resolves the client's true geolocation.
+if ($path === 'g/collect' || $path === 'collect') {
+    $targetUrl = 'https://www.google-analytics.com/g/collect';
+    $queryParams = $_GET;
+    unset($queryParams['path']);
+    if (!empty($queryParams)) {
+        $targetUrl .= '?' . http_build_query($queryParams);
+    }
+    header('Location: ' . $targetUrl, true, 307);
+    exit;
+}
+
 // Reconstruct GTM Gateway Target URL (Google Gateway expects the /metrics/ prefix)
 $targetUrl = 'https://' . $backendHost . '/metrics/' . $path;
 

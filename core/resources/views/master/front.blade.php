@@ -27,7 +27,44 @@
     <!-- End Google Tag Manager Stub -->
     @endif
     <meta charset="UTF-8">
-    @if (url()->current() == route('front.index'))
+    @php
+        // Dynamic Page SEO Module Integration
+        $routeName = Route::currentRouteName();
+        $seoPageKey = null;
+        if ($routeName === 'front.index') {
+            $seoPageKey = 'home';
+        } elseif ($routeName === 'front.catalog') {
+            // Apply shop page SEO only if no category, subcategory, childcategory, or brand filter is selected
+            if (!request()->filled('category') && !request()->filled('subcategory') && !request()->filled('childcategory') && !request()->filled('brand')) {
+                $seoPageKey = 'catalog';
+            }
+        } elseif ($routeName === 'front.blog') {
+            $seoPageKey = 'blog';
+        } elseif ($routeName === 'front.brand') {
+            $seoPageKey = 'brand';
+        } elseif ($routeName === 'front.order.track' || $routeName === 'front.order.track.submit') {
+            $seoPageKey = 'track_order';
+        } elseif ($routeName === 'front.contact') {
+            $seoPageKey = 'contact';
+        } elseif ($routeName === 'front.faq') {
+            $seoPageKey = 'faq';
+        } elseif ($routeName === 'front.cart') {
+            $seoPageKey = 'cart';
+        } elseif ($routeName === 'front.checkout') {
+            $seoPageKey = 'checkout';
+        } elseif ($routeName === 'fornt.compare.index') {
+            $seoPageKey = 'compare';
+        }
+
+        $activePageSeo = null;
+        if ($seoPageKey) {
+            $activePageSeo = \App\Models\PageSeo::where('page_name', $seoPageKey)->first();
+        }
+    @endphp
+
+    @if ($activePageSeo)
+        <title>{{ $activePageSeo->title }}</title>
+    @elseif (url()->current() == route('front.index'))
         <title>@yield('hometitle')</title>
     @else
         <title>@yield('title') - {{ $setting->title }}</title>
@@ -46,14 +83,20 @@
     @endif
 
     <!-- SEO Meta Tags-->
-    @if (url()->current() == route('front.index'))
+    @if ($activePageSeo)
+        @php
+            $seoKeywords = $activePageSeo->meta_keywords;
+            if (strpos($seoKeywords, '[{') !== false) {
+                $seoKeywords = str_replace(["value","{","}","[","]",":","\""], '', $seoKeywords);
+            }
+        @endphp
         <meta name="author" content="GeniusDevs">
         <meta name="distribution" content="web">
-        <meta name="description" content="{{ $setting->meta_description }}">
-        <meta name="keywords" content="{{ $setting->meta_keywords }}">
+        <meta name="description" content="{{ $activePageSeo->meta_description }}">
+        <meta name="keywords" content="{{ $seoKeywords }}">
         <meta name="image" content="{{ asset('storage/images/' . $setting->meta_image) }}">
-        <meta property="og:title" content="{{ $setting->title}}">
-        <meta property="og:description" content="{{ $setting->meta_description }}">
+        <meta property="og:title" content="{{ $activePageSeo->title }}">
+        <meta property="og:description" content="{{ $activePageSeo->meta_description }}">
         <meta property="og:image" content="{{ asset('storage/images/' . $setting->meta_image) }}">
         <meta property="og:image:secure_url" content="{{ asset('storage/images/' . $setting->meta_image) }}" />
         <meta property="og:image:type" content="image/jpeg" />
@@ -63,17 +106,35 @@
         <meta property="og:site_name" content="{{ $setting->title }}">
         <meta property="og:type" content="website">
     @else
-        @if (View::hasSection('meta'))
-            @yield('meta')
-        @else
+        @if (url()->current() == route('front.index'))
             <meta name="author" content="GeniusDevs">
+            <meta name="distribution" content="web">
             <meta name="description" content="{{ $setting->meta_description }}">
             <meta name="keywords" content="{{ $setting->meta_keywords }}">
-            <meta property="og:title" content="@yield('title') - {{ $setting->title }}">
+            <meta name="image" content="{{ asset('storage/images/' . $setting->meta_image) }}">
+            <meta property="og:title" content="{{ $setting->title}}">
             <meta property="og:description" content="{{ $setting->meta_description }}">
+            <meta property="og:image" content="{{ asset('storage/images/' . $setting->meta_image) }}">
+            <meta property="og:image:secure_url" content="{{ asset('storage/images/' . $setting->meta_image) }}" />
+            <meta property="og:image:type" content="image/jpeg" />
+            <meta property="og:image:width" content="1200" />
+            <meta property="og:image:height" content="627" />
             <meta property="og:url" content="{{ url()->current() }}">
             <meta property="og:site_name" content="{{ $setting->title }}">
             <meta property="og:type" content="website">
+        @else
+            @if (View::hasSection('meta'))
+                @yield('meta')
+            @else
+                <meta name="author" content="GeniusDevs">
+                <meta name="description" content="{{ $setting->meta_description }}">
+                <meta name="keywords" content="{{ $setting->meta_keywords }}">
+                <meta property="og:title" content="@yield('title') - {{ $setting->title }}">
+                <meta property="og:description" content="{{ $setting->meta_description }}">
+                <meta property="og:url" content="{{ url()->current() }}">
+                <meta property="og:site_name" content="{{ $setting->title }}">
+                <meta property="og:type" content="website">
+            @endif
         @endif
     @endif
 
