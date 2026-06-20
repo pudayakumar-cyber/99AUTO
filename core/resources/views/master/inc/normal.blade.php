@@ -216,11 +216,11 @@
                         <span class="sub-item">{{ __('General Settings') }}</span>
                     </a>
                 </li>
-                <!-- <li>
+                <li>
                     <a class="sub-link" href="{{ route('back.page_seo.index') }}">
                         <span class="sub-item">{{ __('Page SEO Settings') }}</span>
                     </a>
-                </li> -->
+                </li>
               <!--  <li>
                     <a class="sub-link" href="{{ route('back.menu.index') }}">
                         <span class="sub-item">{{ __('Menu Builder') }}</span>
