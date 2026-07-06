@@ -364,7 +364,7 @@ class CatalogController extends Controller
         $params = $request->except(['page', 'catalog_chunk', 'catalog_chunk_size', 'view_check']);
         ksort($params);
 
-        return 'catalog_fitment_ids_' . md5(json_encode($params));
+        return 'catalog_fitment_ids_v3_' . md5(json_encode($params));
     }
 
     private function applyFitmentKeywordPrefilter($query, $year, $make, $model): void
