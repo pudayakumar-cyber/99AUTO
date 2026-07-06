@@ -268,7 +268,28 @@ class CatalogController extends Controller
         $model = $request->model;
         $search = $request->search;
 
-        $itemsQuery = Item::query()->where('status', 1);
+        $category = $request->has('category') ? ( !empty($request->category) ? Category::whereSlug($request->category)->first() : null ) : null;
+        $subcategory = $request->has('subcategory') ? ( !empty($request->subcategory) ? Subcategory::whereSlug($request->subcategory)->first() : null ) : null;
+        $childcategory = $request->has('childcategory') ? ( !empty($request->childcategory) ? ChieldCategory::where('slug',$request->childcategory)->first() : null ) : null;
+        $brand = $request->has('brand') ?  ( !empty($request->brand) ? Brand::whereSlug($request->brand)->first() : null ) : null;
+        $tag = $request->has('tag') ?  ( !empty($request->tag) ? $request->tag : null ) : null;
+
+        $itemsQuery = Item::query()->where('status', 1)
+            ->when($category, function ($query, $category) {
+                return $query->where('category_id', $category->id);
+            })
+            ->when($subcategory, function ($query, $subcategory) {
+                return $query->where('subcategory_id', $subcategory->id);
+            })
+            ->when($childcategory, function ($query, $childcategory) {
+                return $query->where('childcategory_id', $childcategory->id);
+            })
+            ->when($tag, function ($query, $tag) {
+                return $query->where('tags', 'like', '%' . $tag . '%');
+            })
+            ->when($brand, function ($query, $brand) {
+                return $query->where('brand_id', $brand->id);
+            });
 
         if ($search) {
             $this->applySmartSearch($itemsQuery, $search);
