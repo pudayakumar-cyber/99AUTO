@@ -555,8 +555,14 @@ class FrontendController extends Controller
                 $query->where('status', 1);
             }], 'rating')
             ->whereStatus(1)
-            ->whereSlug($slug)
-            ->firstOrFail();
+            ->whereSlug($slug);
+
+        $requestedItemId = request()->query('item_id');
+        if (is_numeric($requestedItemId)) {
+            $itemQuery->where('id', (int) $requestedItemId);
+        }
+
+        $item = $itemQuery->firstOrFail();
 
         $reviews = $item->reviews()
             ->with('user')
