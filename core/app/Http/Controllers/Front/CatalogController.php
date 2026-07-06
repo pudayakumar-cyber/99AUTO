@@ -286,12 +286,21 @@ class CatalogController extends Controller
 
         $filtered = $this->filterItemsByFitment($candidates, $year, $make, $model);
 
+        $cacheKey = $this->fitmentCacheKey($request);
+        $cachedValue = Cache::get($cacheKey);
+
         $out = [
             'input' => [
                 'year' => $year,
                 'make' => $make,
                 'model' => $model,
                 'search' => $search,
+            ],
+            'cache' => [
+                'key' => $cacheKey,
+                'exists' => Cache::has($cacheKey),
+                'value_count' => is_array($cachedValue) ? count($cachedValue) : null,
+                'value_sample' => is_array($cachedValue) ? array_slice($cachedValue, 0, 10) : $cachedValue,
             ],
             'total_items_in_db' => Item::count(),
             'total_active_items' => Item::where('status', 1)->count(),
