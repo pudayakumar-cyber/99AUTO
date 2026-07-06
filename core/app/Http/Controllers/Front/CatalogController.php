@@ -442,27 +442,9 @@ class CatalogController extends Controller
             $make = $this->canonicalFitmentToken($make);
             $model = $this->canonicalFitmentToken($model);
 
-            // Prefer the normalized fitment table to avoid matching arbitrary 3-column tables.
-            $details = (string) $item->details;
-            $rowsSource = $details;
-            if (preg_match('/<table[^>]*class="[^"]*\bpa-fitment-table\b[^"]*"[^>]*>[\s\S]*?<\/table>/i', $details, $m)) {
-                $rowsSource = $m[0];
-            }
+            $rows = $this->fitmentRowsFromDetails((string) $item->details);
 
-            preg_match_all('/<tr>(.*?)<\/tr>/si', $rowsSource, $rows);
-
-            foreach ($rows[1] as $rowHtml) {
-
-                preg_match_all('/<td[^>]*>(.*?)<\/td>/si', $rowHtml, $cols);
-
-                if (count($cols[1]) !== 3) {
-                    continue;
-                }
-
-                [$yearsCell, $makeCell, $modelCell] = array_map(
-                    fn ($v) => trim(html_entity_decode(strip_tags((string) $v))),
-                    $cols[1]
-                );
+            foreach ($rows as [$yearsCell, $makeCell, $modelCell]) {
 
                 // YEAR
                 if ($year) {
@@ -487,6 +469,50 @@ class CatalogController extends Controller
 
             return false;
         });
+    }
+
+    private function fitmentRowsFromDetails(string $details): array
+    {
+        $tableHtml = null;
+
+        if (preg_match('/<table[^>]*class="[^"]*\bpa-fitment-table\b[^"]*"[^>]*>[\s\S]*?<\/table>/i', $details, $m)) {
+            $tableHtml = $m[0];
+        } elseif (preg_match('/<div[^>]*id=["\']collapsePaFitting["\'][^>]*>[\s\S]*?(<table[^>]*>[\s\S]*?<\/table>)/i', $details, $m)) {
+            $tableHtml = $m[1];
+        }
+
+        if ($tableHtml === null) {
+            return [];
+        }
+
+        preg_match_all('/<tr[^>]*>(.*?)<\/tr>/si', $tableHtml, $rowMatches);
+
+        $rows = [];
+        foreach ($rowMatches[1] as $rowHtml) {
+            preg_match_all('/<t[dh][^>]*>(.*?)<\/t[dh]>/si', $rowHtml, $cols);
+
+            if (count($cols[1]) < 3) {
+                continue;
+            }
+
+            $cells = array_map(
+                fn ($v) => trim(html_entity_decode(strip_tags((string) $v))),
+                array_slice($cols[1], 0, 3)
+            );
+
+            $firstCell = $this->canonicalFitmentToken($cells[0] ?? '');
+            if (in_array($firstCell, ['year', 'years', 'fitment'], true)) {
+                continue;
+            }
+
+            if ($cells[0] === '' || $cells[1] === '' || $cells[2] === '') {
+                continue;
+            }
+
+            $rows[] = $cells;
+        }
+
+        return $rows;
     }
 
     private function normalizeFitmentToken(?string $value): string
@@ -529,7 +555,7 @@ class CatalogController extends Controller
         $params = $request->except(['page', 'catalog_chunk', 'catalog_chunk_size', 'view_check']);
         ksort($params);
 
-        return 'catalog_fitment_ids_v3_' . md5(json_encode($params));
+        return 'catalog_fitment_ids_v4_' . md5(json_encode($params));
     }
 
     private function applyFitmentKeywordPrefilter($query, $year, $make, $model): void
