@@ -390,6 +390,38 @@ class CatalogController extends Controller
         ], 200, [], JSON_PRETTY_PRINT);
     }
 
+    public function debugFindItem($q)
+    {
+        $items = Item::where('name', 'like', "%{$q}%")
+            ->orWhere('prod_number', 'like', "%{$q}%")
+            ->orWhere('product_part_number', 'like', "%{$q}%")
+            ->select('id', 'name', 'prod_number', 'product_part_number', 'details')
+            ->get();
+
+        return response()->json($items->map(function ($item) {
+            $details = $item->details;
+            $rowsSource = $details;
+            if (preg_match('/<table[^>]*class="[^"]*\bpa-fitment-table\b[^"]*"[^>]*>[\s\S]*?<\/table>/i', $details, $m)) {
+                $rowsSource = $m[0];
+            }
+            preg_match_all('/<tr>(.*?)<\/tr>/si', $rowsSource, $rows);
+            $parsedRows = [];
+            foreach ($rows[1] as $rowHtml) {
+                preg_match_all('/<td[^>]*>(.*?)<\/td>/si', $rowHtml, $cols);
+                if (count($cols[1]) === 3) {
+                    $parsedRows[] = array_map(fn($v) => trim(strip_tags((string)$v)), $cols[1]);
+                }
+            }
+            return [
+                'id' => $item->id,
+                'name' => $item->name,
+                'prod_number' => $item->prod_number,
+                'product_part_number' => $item->product_part_number,
+                'fitment_rows' => $parsedRows,
+            ];
+        }), 200, [], JSON_PRETTY_PRINT);
+    }
+
     private function filterItemsByFitment($items, $year, $make, $model)
     {
         if (!($year || $make || $model)) {
