@@ -384,6 +384,8 @@ class CatalogController extends Controller
         return response()->json([
             'id' => $item->id,
             'name' => $item->name,
+            'prod_number' => $item->prod_number,
+            'product_part_number' => $item->product_part_number,
             'has_fitment_table' => (strpos($details, 'pa-fitment-table') !== false),
             'fitment_table_html' => $rowsSource,
             'parsed_rows' => $parsedRows,
