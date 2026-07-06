@@ -2387,7 +2387,7 @@ function fillSelect(select, data, placeholder) {
     data.forEach(item => {
         const opt = document.createElement('option');
         opt.value = item.id;
-        opt.textContent = (item.make || item.year || item.model || '').trim();
+        opt.textContent = String(item.make || item.year || item.model || '').trim();
         select.appendChild(opt);
     });
 }
