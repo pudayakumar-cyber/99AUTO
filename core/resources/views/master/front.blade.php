@@ -2379,11 +2379,16 @@ const YMM_PLACEHOLDERS = {
 
 // Populate dropdown
 function fillSelect(select, data, placeholder) {
-    select.innerHTML = `<option value="">${placeholder}</option>`;
+    select.innerHTML = '';
+    const placeholderOpt = document.createElement('option');
+    placeholderOpt.value = '';
+    placeholderOpt.textContent = placeholder;
+    select.appendChild(placeholderOpt);
     data.forEach(item => {
-        select.innerHTML += `<option value="${item.id}">
-            ${item.make || item.year || item.model}
-        </option>`;
+        const opt = document.createElement('option');
+        opt.value = item.id;
+        opt.textContent = (item.make || item.year || item.model || '').trim();
+        select.appendChild(opt);
     });
 }
 
@@ -2648,6 +2653,15 @@ document.addEventListener('DOMContentLoaded', async function () {
     const v = JSON.parse(stored);
     if (!v.year_id || !v.make_id || !v.model_id) return;
 
+    // ✅ Set hidden inputs IMMEDIATELY (synchronous, before any async fetch calls)
+    // This prevents race conditions where form submits before dropdowns finish loading
+    const hy  = document.getElementById('search_year');
+    const hm  = document.getElementById('search_make');
+    const hmo = document.getElementById('search_model');
+    if (hy)  hy.value  = (v.year  || '').trim();
+    if (hm)  hm.value  = (v.make  || '').trim();
+    if (hmo) hmo.value = (v.model || '').trim();
+
     // 1️⃣ Load & select YEAR
     await loadYears(v.year_id);
 
@@ -2665,10 +2679,10 @@ document.addEventListener('DOMContentLoaded', async function () {
     summaryText.textContent = `✔: ${v.year} ${v.make} ${v.model}`;
     summaryBox.style.display = 'flex';
 
-    // 🔁 Hidden inputs
-    document.getElementById('search_year').value  = v.year;
-    document.getElementById('search_make').value  = v.make;
-    document.getElementById('search_model').value = v.model;
+    // 🔁 Re-confirm hidden inputs after async loads (in case text was cleaned up)
+    if (hy)  hy.value  = (v.year  || '').trim();
+    if (hm)  hm.value  = (v.make  || '').trim();
+    if (hmo) hmo.value = (v.model || '').trim();
 });
 
 
@@ -2739,8 +2753,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (searchBtn && form) {
         searchBtn.addEventListener('click', function () {
-            const y = document.getElementById('ymm_year');
-            const m = document.getElementById('ymm_make');
+            const y  = document.getElementById('ymm_year');
+            const m  = document.getElementById('ymm_make');
             const mo = document.getElementById('ymm_model');
             if (!y || !m || !mo || !y.value || !m.value || !mo.value) {
                 if (hintEl) {
@@ -2749,6 +2763,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 return;
             }
+
+            // ✅ Always write the CORRECT text values to hidden inputs right before submit
+            const hiddenYear  = document.getElementById('search_year');
+            const hiddenMake  = document.getElementById('search_make');
+            const hiddenModel = document.getElementById('search_model');
+            hiddenYear.value  = y.options[y.selectedIndex].textContent.trim();
+            hiddenMake.value  = m.options[m.selectedIndex].textContent.trim();
+            hiddenModel.value = mo.options[mo.selectedIndex].textContent.trim();
+
+            // ✅ Save to localStorage so the vehicle persists across pages
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                year_id: y.value,   year:  hiddenYear.value,
+                make_id: m.value,   make:  hiddenMake.value,
+                model_id: mo.value, model: hiddenModel.value,
+            }));
+
             setPanelState(false);
             if (typeof form.requestSubmit === 'function') {
                 form.requestSubmit();
