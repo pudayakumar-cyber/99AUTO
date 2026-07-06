@@ -42,7 +42,7 @@
             <div class="product-category">
                 <a href="{{ route('front.catalog') . '?category=' . $item->category->slug }}">{{ $item->category->name }}</a>
             </div>
-            <h3 class="product-title"><a href="{{ route('front.product', $item->slug) }}">
+            <h3 class="product-title"><a href="{{ route('front.product', $item->slug) . '?item_id=' . $item->id }}">
                 {{ Str::limit(collect([
                     optional($item->brand)->name ?: null,
                     $item->product_part_number ?: $item->prod_number ?: null,
