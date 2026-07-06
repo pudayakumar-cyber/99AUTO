@@ -261,6 +261,52 @@ class CatalogController extends Controller
         return view('includes.search_suggest', compact('items'));
     }
 
+    public function debugFitment(Request $request)
+    {
+        $year  = $request->year;
+        $make  = $request->make;
+        $model = $request->model;
+        $search = $request->search;
+
+        $itemsQuery = Item::query()->where('status', 1);
+
+        if ($search) {
+            $this->applySmartSearch($itemsQuery, $search);
+        }
+
+        $allCount = (clone $itemsQuery)->count();
+
+        $candidateQuery = clone $itemsQuery;
+        if ($year || $make || $model) {
+            $this->applyFitmentKeywordPrefilter($candidateQuery, $year, $make, $model);
+        }
+
+        $candidatesCount = (clone $candidateQuery)->count();
+        $candidates = $candidateQuery->select('id', 'name', 'details')->get();
+
+        $filtered = $this->filterItemsByFitment($candidates, $year, $make, $model);
+
+        $out = [
+            'input' => [
+                'year' => $year,
+                'make' => $make,
+                'model' => $model,
+                'search' => $search,
+            ],
+            'total_items_in_db' => Item::count(),
+            'total_active_items' => Item::where('status', 1)->count(),
+            'search_filtered_count' => $allCount,
+            'fitment_prefilter_count' => $candidatesCount,
+            'final_filtered_count' => $filtered->count(),
+            'final_filtered_items' => $filtered->map(fn($item) => [
+                'id' => $item->id,
+                'name' => $item->name,
+            ])->values()->all(),
+        ];
+
+        return response()->json($out, 200, [], JSON_PRETTY_PRINT);
+    }
+
     private function filterItemsByFitment($items, $year, $make, $model)
     {
         if (!($year || $make || $model)) {
