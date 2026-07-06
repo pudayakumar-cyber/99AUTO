@@ -307,6 +307,59 @@ class CatalogController extends Controller
         return response()->json($out, 200, [], JSON_PRETTY_PRINT);
     }
 
+    public function debugItem($id)
+    {
+        $item = Item::findOrFail($id);
+        
+        $details = $item->details;
+        $rowsSource = $details;
+        if (preg_match('/<table[^>]*class="[^"]*\bpa-fitment-table\b[^"]*"[^>]*>[\s\S]*?<\/table>/i', $details, $m)) {
+            $rowsSource = $m[0];
+        }
+
+        preg_match_all('/<tr>(.*?)<\/tr>/si', $rowsSource, $rows);
+
+        $parsedRows = [];
+        foreach ($rows[1] as $i => $rowHtml) {
+            preg_match_all('/<td[^>]*>(.*?)<\/td>/si', $rowHtml, $cols);
+            if (count($cols[1]) !== 3) {
+                $parsedRows[] = [
+                    'index' => $i,
+                    'html' => $rowHtml,
+                    'status' => 'skipped (cols count not 3)',
+                ];
+                continue;
+            }
+
+            [$yearsCell, $makeCell, $modelCell] = array_map(
+                fn ($v) => trim(html_entity_decode(strip_tags((string) $v))),
+                $cols[1]
+            );
+
+            $years = $this->expandFitmentYears($yearsCell);
+
+            $parsedRows[] = [
+                'index' => $i,
+                'raw' => [
+                    'year' => $yearsCell,
+                    'make' => $makeCell,
+                    'model' => $modelCell,
+                ],
+                'expanded_years' => $years,
+                'canonical_make' => $this->canonicalFitmentToken($makeCell),
+                'canonical_model' => $this->canonicalFitmentToken($modelCell),
+            ];
+        }
+
+        return response()->json([
+            'id' => $item->id,
+            'name' => $item->name,
+            'has_fitment_table' => (strpos($details, 'pa-fitment-table') !== false),
+            'fitment_table_html' => $rowsSource,
+            'parsed_rows' => $parsedRows,
+        ], 200, [], JSON_PRETTY_PRINT);
+    }
+
     private function filterItemsByFitment($items, $year, $make, $model)
     {
         if (!($year || $make || $model)) {

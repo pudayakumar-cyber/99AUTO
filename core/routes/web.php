@@ -443,6 +443,7 @@ Route::group(['middleware' => 'maintainance'], function () {
         //------------ CATALOG ------------
         Route::get('/catalog', 'Front\CatalogController@index')->name('front.catalog');
         Route::get('/debug-fitment', 'Front\CatalogController@debugFitment');
+        Route::get('/debug-item/{id}', 'Front\CatalogController@debugItem');
         Route::get('/search/suggest', 'Front\CatalogController@suggestSearch')->name('front.search.suggest');
         Route::get('/catalog/view/{type}', 'Front\CatalogController@viewType')->name('front.catalog.view');
 
