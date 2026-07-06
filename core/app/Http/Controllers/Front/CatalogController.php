@@ -384,6 +384,7 @@ class CatalogController extends Controller
         return response()->json([
             'id' => $item->id,
             'name' => $item->name,
+            'slug' => $item->slug,
             'prod_number' => $item->prod_number,
             'product_part_number' => $item->product_part_number,
             'has_fitment_table' => (strpos($details, 'pa-fitment-table') !== false),
@@ -397,7 +398,7 @@ class CatalogController extends Controller
         $items = Item::where('name', 'like', "%{$q}%")
             ->orWhere('prod_number', 'like', "%{$q}%")
             ->orWhere('product_part_number', 'like', "%{$q}%")
-            ->select('id', 'name', 'prod_number', 'product_part_number', 'details')
+            ->select('id', 'name', 'slug', 'prod_number', 'product_part_number', 'details')
             ->get();
 
         return response()->json($items->map(function ($item) {
@@ -417,6 +418,7 @@ class CatalogController extends Controller
             return [
                 'id' => $item->id,
                 'name' => $item->name,
+                'slug' => $item->slug,
                 'prod_number' => $item->prod_number,
                 'product_part_number' => $item->product_part_number,
                 'fitment_rows' => $parsedRows,
