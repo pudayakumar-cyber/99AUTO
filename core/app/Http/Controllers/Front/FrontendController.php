@@ -543,7 +543,7 @@ class FrontendController extends Controller
     public function product($slug)
     {
 
-        $item = Item::with([
+        $itemQuery = Item::with([
             'category',
             'brand',
             'subcategory',
