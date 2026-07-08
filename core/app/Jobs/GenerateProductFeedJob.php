@@ -118,7 +118,7 @@ class GenerateProductFeedJob implements ShouldQueue
                     $fitmentColumn = implode(' | ', array_unique($fitmentStrings));
 
                     $baseImageUrl = 'https://99autoparts.ca/core/public/storage/images/';
-                    $productUrl = 'https://99autoparts.ca/product/' . $item->slug;
+                    $productUrl = 'https://99autoparts.ca/product/' . ltrim($item->slug, '/') . '?item_id=' . $item->id;
 
                     $photoUrl = $item->photo
                         ? $baseImageUrl . $item->photo

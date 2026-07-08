@@ -98,7 +98,7 @@ class ProductFeedController extends Controller
                             optional($item->brand)->name,
                             $item->name,
                             $item->slug,
-                            $baseUrl . '/product/' . ltrim($item->slug, '/'),
+                            $baseUrl . '/product/' . ltrim($item->slug, '/') . '?item_id=' . $item->id,
                             $item->stock,
                             optional($item->updated_at)->toDateTimeString(),
                         ]);
@@ -126,7 +126,7 @@ class ProductFeedController extends Controller
                 ->orderBy('id')
                 ->chunk(1000, function ($items) use ($baseUrl) {
                     foreach ($items as $item) {
-                        $productUrl = htmlspecialchars($baseUrl . '/product/' . ltrim($item->slug, '/'), ENT_XML1, 'UTF-8');
+                        $productUrl = htmlspecialchars($baseUrl . '/product/' . ltrim($item->slug, '/') . '?item_id=' . $item->id, ENT_XML1, 'UTF-8');
                         $lastMod = optional($item->updated_at)->toAtomString();
 
                         echo "  <url>" . PHP_EOL;
