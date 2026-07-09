@@ -19,7 +19,6 @@ class Kernel extends HttpKernel
         \Illuminate\Http\Middleware\HandleCors::class,
         \App\Http\Middleware\PreventRequestsDuringMaintenance::class,
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
-        \App\Http\Middleware\Security::class,
         \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
         \Spatie\CookieConsent\CookieConsentMiddleware::class,
@@ -72,7 +71,6 @@ class Kernel extends HttpKernel
         'signed' => \App\Http\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
-        'security' => \App\Http\Middleware\Security::class,
         'localize' => \App\Http\Middleware\Localization::class, // Localization Middleware
         'adminlocalize' => \App\Http\Middleware\AdminLocalization::class, // Localization Middleware
         'permissions' => \App\Http\Middleware\Permission::class,
