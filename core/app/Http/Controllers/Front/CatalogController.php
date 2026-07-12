@@ -185,6 +185,69 @@ class CatalogController extends Controller
                 ->whereIn('id', $attributeIds)
                 ->get();
         });
+
+        $brandItemFilter = function ($query) use (
+            $category,
+            $subcategory,
+            $childcategory,
+            $tag,
+            $search,
+            $minPrice,
+            $maxPrice,
+            $feature,
+            $top,
+            $best,
+            $new,
+            $attr_item_ids,
+            $option_wise_item_ids
+        ) {
+            $query->where('status', 1)
+                ->when($category, function ($query, $category) {
+                    return $query->where('category_id', $category->id);
+                })
+                ->when($subcategory, function ($query, $subcategory) {
+                    return $query->where('subcategory_id', $subcategory->id);
+                })
+                ->when($childcategory, function ($query, $childcategory) {
+                    return $query->where('childcategory_id', $childcategory->id);
+                })
+                ->when($tag, function ($query, $tag) {
+                    return $query->where('tags', 'like', '%' . $tag . '%');
+                })
+                ->when($search, function ($query, $search) {
+                    return $this->applySmartSearch($query, $search);
+                })
+                ->when($minPrice, function ($query, $minPrice) {
+                    return $query->where('discount_price', '>=', $minPrice);
+                })
+                ->when($maxPrice, function ($query, $maxPrice) {
+                    return $query->where('discount_price', '<=', $maxPrice);
+                })
+                ->when($feature, function ($query) {
+                    return $query->whereIsType('feature');
+                })
+                ->when($top, function ($query) {
+                    return $query->whereIsType('top');
+                })
+                ->when($best, function ($query) {
+                    return $query->whereIsType('best');
+                })
+                ->when($new, function ($query) {
+                    return $query->whereIsType('new');
+                })
+                ->when($attr_item_ids, function ($query, $attr_item_ids) {
+                    return $query->whereIn('id', $attr_item_ids);
+                })
+                ->when($option_wise_item_ids, function ($query, $option_wise_item_ids) {
+                    return $query->whereIn('id', $option_wise_item_ids);
+                });
+        };
+
+        $brands = Brand::whereStatus(1)
+            ->whereHas('items', $brandItemFilter)
+            ->withCount(['items' => $brandItemFilter])
+            ->orderBy('name')
+            ->get();
       
         $blade = 'front.catalog.index';
 
@@ -204,9 +267,7 @@ class CatalogController extends Controller
             'childcategory' => $childcategory,
             'checkType'  => $checkType,
             'view_product' => $perPage,
-            'brands' => Cache::remember('catalog_sidebar_brands', 1800, function () {
-                return Brand::withCount('items')->whereStatus(1)->get();
-            }),
+            'brands' => $brands,
             'categories' => Cache::remember('catalog_sidebar_categories', 1800, function () {
                 return Category::whereStatus(1)
                     ->orderby('serial','asc')
