@@ -544,12 +544,13 @@ class FrontendController extends Controller
     {
 
         $itemQuery = Item::with([
-            'category',
-            'brand',
-            'subcategory',
-            'childcategory',
-            'galleries',
-            'attributes.options',
+            'category:id,name,slug',
+            'brand:id,name,slug',
+            'subcategory:id,name,slug',
+            'childcategory:id,name,slug',
+            'galleries:id,item_id,photo',
+            'attributes:id,item_id,name',
+            'attributes.options:id,attribute_id,name,stock,price',
         ])
             ->withAvg(['reviews as reviews_avg_rating' => function ($query) {
                 $query->where('status', 1);
@@ -576,15 +577,41 @@ class FrontendController extends Controller
             ->groupBy('rating')
             ->pluck('total', 'rating');
 
-        $relatedItems = $item->category->items()
-            ->with(['category', 'brand'])
-            ->withAvg(['reviews as reviews_avg_rating' => function ($query) {
-                $query->where('status', 1);
-            }], 'rating')
-            ->whereStatus(1)
-            ->where('id', '!=', $item->id)
-            ->take(8)
-            ->get();
+        $relatedItems = Cache::remember(
+            'product_related_items_' . $item->category_id . '_' . $item->id,
+            600,
+            function () use ($item) {
+                return Item::query()
+                    ->select([
+                        'id',
+                        'category_id',
+                        'brand_id',
+                        'name',
+                        'slug',
+                        'thumbnail',
+                        'discount_price',
+                        'previous_price',
+                        'stock',
+                        'status',
+                        'is_type',
+                        'item_type',
+                        'affiliate_link',
+                    ])
+                    ->with([
+                        'category:id,name,slug',
+                        'brand:id,name,slug',
+                    ])
+                    ->withAvg(['reviews as reviews_avg_rating' => function ($query) {
+                        $query->where('status', 1);
+                    }], 'rating')
+                    ->where('category_id', $item->category_id)
+                    ->whereStatus(1)
+                    ->where('id', '!=', $item->id)
+                    ->latest('id')
+                    ->take(8)
+                    ->get();
+            }
+        );
 
         $video = explode('=', $item->video);
 
