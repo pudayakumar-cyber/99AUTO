@@ -2340,24 +2340,17 @@ body_theme4 @endif
 
             if (!popup || !trigger) return;
 
-            // Auto show once after 8 seconds
-            if (!localStorage.getItem('wa_popup_shown')) {
-                setTimeout(() => {
-                    popup.classList.remove('hidden');
-                    localStorage.setItem('wa_popup_shown', 'yes');
-                }, 8000);
-            }
-
-            // Click icon → open popup
             trigger.addEventListener('click', function (e) {
                 e.preventDefault();
                 popup.classList.remove('hidden');
             });
 
             // Close popup
-            close.addEventListener('click', function () {
-                popup.classList.add('hidden');
-            });
+            if (close) {
+                close.addEventListener('click', function () {
+                    popup.classList.add('hidden');
+                });
+            }
         });
     </script>
 
