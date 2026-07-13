@@ -232,6 +232,20 @@
             cursor: pointer;
         }
 
+        @media (hover: none), (max-width: 767.98px) {
+            .product-card:not(.product-list) .product-button-group,
+            .product-card:not(.product-list):hover .product-button-group {
+                bottom: -15px !important;
+                opacity: 0 !important;
+                visibility: hidden !important;
+                pointer-events: none !important;
+            }
+
+            .product-card:not(.product-list):hover .product-thumb > img {
+                transform: none;
+            }
+        }
+
         .whatsapp-float {
             position: fixed;
             bottom: 20px;
