@@ -808,6 +808,11 @@
                 backdrop-filter: blur(2px);
             }
 
+            .vehicle-picker-backdrop[hidden],
+            .wa-popup[hidden] {
+                display: none !important;
+            }
+
             .vehicle-picker-backdrop.is-open {
                 display: flex;
             }
