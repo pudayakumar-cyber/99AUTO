@@ -881,7 +881,9 @@
 
                 .site-header .search-box-wrap {
                     width: 100%;
+                    max-width: 100%;
                     padding-top: 0;
+                    overflow: hidden;
                 }
 
                 /* Keep car + keyword on one row (responsive.css handles layout) */
@@ -889,6 +891,8 @@
                     flex-direction: row;
                     align-items: stretch;
                     gap: 8px;
+                    width: 100%;
+                    min-width: 0;
                 }
 
                 .site-header .vehicle-picker-trigger {
@@ -921,6 +925,11 @@
                     flex: 1 1 auto;
                 }
 
+                .site-header .header-keyword-search {
+                    min-width: 0;
+                    flex: 1 1 auto;
+                }
+
                 .vehicle-summary {
                     width: 100%;
                     margin-top: 8px;
@@ -935,6 +944,12 @@
                     bottom: 12px;
                     padding: 12px 14px;
                     border-radius: 12px;
+                }
+
+                html,
+                body {
+                    max-width: 100%;
+                    overflow-x: hidden;
                 }
 
                 body {
@@ -1104,6 +1119,7 @@
 
                 body.mobile-cart-open {
                     overflow: hidden;
+                    overscroll-behavior: contain;
                 }
 
                 body.mobile-cart-open .site-header {
@@ -1124,10 +1140,13 @@
                     left: auto;
                     z-index: 1070;
                     display: block !important;
-                    width: min(88vw, 380px);
+                    box-sizing: border-box;
+                    width: min(84vw, 380px);
+                    max-width: calc(100vw - 44px);
                     height: calc(100vh - 128px);
                     max-height: calc(100vh - 128px);
                     padding: 22px 18px 22px !important;
+                    overflow-x: hidden;
                     overflow-y: auto;
                     background: #fff;
                     border: 0;
@@ -1140,6 +1159,45 @@
                     transition: transform 0.26s ease;
                 }
 
+                body > .cart-dropdown.mobile-cart-drawer .entry {
+                    display: grid;
+                    grid-template-columns: 64px minmax(0, 1fr) 24px;
+                    gap: 12px;
+                    align-items: flex-start;
+                }
+
+                body > .cart-dropdown.mobile-cart-drawer .entry-thumb,
+                body > .cart-dropdown.mobile-cart-drawer .entry-thumb img {
+                    width: 64px;
+                    max-width: 64px;
+                }
+
+                body > .cart-dropdown.mobile-cart-drawer .entry-content,
+                body > .cart-dropdown.mobile-cart-drawer .entry-title,
+                body > .cart-dropdown.mobile-cart-drawer .entry-title a,
+                body > .cart-dropdown.mobile-cart-drawer .entry-meta {
+                    min-width: 0;
+                    max-width: 100%;
+                    overflow-wrap: anywhere;
+                    white-space: normal;
+                }
+
+                body > .cart-dropdown.mobile-cart-drawer .d-flex.justify-content-between {
+                    gap: 14px;
+                    align-items: center;
+                }
+
+                body > .cart-dropdown.mobile-cart-drawer .d-flex.justify-content-between > .w-50 {
+                    width: auto !important;
+                    flex: 1 1 0;
+                    min-width: 0;
+                }
+
+                body > .cart-dropdown.mobile-cart-drawer .btn {
+                    width: 100%;
+                    white-space: nowrap;
+                }
+
                 .site-header .toolbar .cart-toolbar-item.is-cart-open .cart-dropdown,
                 body.mobile-cart-open > .cart-dropdown.mobile-cart-drawer {
                     pointer-events: auto;
@@ -1149,7 +1207,7 @@
                 .mobile-cart-drawer-close {
                     position: fixed;
                     top: 18px;
-                    right: 18px;
+                    right: max(12px, env(safe-area-inset-right));
                     z-index: 1080;
                     display: none !important;
                     width: 42px;
