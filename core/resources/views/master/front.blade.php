@@ -244,6 +244,8 @@
             .product-card:not(.product-list):hover .product-thumb > img {
                 transform: none;
             }
+        }
+
         a,
         button,
         [role="button"],
