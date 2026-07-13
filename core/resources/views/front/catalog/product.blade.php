@@ -64,20 +64,25 @@
 
         return url('/storage/images/' . $filename);
     };
+
+    $primaryProductImageUrl = $resolveProductImageUrl($item->photo);
+    $primaryProductImageFallbackUrl = $resolveProductImageFallbackUrl($item->photo);
 @endphp
 
 
 @section('meta')
+    <link rel="preload" as="image" href="{{ $primaryProductImageUrl }}" fetchpriority="high">
+
     <meta name="tile" content="{{ $item->title }}">
     <meta name="keywords" content="{{ $item->meta_keywords }}">
     <meta name="description" content="{{ $item->meta_description }}">
 
     <meta name="twitter:title" content="{{ $item->title }}">
-    <meta name="twitter:image" content="{{ $resolveProductImageUrl($item->photo) }}">
+    <meta name="twitter:image" content="{{ $primaryProductImageUrl }}">
     <meta name="twitter:description" content="{{ $item->meta_description }}">
 
     <meta name="og:title" content="{{ $item->title }}">
-    <meta name="og:image" content="{{ $resolveProductImageUrl($item->photo) }}">
+    <meta name="og:image" content="{{ $primaryProductImageUrl }}">
     <meta name="og:description" content="{{ $item->meta_description }}">
 
 @endsection
@@ -145,6 +150,12 @@
         }
         .pa-fitment-status-top {
             margin: 0.35rem 0 0.85rem;
+        }
+
+        .product-gallery .product-details-slider .item img {
+            aspect-ratio: 1 / 1;
+            object-fit: contain;
+            background: #fff;
         }
 
        
@@ -215,14 +226,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     <div class="product-thumbnails insize">
                         <div class="product-details-slider owl-carousel">
-                            <div class="item"><img src="{{ $resolveProductImageUrl($item->photo) }}"
-                                    onerror="if(!this.dataset.fallbackDone){this.dataset.fallbackDone=1;this.src='{{ $resolveProductImageFallbackUrl($item->photo) }}';}"
-                                    alt="{{ $displayProductName }}" />
+                            <div class="item"><img src="{{ $primaryProductImageUrl }}"
+                                    onerror="if(!this.dataset.fallbackDone){this.dataset.fallbackDone=1;this.src='{{ $primaryProductImageFallbackUrl }}';}"
+                                    alt="{{ $displayProductName }}"
+                                    width="640"
+                                    height="640"
+                                    loading="eager"
+                                    fetchpriority="high"
+                                    decoding="async" />
                             </div>
                             @foreach ($galleries as $key => $gallery)
                                 <div class="item"><img src="{{ $resolveProductImageUrl($gallery->photo) }}"
                                         onerror="if(!this.dataset.fallbackDone){this.dataset.fallbackDone=1;this.src='{{ $resolveProductImageFallbackUrl($gallery->photo) }}';}"
-                                        alt="{{ $displayProductName }}" /></div>
+                                        alt="{{ $displayProductName }}"
+                                        width="640"
+                                        height="640"
+                                        loading="lazy"
+                                        decoding="async" /></div>
                             @endforeach
                         </div>
                     </div>
