@@ -24,7 +24,7 @@
         return url('/core/public/storage/images/' . $filename);
     };
 
-    $cartSession = Session::has('cart') ? Session::get('cart') : [];
+    $cartSession = Session::has('cart') && is_array(Session::get('cart')) ? Session::get('cart') : [];
     $itemIds = [];
     foreach ($cartSession as $key => $line) {
         $itemId = \PriceHelper::GetItemId($key);
@@ -32,10 +32,12 @@
             $itemIds[] = $itemId;
         }
     }
-    $cartDbItems = \App\Models\Item::with(['category', 'subcategory', 'childcategory', 'brand'])->whereIn('id', $itemIds)->get()->keyBy('id');
+    $cartDbItems = count($itemIds)
+        ? \App\Models\Item::with(['category', 'subcategory', 'childcategory', 'brand'])->whereIn('id', $itemIds)->get()->keyBy('id')
+        : collect();
 @endphp
-@if (Session::has('cart'))
-@foreach (Session::get('cart') as $key => $cart)
+@if (count($cartSession) > 0)
+@foreach ($cartSession as $key => $cart)
 @php
     $itemId = \PriceHelper::GetItemId($key);
     $dbItem = $cartDbItems->get($itemId);
@@ -54,17 +56,18 @@
     }
     $itemVariant = implode(', ', $attributeNames);
 
-    $grandSubtotal += ($cart['main_price'] + $cart['attribute_price']) * $cart['qty'];
+    $cartAttributePrice = (float)($cart['attribute_price'] ?? 0);
+    $grandSubtotal += ($cartPrice + $cartAttributePrice) * $cartQty;
 @endphp
 <div class="entry">
-  <div class="entry-thumb"><a href="{{route('front.product',$cart['slug'])}}"><img src="{{ $resolveCartImageUrl($cart['photo'] ?? '') }}" alt="{{ $cart['name'] }}"></a></div>
+  <div class="entry-thumb"><a href="{{route('front.product',$cart['slug']) . '?item_id=' . $itemId}}"><img src="{{ $resolveCartImageUrl($cart['photo'] ?? '') }}" alt="{{ $cart['name'] }}"></a></div>
   <div class="entry-content">
-    <h4 class="entry-title"><a href="{{route('front.product',$cart['slug'])}}">
+    <h4 class="entry-title"><a href="{{route('front.product',$cart['slug']) . '?item_id=' . $itemId}}">
         {{ Str::limit($cart['name'], 45) }}
     </a></h4>
-    <span class="entry-meta">{{$cart['qty']}} x {{PriceHelper::setCurrencyPrice($cart['main_price'])}}</span>
-    @foreach ($cart['attribute']['option_name'] as $optionkey => $option_name)
-    <span class="att"><em>{{$cart['attribute']['names'][$optionkey]}}:</em> {{$option_name}} ({{PriceHelper::setCurrencyPrice($cart['attribute']['option_price'][$optionkey])}})</span>
+    <span class="entry-meta">{{$cartQty}} x {{PriceHelper::setCurrencyPrice($cartPrice)}}</span>
+    @foreach (($cart['attribute']['option_name'] ?? []) as $optionkey => $option_name)
+    <span class="att"><em>{{ $cart['attribute']['names'][$optionkey] ?? '' }}:</em> {{$option_name}} ({{PriceHelper::setCurrencyPrice($cart['attribute']['option_price'][$optionkey] ?? 0)}})</span>
     @endforeach
 
  </div>
@@ -90,7 +93,11 @@
 <div class="d-flex justify-content-between">
 <div class="w-50 d-block"><a class="btn btn-primary btn-sm  mb-0" href="{{route('front.cart')}}"><span>{{__('Cart')}}</span></a></div>
 <div class="w-50 d-block text-end"><a class="btn btn-primary btn-sm  mb-0" href="{{route('front.checkout.billing')}}"><span>{{__('Checkout')}}</span></a></div>
-@else
-{{__('Cart empty')}}
-  @endif
 </div>
+@else
+<div class="cart-empty-state text-center py-4">
+    <div class="cart-empty-icon mb-2"><i class="icon-shopping-cart"></i></div>
+    <p class="mb-2 text-muted">{{ __('Your cart is empty.') }}</p>
+    <a class="btn btn-primary btn-sm" href="{{ route('front.catalog') }}"><span>{{ __('Start Shopping') }}</span></a>
+</div>
+@endif

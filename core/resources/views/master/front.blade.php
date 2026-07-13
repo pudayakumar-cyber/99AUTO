@@ -846,6 +846,23 @@
                 display: none;
             }
 
+            .cart-empty-state {
+                color: #555;
+            }
+
+            .cart-empty-state .cart-empty-icon {
+                width: 48px;
+                height: 48px;
+                margin: 0 auto;
+                border-radius: 50%;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                background: rgba(222, 24, 33, 0.08);
+                color: #de1821;
+                font-size: 22px;
+            }
+
 
 
 
