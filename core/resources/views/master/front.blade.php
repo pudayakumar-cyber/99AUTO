@@ -2058,7 +2058,7 @@ body_theme4 @endif
     <div id="mobileCartBackdrop" class="mobile-cart-backdrop" aria-hidden="true"></div>
 
     <!-- Vehicle Search modal (YMM) — desktop: centered; mobile: bottom sheet style -->
-    <div id="vehiclePickerBackdrop" class="vehicle-picker-backdrop" aria-hidden="true">
+    <div id="vehiclePickerBackdrop" class="vehicle-picker-backdrop" aria-hidden="true" hidden>
         <div id="vehiclePickerModal" class="vehicle-picker-modal" role="dialog" aria-modal="true"
             aria-labelledby="vehiclePickerTitle">
             <div class="vehicle-picker-head">
@@ -2507,7 +2507,7 @@ body_theme4 @endif
         </script>
     @endif
     <!-- WhatsApp Popup -->
-    <div id="wa-popup" class="wa-popup hidden">
+    <div id="wa-popup" class="wa-popup hidden" hidden>
         <div class="wa-header">
             <strong>99 Auto Parts Support</strong>
             <span id="wa-close">×</span>
@@ -2549,6 +2549,7 @@ body_theme4 @endif
 
             trigger.addEventListener('click', function (e) {
                 e.preventDefault();
+                popup.hidden = false;
                 popup.classList.remove('hidden');
             });
 
@@ -2556,6 +2557,7 @@ body_theme4 @endif
             if (close) {
                 close.addEventListener('click', function () {
                     popup.classList.add('hidden');
+                    popup.hidden = true;
                 });
             }
         });
@@ -2910,10 +2912,19 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function setPanelState(isOpen) {
+        if (isOpen) {
+            backdrop.hidden = false;
+        }
+
         backdrop.classList.toggle('is-open', isOpen);
         document.body.classList.toggle('vehicle-picker-open', isOpen);
         toggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
         backdrop.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+
+        if (!isOpen) {
+            backdrop.hidden = true;
+        }
+
         if (hintEl) {
             hintEl.classList.remove('is-visible');
             hintEl.textContent = '';
