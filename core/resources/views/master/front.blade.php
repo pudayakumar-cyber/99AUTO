@@ -244,6 +244,8 @@
             .product-card:not(.product-list):hover .product-thumb > img {
                 transform: none;
             }
+        }
+
         a,
         button,
         [role="button"],
@@ -806,6 +808,11 @@
                 background: rgba(0, 0, 0, 0.45);
                 -webkit-backdrop-filter: blur(2px);
                 backdrop-filter: blur(2px);
+            }
+
+            .vehicle-picker-backdrop[hidden],
+            .wa-popup[hidden] {
+                display: none !important;
             }
 
             .vehicle-picker-backdrop.is-open {
