@@ -2060,11 +2060,7 @@ body_theme4 @endif
     <!-- Backdrop-->
     <div class="site-backdrop"></div>
 
-    <!-- Cookie alert dialog  -->
-    @if ($setting->is_cookie == 1)
-        @include('cookie-consent::index')
-    @endif
-    <!-- Cookie alert dialog  -->
+    {{-- Cookie consent is injected globally by Spatie's CookieConsentMiddleware. --}}
 
 
     @php
