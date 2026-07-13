@@ -244,6 +244,72 @@
             .product-card:not(.product-list):hover .product-thumb > img {
                 transform: none;
             }
+        a,
+        button,
+        [role="button"],
+        .product-card,
+        .category_search,
+        .subcategory,
+        .childcategory,
+        .brand-select,
+        .product-button,
+        .toolbar-item > a {
+            -webkit-tap-highlight-color: rgba(222, 24, 33, 0.18);
+            touch-action: manipulation;
+        }
+
+        a:focus-visible,
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible,
+        textarea:focus-visible,
+        [role="button"]:focus-visible,
+        .product-card:focus-within {
+            outline: 3px solid rgba(222, 24, 33, 0.45);
+            outline-offset: 3px;
+        }
+
+        .product-button,
+        .toolbar-item > a,
+        .category_search,
+        .subcategory,
+        .childcategory,
+        .brand-select + label,
+        #quick_filter a {
+            transition: color 0.18s ease, background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+        }
+
+        .product-button:active,
+        .toolbar-item > a:active,
+        .category_search:active,
+        .subcategory:active,
+        .childcategory:active,
+        #quick_filter a:active {
+            transform: scale(0.97);
+        }
+
+        .widget-categories a,
+        #quick_filter a {
+            display: inline-flex;
+            align-items: center;
+            min-height: 36px;
+        }
+
+        .widget-categories a:hover,
+        .widget-categories a:focus-visible,
+        #quick_filter a:hover,
+        #quick_filter a:focus-visible {
+            color: #de1821;
+            text-decoration: none;
+        }
+
+        .btn,
+        .product-button,
+        .vehicle-picker-trigger,
+        .mobile-cart-toggle,
+        .mobile-menu-toggle > a,
+        .mobile-category-toggle > a {
+            min-height: 44px;
         }
 
         .whatsapp-float {
@@ -628,6 +694,50 @@
                 height: 38px;
             }
 
+            @media (min-width: 768px) {
+                .site-header .topbar .container > .row > .col-lg-12 > .d-flex {
+                    display: flex !important;
+                    flex-wrap: nowrap !important;
+                    gap: 16px;
+                    width: 100%;
+                }
+
+                .site-header .site-branding {
+                    flex: 0 0 auto;
+                }
+
+                .site-header .search-box-wrap {
+                    flex: 1 1 auto;
+                    min-width: 0;
+                    max-width: none;
+                }
+
+                .site-header .toolbar {
+                    display: flex !important;
+                    flex: 0 0 auto;
+                    align-items: stretch;
+                    justify-content: flex-end;
+                    width: auto;
+                    min-width: 294px;
+                    white-space: nowrap;
+                }
+
+                .site-header .toolbar .toolbar-item {
+                    flex: 0 0 88px;
+                    width: 88px;
+                    min-height: 58px;
+                    margin-left: 10px;
+                }
+
+                .site-header .toolbar .toolbar-item > a {
+                    min-height: 58px;
+                }
+
+                .site-header .toolbar .toolbar-item.visible-on-mobile {
+                    display: none !important;
+                }
+            }
+
             .vehicle-search {
                 display: flex;
                 align-items: center;
@@ -860,6 +970,23 @@
                 display: none;
             }
 
+            .cart-empty-state {
+                color: #555;
+            }
+
+            .cart-empty-state .cart-empty-icon {
+                width: 48px;
+                height: 48px;
+                margin: 0 auto;
+                border-radius: 50%;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                background: rgba(222, 24, 33, 0.08);
+                color: #de1821;
+                font-size: 22px;
+            }
+
 
 
 
@@ -895,7 +1022,9 @@
 
                 .site-header .search-box-wrap {
                     width: 100%;
+                    max-width: 100%;
                     padding-top: 0;
+                    overflow: hidden;
                 }
 
                 /* Keep car + keyword on one row (responsive.css handles layout) */
@@ -903,6 +1032,8 @@
                     flex-direction: row;
                     align-items: stretch;
                     gap: 8px;
+                    width: 100%;
+                    min-width: 0;
                 }
 
                 .site-header .vehicle-picker-trigger {
@@ -935,6 +1066,11 @@
                     flex: 1 1 auto;
                 }
 
+                .site-header .header-keyword-search {
+                    min-width: 0;
+                    flex: 1 1 auto;
+                }
+
                 .vehicle-summary {
                     width: 100%;
                     margin-top: 8px;
@@ -949,6 +1085,12 @@
                     bottom: 12px;
                     padding: 12px 14px;
                     border-radius: 12px;
+                }
+
+                html,
+                body {
+                    max-width: 100%;
+                    overflow-x: hidden;
                 }
 
                 body {
@@ -1005,10 +1147,10 @@
                     display: flex !important;
                     width: 100%;
                     justify-content: space-between;
-                    gap: 18px;
+                    gap: 10px;
                     margin-top: 7px;
-                    padding: 9px 44px 11px;
-                    min-height: 72px;
+                    padding: 10px 26px 13px;
+                    min-height: 78px;
                     align-items: center;
                     border: 0;
                     background: #fff;
@@ -1051,15 +1193,17 @@
 
                 .site-header .toolbar .toolbar-item > a {
                     width: 100%;
+                    min-height: 54px;
+                    border-radius: 12px;
                 }
 
                 .site-header .toolbar .toolbar-item > a > div {
-                    min-height: 48px;
+                    min-height: 54px;
                     display: inline-flex;
                     flex-direction: column;
                     align-items: center;
                     justify-content: center;
-                    gap: 3px;
+                    gap: 5px;
                     color: #222;
                 }
 
@@ -1072,8 +1216,14 @@
                 }
 
                 .site-header .toolbar .toolbar-item > a > div i {
-                    font-size: 25px;
+                    font-size: 26px;
                     line-height: 1;
+                }
+
+                .site-header .toolbar .toolbar-item > a:hover,
+                .site-header .toolbar .toolbar-item > a:focus-visible,
+                .site-header .toolbar .toolbar-item > a:active {
+                    background: rgba(222, 24, 33, 0.07);
                 }
 
                 .page-title {
@@ -1090,8 +1240,12 @@
                 }
 
                 .site-header .toolbar .cart-icon .count-label {
-                    top: -7px;
-                    right: -9px;
+                    top: -8px;
+                    right: -10px;
+                    min-width: 19px;
+                    height: 19px;
+                    line-height: 19px;
+                    font-size: 11px;
                 }
 
                 .site-header .toolbar .cart-icon {
@@ -1118,6 +1272,7 @@
 
                 body.mobile-cart-open {
                     overflow: hidden;
+                    overscroll-behavior: contain;
                 }
 
                 body.mobile-cart-open .site-header {
@@ -1138,10 +1293,13 @@
                     left: auto;
                     z-index: 1070;
                     display: block !important;
-                    width: min(88vw, 380px);
+                    box-sizing: border-box;
+                    width: min(84vw, 380px);
+                    max-width: calc(100vw - 44px);
                     height: calc(100vh - 128px);
                     max-height: calc(100vh - 128px);
                     padding: 22px 18px 22px !important;
+                    overflow-x: hidden;
                     overflow-y: auto;
                     background: #fff;
                     border: 0;
@@ -1154,6 +1312,45 @@
                     transition: transform 0.26s ease;
                 }
 
+                body > .cart-dropdown.mobile-cart-drawer .entry {
+                    display: grid;
+                    grid-template-columns: 64px minmax(0, 1fr) 24px;
+                    gap: 12px;
+                    align-items: flex-start;
+                }
+
+                body > .cart-dropdown.mobile-cart-drawer .entry-thumb,
+                body > .cart-dropdown.mobile-cart-drawer .entry-thumb img {
+                    width: 64px;
+                    max-width: 64px;
+                }
+
+                body > .cart-dropdown.mobile-cart-drawer .entry-content,
+                body > .cart-dropdown.mobile-cart-drawer .entry-title,
+                body > .cart-dropdown.mobile-cart-drawer .entry-title a,
+                body > .cart-dropdown.mobile-cart-drawer .entry-meta {
+                    min-width: 0;
+                    max-width: 100%;
+                    overflow-wrap: anywhere;
+                    white-space: normal;
+                }
+
+                body > .cart-dropdown.mobile-cart-drawer .d-flex.justify-content-between {
+                    gap: 14px;
+                    align-items: center;
+                }
+
+                body > .cart-dropdown.mobile-cart-drawer .d-flex.justify-content-between > .w-50 {
+                    width: auto !important;
+                    flex: 1 1 0;
+                    min-width: 0;
+                }
+
+                body > .cart-dropdown.mobile-cart-drawer .btn {
+                    width: 100%;
+                    white-space: nowrap;
+                }
+
                 .site-header .toolbar .cart-toolbar-item.is-cart-open .cart-dropdown,
                 body.mobile-cart-open > .cart-dropdown.mobile-cart-drawer {
                     pointer-events: auto;
@@ -1163,7 +1360,7 @@
                 .mobile-cart-drawer-close {
                     position: fixed;
                     top: 18px;
-                    right: 18px;
+                    right: max(12px, env(safe-area-inset-right));
                     z-index: 1080;
                     display: none !important;
                     width: 42px;
