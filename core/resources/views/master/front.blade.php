@@ -232,6 +232,74 @@
             cursor: pointer;
         }
 
+        a,
+        button,
+        [role="button"],
+        .product-card,
+        .category_search,
+        .subcategory,
+        .childcategory,
+        .brand-select,
+        .product-button,
+        .toolbar-item > a {
+            -webkit-tap-highlight-color: rgba(222, 24, 33, 0.18);
+            touch-action: manipulation;
+        }
+
+        a:focus-visible,
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible,
+        textarea:focus-visible,
+        [role="button"]:focus-visible,
+        .product-card:focus-within {
+            outline: 3px solid rgba(222, 24, 33, 0.45);
+            outline-offset: 3px;
+        }
+
+        .product-button,
+        .toolbar-item > a,
+        .category_search,
+        .subcategory,
+        .childcategory,
+        .brand-select + label,
+        #quick_filter a {
+            transition: color 0.18s ease, background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+        }
+
+        .product-button:active,
+        .toolbar-item > a:active,
+        .category_search:active,
+        .subcategory:active,
+        .childcategory:active,
+        #quick_filter a:active {
+            transform: scale(0.97);
+        }
+
+        .widget-categories a,
+        #quick_filter a {
+            display: inline-flex;
+            align-items: center;
+            min-height: 36px;
+        }
+
+        .widget-categories a:hover,
+        .widget-categories a:focus-visible,
+        #quick_filter a:hover,
+        #quick_filter a:focus-visible {
+            color: #de1821;
+            text-decoration: none;
+        }
+
+        .btn,
+        .product-button,
+        .vehicle-picker-trigger,
+        .mobile-cart-toggle,
+        .mobile-menu-toggle > a,
+        .mobile-category-toggle > a {
+            min-height: 44px;
+        }
+
         .whatsapp-float {
             position: fixed;
             bottom: 20px;
@@ -1008,10 +1076,10 @@
                     display: flex !important;
                     width: 100%;
                     justify-content: space-between;
-                    gap: 18px;
+                    gap: 10px;
                     margin-top: 7px;
-                    padding: 9px 44px 11px;
-                    min-height: 72px;
+                    padding: 10px 26px 13px;
+                    min-height: 78px;
                     align-items: center;
                     border: 0;
                     background: #fff;
@@ -1054,15 +1122,17 @@
 
                 .site-header .toolbar .toolbar-item > a {
                     width: 100%;
+                    min-height: 54px;
+                    border-radius: 12px;
                 }
 
                 .site-header .toolbar .toolbar-item > a > div {
-                    min-height: 48px;
+                    min-height: 54px;
                     display: inline-flex;
                     flex-direction: column;
                     align-items: center;
                     justify-content: center;
-                    gap: 3px;
+                    gap: 5px;
                     color: #222;
                 }
 
@@ -1075,8 +1145,14 @@
                 }
 
                 .site-header .toolbar .toolbar-item > a > div i {
-                    font-size: 25px;
+                    font-size: 26px;
                     line-height: 1;
+                }
+
+                .site-header .toolbar .toolbar-item > a:hover,
+                .site-header .toolbar .toolbar-item > a:focus-visible,
+                .site-header .toolbar .toolbar-item > a:active {
+                    background: rgba(222, 24, 33, 0.07);
                 }
 
                 .page-title {
@@ -1093,8 +1169,12 @@
                 }
 
                 .site-header .toolbar .cart-icon .count-label {
-                    top: -7px;
-                    right: -9px;
+                    top: -8px;
+                    right: -10px;
+                    min-width: 19px;
+                    height: 19px;
+                    line-height: 19px;
+                    font-size: 11px;
                 }
 
                 .site-header .toolbar .cart-icon {
