@@ -67,6 +67,9 @@
 
     $primaryProductImageUrl = $resolveProductImageUrl($item->photo);
     $primaryProductImageFallbackUrl = $resolveProductImageFallbackUrl($item->photo);
+    $productShareUrl = request()->fullUrl();
+    $encodedProductShareUrl = rawurlencode($productShareUrl);
+    $encodedProductShareTitle = rawurlencode($displayProductName);
 @endphp
 
 
@@ -158,7 +161,28 @@
             background: #fff;
         }
 
-       
+        .product-gallery .product-details-slider:not(.owl-loaded) {
+            display: block;
+            min-height: 360px;
+        }
+
+        .product-gallery .product-details-slider:not(.owl-loaded) .item:not(:first-child) {
+            display: none;
+        }
+
+        .qtySelector .decreaseQty,
+        .qtySelector .increaseQty {
+            border: 0;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        .pa-share-link i,
+        .product-quantity i,
+        .p-action-button i,
+        .p-d-f-area i {
+            pointer-events: none;
+        }
     </style>
 @endsection
 
@@ -314,9 +338,10 @@ document.addEventListener('DOMContentLoaded', function () {
                             <div class="col-sm-12">
                                 @if ($item->item_type == 'normal')
                                     <div class="qtySelector product-quantity">
-                                        <span style="padding:10px" class="decreaseQty subclick"><i class="fas fa-minus "></i></span>
-                                        <input type="text" class="qtyValue cart-amount" value="1" id="product-quantity">
-                                        <span style="padding:10px" class="increaseQty addclick"><i class="fas fa-plus"></i></span>
+                                        <button type="button" style="padding:10px" class="decreaseQty subclick" aria-label="{{ __('Decrease quantity') }}"><i class="fas fa-minus" aria-hidden="true"></i></button>
+                                        <label class="sr-only" for="product-quantity">{{ __('Quantity') }}</label>
+                                        <input type="text" class="qtyValue cart-amount" value="1" id="product-quantity" inputmode="numeric" aria-label="{{ __('Quantity') }}">
+                                        <button type="button" style="padding:10px" class="increaseQty addclick" aria-label="{{ __('Increase quantity') }}"><i class="fas fa-plus" aria-hidden="true"></i></button>
                                         <input type="hidden" value="3333" id="current_stock">
                                     </div>
                                 @endif
@@ -329,18 +354,18 @@ document.addEventListener('DOMContentLoaded', function () {
                                                 data-id="{{ $item->id ?? $item->prod_number }}"
                                                 data-name="{{ $item->name }}"
                                                 data-price="{{ (float) ($item->discount_price ?? $item->previous_price ?? 0) }}">
-                                                <i class="icon-bag"></i><span>{{ __('Add to Cart') }}</span>
+                                                <i class="icon-bag" aria-hidden="true"></i><span>{{ __('Add to Cart') }}</span>
                                             </button>
-                                            <button class="btn btn-primary m-0" id="but_to_cart"><i
-                                                    class="icon-bag"></i><span>{{ __('Buy Now') }}</span></button>
+                                            <button class="btn btn-primary m-0" id="but_to_cart" type="button"><i
+                                                    class="icon-bag" aria-hidden="true"></i><span>{{ __('Buy Now') }}</span></button>
                                         @else
-                                            <button class="btn btn-primary m-0"><i
-                                                    class="icon-bag"></i><span>{{ __('Out of stock') }}</span></button>
+                                            <button class="btn btn-primary m-0" type="button" disabled><i
+                                                    class="icon-bag" aria-hidden="true"></i><span>{{ __('Out of stock') }}</span></button>
                                         @endif
                                     @else
                                         <a href="{{ $item->affiliate_link }}" target="_blank"
                                             class="btn btn-primary m-0"><span><i
-                                                    class="icon-bag"></i>{{ __('Buy Now') }}</span></a>
+                                                    class="icon-bag" aria-hidden="true"></i>{{ __('Buy Now') }}</span></a>
                                     @endif
                                 </div>
 
@@ -393,7 +418,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 <div class="left">
                                     <a class="btn btn-primary btn-sm wishlist_store wishlist_text"
                                         href="{{ route('user.wishlist.store', $item->id) }}"><span><i
-                                                class="icon-heart"></i></span>
+                                                class="icon-heart" aria-hidden="true"></i></span>
                                         @if (Auth::check() &&
                                                 App\Models\Wishlist::where('user_id', Auth::user()->id)->where('item_id', $item->id)->exists())
                                             <span>{{ __('Added To Wishlist') }}</span>
@@ -402,28 +427,27 @@ document.addEventListener('DOMContentLoaded', function () {
                                             <span class="wishlist2 d-none">{{ __('Added To Wishlist') }}</span>
                                         @endif
                                     </a>
-                                    <button class="btn btn-primary btn-sm  product_compare"
+                                    <button class="btn btn-primary btn-sm  product_compare" type="button"
                                         data-target="{{ route('fornt.compare.product', $item->id) }}"><span><i
-                                                class="icon-repeat"></i>{{ __('Compare') }}</span></button>
+                                                class="icon-repeat" aria-hidden="true"></i>{{ __('Compare') }}</span></button>
                                 </div>
 
                                 <div class="d-flex align-items-center">
                                     <span class="text-muted mr-1">{{ __('Share') }}: </span>
-                                    <div class="d-inline-block a2a_kit">
-                                        <a class="facebook  a2a_button_facebook" href="">
-                                            <span><i style="line-height: 2;" class="fab fa-facebook-f"></i></span>
+                                    <div class="d-inline-block">
+                                        <a class="facebook pa-share-link" href="https://www.facebook.com/sharer/sharer.php?u={{ $encodedProductShareUrl }}" target="_blank" rel="noopener noreferrer" aria-label="{{ __('Share on Facebook') }}">
+                                            <span><i style="line-height: 2;" class="fab fa-facebook-f" aria-hidden="true"></i></span>
                                         </a>
-                                        <a class="twitter  a2a_button_twitter" href="">
-                                            <span><i style="line-height: 2;" class="fab fa-twitter"></i></span>
+                                        <a class="twitter pa-share-link" href="https://twitter.com/intent/tweet?url={{ $encodedProductShareUrl }}&text={{ $encodedProductShareTitle }}" target="_blank" rel="noopener noreferrer" aria-label="{{ __('Share on Twitter') }}">
+                                            <span><i style="line-height: 2;" class="fab fa-twitter" aria-hidden="true"></i></span>
                                         </a>
-                                        <a class="linkedin  a2a_button_linkedin" href="">
-                                            <span><i style="line-height: 2;" class="fab fa-linkedin-in"></i></span>
+                                        <a class="linkedin pa-share-link" href="https://www.linkedin.com/sharing/share-offsite/?url={{ $encodedProductShareUrl }}" target="_blank" rel="noopener noreferrer" aria-label="{{ __('Share on LinkedIn') }}">
+                                            <span><i style="line-height: 2;" class="fab fa-linkedin-in" aria-hidden="true"></i></span>
                                         </a>
-                                        <a class="pinterest   a2a_button_pinterest" href="">
-                                            <span><i style="line-height: 2;" class="fab fa-pinterest"></i></span>
+                                        <a class="pinterest pa-share-link" href="https://pinterest.com/pin/create/button/?url={{ $encodedProductShareUrl }}&description={{ $encodedProductShareTitle }}" target="_blank" rel="noopener noreferrer" aria-label="{{ __('Share on Pinterest') }}">
+                                            <span><i style="line-height: 2;" class="fab fa-pinterest" aria-hidden="true"></i></span>
                                         </a>
                                     </div>
-                                    <script async src="https://static.addtoany.com/menu/page.js"></script>
                                 </div>
 
                             </div>
@@ -696,8 +720,9 @@ document.addEventListener('DOMContentLoaded', function () {
                             <div class="progress margin-bottom-1x">
                                 <div class="progress-bar bg-warning" role="progressbar"
                                     style="width: {{ ((int) ($review_breakdown[5] ?? 0)) * 20 }}%; height: 2px;"
-                                    aria-valuenow="100"
-                                    aria-valuemin="{{ ((int) ($review_breakdown[5] ?? 0)) * 20 }}"
+                                    aria-label="{{ __('5 star reviews') }}"
+                                    aria-valuenow="{{ ((int) ($review_breakdown[5] ?? 0)) * 20 }}"
+                                    aria-valuemin="0"
                                     aria-valuemax="100"></div>
                             </div>
                             <label class="text-medium text-sm">4 {{ __('stars') }} <span class="text-muted">-
@@ -705,6 +730,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             <div class="progress margin-bottom-1x">
                                 <div class="progress-bar bg-warning" role="progressbar"
                                     style="width: {{ ((int) ($review_breakdown[4] ?? 0)) * 20 }}%; height: 2px;"
+                                    aria-label="{{ __('4 star reviews') }}"
                                     aria-valuenow="{{ ((int) ($review_breakdown[4] ?? 0)) * 20 }}"
                                     aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
@@ -713,6 +739,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             <div class="progress margin-bottom-1x">
                                 <div class="progress-bar bg-warning" role="progressbar"
                                     style="width: {{ ((int) ($review_breakdown[3] ?? 0)) * 20 }}%; height: 2px;"
+                                    aria-label="{{ __('3 star reviews') }}"
                                     aria-valuenow="{{ ((int) ($review_breakdown[3] ?? 0)) * 20 }}"
                                     aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
@@ -721,6 +748,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             <div class="progress margin-bottom-1x">
                                 <div class="progress-bar bg-warning" role="progressbar"
                                     style="width: {{ ((int) ($review_breakdown[2] ?? 0)) * 20 }}%; height: 2px;"
+                                    aria-label="{{ __('2 star reviews') }}"
                                     aria-valuenow="{{ ((int) ($review_breakdown[2] ?? 0)) * 20 }}"
                                     aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
@@ -729,8 +757,9 @@ document.addEventListener('DOMContentLoaded', function () {
                             <div class="progress mb-2">
                                 <div class="progress-bar bg-warning" role="progressbar"
                                     style="width: {{ ((int) ($review_breakdown[1] ?? 0)) * 20 }}%; height: 2px;"
-                                    aria-valuenow="0"
-                                    aria-valuemin="{{ ((int) ($review_breakdown[1] ?? 0)) * 20 }}"
+                                    aria-label="{{ __('1 star reviews') }}"
+                                    aria-valuenow="{{ ((int) ($review_breakdown[1] ?? 0)) * 20 }}"
+                                    aria-valuemin="0"
                                     aria-valuemax="100"></div>
                             </div>
                         </div>
@@ -801,14 +830,18 @@ document.addEventListener('DOMContentLoaded', function () {
                                     <div class="product-thumb">
                                         <img class="lazy"
                                             data-src="{{ $resolveProductImageUrl($related->thumbnail) }}"
-                                            alt="{{ $related->name }}">
+                                            alt="{{ $related->name }}"
+                                            width="300"
+                                            height="300"
+                                            loading="lazy"
+                                            decoding="async">
                                         <div class="product-button-group">
                                             <a class="product-button wishlist_store"
                                                 href="{{ route('user.wishlist.store', $related->id) }}"
-                                                title="{{ __('Wishlist') }}"><i class="icon-heart"></i></a>
+                                                title="{{ __('Wishlist') }}" aria-label="{{ __('Add :product to wishlist', ['product' => $related->name]) }}"><i class="icon-heart" aria-hidden="true"></i></a>
                                             <a class="product-button product_compare" href="javascript:;"
                                                 data-target="{{ route('fornt.compare.product', $related->id) }}"
-                                                title="{{ __('Compare') }}"><i class="icon-repeat"></i></a>
+                                                title="{{ __('Compare') }}" aria-label="{{ __('Compare :product', ['product' => $related->name]) }}"><i class="icon-repeat" aria-hidden="true"></i></a>
                                             @include('includes.item_footer', ['sitem' => $related])
                                         </div>
                                     </div>
