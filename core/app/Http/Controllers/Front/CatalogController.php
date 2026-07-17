@@ -19,6 +19,8 @@ use App\Models\ChieldCategory;
 use App\Models\Setting;
 use App\Models\Subcategory;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 
@@ -598,6 +600,11 @@ class CatalogController extends Controller
     private function getFitmentMatchedItemIds($itemsQuery, Request $request, $year, $make, $model): array
     {
         return Cache::remember($this->fitmentCacheKey($request), 600, function () use ($itemsQuery, $year, $make, $model) {
+            $indexedIds = $this->getIndexedFitmentMatchedItemIds($itemsQuery, $year, $make, $model);
+            if ($indexedIds !== null) {
+                return $indexedIds;
+            }
+
             $candidateQuery = clone $itemsQuery;
             $candidateQuery->setEagerLoads([]);
             $this->applyFitmentKeywordPrefilter($candidateQuery, $year, $make, $model);
@@ -611,12 +618,47 @@ class CatalogController extends Controller
         });
     }
 
+    private function getIndexedFitmentMatchedItemIds($itemsQuery, $year, $make, $model): ?array
+    {
+        if (! $this->itemFitmentsTableReady()) {
+            return null;
+        }
+
+        $baseItemQuery = clone $itemsQuery;
+        $baseItemQuery->setEagerLoads([]);
+        $baseItemQuery->getQuery()->orders = null;
+        $baseItemQuery->getQuery()->limit = null;
+        $baseItemQuery->getQuery()->offset = null;
+
+        $fitmentQuery = DB::table('item_fitments')
+            ->whereIn('item_id', $baseItemQuery->select('items.id'))
+            ->when($year, function ($query, $year) {
+                return $query->where('year', $this->normalizeFitmentToken($year));
+            })
+            ->when($make, function ($query, $make) {
+                return $query->where('make', $this->canonicalFitmentToken($make));
+            })
+            ->when($model, function ($query, $model) {
+                return $query->where('model', $this->canonicalFitmentToken($model));
+            })
+            ->distinct();
+
+        return $fitmentQuery->pluck('item_id')->all();
+    }
+
+    private function itemFitmentsTableReady(): bool
+    {
+        return Cache::remember('item_fitments_table_ready_v1', 300, function () {
+            return Schema::hasTable('item_fitments') && DB::table('item_fitments')->limit(1)->exists();
+        });
+    }
+
     private function fitmentCacheKey(Request $request): string
     {
         $params = $request->except(['page', 'catalog_chunk', 'catalog_chunk_size', 'view_check']);
         ksort($params);
 
-        return 'catalog_fitment_ids_v4_' . md5(json_encode($params));
+        return 'catalog_fitment_ids_v5_' . md5(json_encode($params));
     }
 
     private function applyFitmentKeywordPrefilter($query, $year, $make, $model): void
