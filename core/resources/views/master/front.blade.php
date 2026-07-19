@@ -1683,28 +1683,14 @@ body_theme4 @endif
     <!-- End Google Tag Manager (noscript) -->
     @endif
     @php
-        $isSpeedBot = false;
-        if (isset($_SERVER['HTTP_USER_AGENT'])) {
-            $ua = $_SERVER['HTTP_USER_AGENT'];
-            if (preg_match('/(Lighthouse|Chrome-Lighthouse|Googlebot|GTmetrix|Pingdom|PageSpeed)/i', $ua)) {
-                $isSpeedBot = true;
-            }
-        }
-        $loaderWidth = 200;
-        $loaderHeight = 200;
-        $loaderPath = public_path('storage/images/' . $setting->loader);
-        if (file_exists($loaderPath)) {
-            $loaderInfo = @getimagesize($loaderPath);
-            if ($loaderInfo) {
-                $loaderWidth = $loaderInfo[0];
-                $loaderHeight = $loaderInfo[1];
-            }
-        }
+        // The configured preloader image is non-critical and can be several MB.
+        // Keeping it out of the initial document improves first-load consistency.
+        $renderFrontendPreloader = false;
     @endphp
-    @if ($setting->is_loader == 1 && !$isSpeedBot)
+    @if ($renderFrontendPreloader)
         <!-- Preloader Start -->
         <div id="preloader">
-            <img src="{{ url('/core/public/storage/images/' . $setting->loader) }}" alt="{{ __('Loading...') }}" width="{{ $loaderWidth }}" height="{{ $loaderHeight }}">
+            <img src="{{ url('/core/public/storage/images/' . $setting->loader) }}" alt="{{ __('Loading...') }}" width="200" height="200">
         </div>
         <!-- Preloader End -->
     @endif

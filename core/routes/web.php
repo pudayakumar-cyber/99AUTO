@@ -7,6 +7,19 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Cache;
 
+Route::get('/storage/images/{filename}', function (string $filename) {
+    $filename = basename($filename);
+    $target = public_path('storage/images/' . $filename);
+
+    if ($filename !== '' && is_file($target)) {
+        return redirect(url('/core/public/storage/images/' . rawurlencode($filename)), 302)
+            ->header('Cache-Control', 'public, max-age=2592000');
+    }
+
+    return redirect(url('/core/public/storage/images/placeholder.png'), 302)
+        ->header('Cache-Control', 'public, max-age=2592000');
+})->where('filename', '.*');
+
 
 Route::group(['middleware' => ['adminlocalize', 'demo']], function () {
     Route::prefix('admin')->group(function () { 

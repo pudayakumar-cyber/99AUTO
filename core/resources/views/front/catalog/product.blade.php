@@ -42,27 +42,8 @@
     };
 
     $resolveProductImageFallbackUrl = function (?string $rawPath): string {
-        $rawPath = trim((string) $rawPath);
-        if ($rawPath === '') {
-            return url('/core/public/storage/images/placeholder.png');
-        }
-
-        $pathOnly = parse_url($rawPath, PHP_URL_PATH) ?? $rawPath;
-
-        // Fallback prefers the non-core public path (if your host serves it).
-        if (preg_match('~/storage/images/([^/?#]+)~i', (string) $pathOnly, $m)) {
-            return url('/storage/images/' . $m[1]);
-        }
-        if (preg_match('~/core/public/storage/images/([^/?#]+)~i', (string) $pathOnly, $m)) {
-            return url('/storage/images/' . $m[1]);
-        }
-
-        $filename = basename((string) $pathOnly);
-        if (trim($filename) === '') {
-            return url('/core/public/storage/images/placeholder.png');
-        }
-
-        return url('/storage/images/' . $filename);
+        // Avoid retrying /storage/images/... because missing files there hit Laravel 404 pages.
+        return url('/core/public/storage/images/placeholder.png');
     };
 
     $primaryProductImageUrl = $resolveProductImageUrl($item->photo);
