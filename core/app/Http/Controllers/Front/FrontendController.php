@@ -564,6 +564,13 @@ class FrontendController extends Controller
         }
 
         $item = $itemQuery->firstOrFail();
+        $galleries = $item->galleries;
+        $firstGalleryPhoto = optional($galleries->first())->photo;
+        if (trim((string) $item->photo) === '' && trim((string) $firstGalleryPhoto) !== '') {
+            $item->photo = $firstGalleryPhoto;
+            $item->thumbnail = $item->thumbnail ?: $firstGalleryPhoto;
+            $galleries = $galleries->slice(1)->values();
+        }
 
         $reviews = $item->reviews()
             ->with('user')
@@ -619,7 +626,7 @@ class FrontendController extends Controller
             'item'          => $item,
             'reviews'       => $reviews,
             'review_breakdown' => $reviewBreakdown,
-            'galleries'     => $item->galleries,
+            'galleries'     => $galleries,
             'video'         => $item->video ? end($video) : '',
             'sec_name'      => isset($item->specification_name) ? json_decode($item->specification_name, true) : [],
             'sec_details'   => isset($item->specification_description) ? json_decode($item->specification_description, true) : [],
