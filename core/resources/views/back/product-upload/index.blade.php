@@ -32,7 +32,7 @@
                     <div class="card-header bg-white border-bottom">
                         <h4 class="mb-0">
                             <i class="fas fa-cloud-upload-alt text-primary"></i>
-                            {{ __('Queue-based CSV import') }}
+                            {{ __('Queue-based product import') }}
                         </h4>
                     </div>
                     <div class="card-body">
@@ -52,10 +52,10 @@
                             @csrf
                             <div class="upload-box text-center p-4">
                                 <i class="fas fa-file-csv fa-3x text-primary mb-3"></i>
-                                <h5 class="mb-2">{{ __('Upload product CSV') }}</h5>
+                                <h5 class="mb-2">{{ __('Upload product CSV or XLSX') }}</h5>
                                 <p class="text-muted mb-4">{{ __('First row must be headers matching the column names above.') }}</p>
-                                <input type="file" name="file" class="form-control" accept=".csv,text/csv" required>
-                                <small class="text-muted d-block mt-2">CSV</small>
+                                <input type="file" name="file" class="form-control" accept=".csv,text/csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+                                <small class="text-muted d-block mt-2">CSV or XLSX</small>
                             </div>
                             <div class="text-center mt-4">
                                 <button type="submit" class="btn btn-primary px-4 py-2">
