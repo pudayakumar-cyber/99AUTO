@@ -250,10 +250,15 @@ class ItemCsvImporter
 
         $images = $this->collectImageUrls($data);
 
-        $photoPath = null;
-        if (! empty($images[0])) {
-            $photoPath = $this->downloadImage($images[0]);
+        $downloadedImages = [];
+        foreach ($images as $url) {
+            $downloadedImage = $this->downloadImage($url);
+            if ($downloadedImage) {
+                $downloadedImages[] = $downloadedImage;
+            }
         }
+
+        $photoPath = $downloadedImages[0] ?? null;
 
         $sortDetails = $this->firstValue($data, [
             'product features',
@@ -307,16 +312,13 @@ class ItemCsvImporter
             'updated_at' => now(),
         ]);
 
-        foreach (array_slice($images, 1) as $img) {
-            $galleryPath = $this->downloadImage($img);
-            if ($galleryPath) {
-                DB::table('galleries')->insert([
-                    'item_id' => $itemId,
-                    'photo' => $galleryPath,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
+        foreach (array_slice($downloadedImages, 1) as $galleryPath) {
+            DB::table('galleries')->insert([
+                'item_id' => $itemId,
+                'photo' => $galleryPath,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
         }
     }
 

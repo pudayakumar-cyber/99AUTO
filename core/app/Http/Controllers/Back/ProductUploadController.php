@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\ProductUpload;
 use App\Jobs\ProcessProductUploadJob;
+use App\Services\SpreadsheetCsvConverter;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class ProductUploadController extends Controller
 {
@@ -29,10 +31,10 @@ class ProductUploadController extends Controller
         return view('back.product-upload.index', compact('uploads', 'chunkJobs', 'batchRuns'));
     }
 
-    public function generate(Request $request)
+    public function generate(Request $request, SpreadsheetCsvConverter $converter)
     {
         $request->validate([
-            'file' => 'required|mimes:csv,txt'
+            'file' => 'required|mimes:csv,txt,xlsx'
         ]);
 
         $file = $request->file('file');
@@ -42,6 +44,25 @@ class ProductUploadController extends Controller
         $file->move(storage_path('app/uploads'), $filename);
 
         $path = 'uploads/'.$filename;
+        $extension = strtolower($file->getClientOriginalExtension());
+
+        if ($extension === 'xlsx') {
+            $csvFilename = pathinfo($filename, PATHINFO_FILENAME).'.csv';
+            $csvPath = 'uploads/'.$csvFilename;
+
+            try {
+                $converter->convertXlsxToCsv(
+                    storage_path('app/'.$path),
+                    storage_path('app/'.$csvPath)
+                );
+            } catch (Throwable $e) {
+                report($e);
+
+                return back()->withError(__('Unable to read the XLSX file. Please confirm the first worksheet contains product headers and try again.'));
+            }
+
+            $path = $csvPath;
+        }
 
         $upload = ProductUpload::create([
             'file_path' => $path,
