@@ -38,11 +38,11 @@
                     <div class="card-body">
                         <p class="text-muted small mb-3">
                             {{ __('Large files are processed in the background (queue). Ensure a worker is running:') }}
-                            <code>php artisan queue:work</code>
+                            <code>php artisan queue:work --queue=imports,default</code>
                         </p>
                         <p class="small mb-3">
                             <strong>{{ __('Required / common columns') }}:</strong>
-                            Title, PROD NUMBER, MOOG, Brand, Category, Images, ADJUSTED PRICE,
+                            Title, PROD NUMBER, MOOG, Brand, Category, Images, ADJUSTED PRICE, <strong>Stock</strong>,
                             <strong>Description</strong>, <strong>Product Features</strong>, <strong>Fitment Table</strong> (or <strong>YMM</strong> / <strong>YMM Rows</strong>)
                             — for vehicle search, use an HTML table (Year | Make | Model columns) or one row per line:
                             <code>2015,2016|Honda|Civic</code> (pipe), tab-separated, or 3-field CSV. Tables get class <code>pa-fitment-table</code> automatically.

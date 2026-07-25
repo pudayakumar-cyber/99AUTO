@@ -539,8 +539,12 @@ Route::get('/updater/finalize', 'Front\FrontendController@finalize');
 
 // run queue word route after finish all task then stop
 Route::get('/run/queue', function () {
-    Artisan::call('queue:work --stop-when-empty');
-    return "Queue is running";
+    Artisan::call('queue:work', [
+        '--queue' => 'imports,default',
+        '--stop-when-empty' => true,
+    ]);
+
+    return 'Queue is running';
 });
 
 
