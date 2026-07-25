@@ -48,6 +48,9 @@
                             <code>2015,2016|Honda|Civic</code> (pipe), tab-separated, or 3-field CSV. Tables get class <code>pa-fitment-table</code> automatically.
                             {{ __('Legacy aliases') }}: Product Highlights, Product Overview, Specifications, Fitting Vehicles.
                         </p>
+                        <p class="small text-muted mb-3">
+                            {{ __('Existing products are matched by SKU or product part number. Non-empty CSV values update the matched product; blank cells keep the existing values.') }}
+                        </p>
                         <form action="{{ route('back.uploads.generate') }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             <div class="upload-box text-center p-4">

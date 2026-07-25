@@ -10,6 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class ProcessProductUploadChunkJob implements ShouldQueue
@@ -17,10 +18,13 @@ class ProcessProductUploadChunkJob implements ShouldQueue
     use Batchable, Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public $timeout = 1200;
+
     public $tries = 8;
 
     protected int $uploadId;
+
     protected int $startByte;
+
     protected int $chunkSize;
 
     public function __construct(int $uploadId, int $startByte, int $chunkSize)
@@ -43,12 +47,23 @@ class ProcessProductUploadChunkJob implements ShouldQueue
             return;
         }
 
-        $path = storage_path('app/'.$upload->file_path);
-        $result = $importer->importChunk($path, $this->startByte, $this->chunkSize);
+        $lock = Cache::lock('product-import-write-lock', $this->timeout + 60);
+        if (! $lock->get()) {
+            $this->release(10);
 
-        $upload->increment('processed_rows', $result['processed']);
-        $upload->increment('imported_count', $result['imported']);
-        $upload->increment('skipped_count', $result['skipped']);
+            return;
+        }
+
+        try {
+            $path = storage_path('app/'.$upload->file_path);
+            $result = $importer->importChunk($path, $this->startByte, $this->chunkSize);
+
+            $upload->increment('processed_rows', $result['processed']);
+            $upload->increment('imported_count', $result['imported']);
+            $upload->increment('skipped_count', $result['skipped']);
+        } finally {
+            $lock->release();
+        }
     }
 
     public function failed(\Throwable $e): void
