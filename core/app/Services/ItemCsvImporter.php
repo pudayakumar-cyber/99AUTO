@@ -24,6 +24,7 @@ use Illuminate\Support\Str;
  *   (first segment before comma or &gt;)
  * - Images (pipe/comma/newline list) OR Image 1 URL … Image 14 URL (merged; duplicates removed)
  * - ADJUSTED PRICE OR Scraped Price (also updated on duplicate SKU / transit matches when present)
+ * - Stock OR Inventory OR Quantity (also updated on duplicate SKU / transit matches when present)
  *
  * Content (storefront):
  * - Description / Product Description — main HTML (`details`)
@@ -140,6 +141,7 @@ class ItemCsvImporter
             $this->fillExistingItemMediaIfMissing($existingItemId, $data);
             $this->syncProductPartNumberOnExistingItem($existingItemId, $data);
             $this->syncPriceOnExistingItem($existingItemId, $data);
+            $this->syncStockOnExistingItem($existingItemId, $data);
             // Same SKU/Transit SKU rows should extend fitment, not be dropped.
             if ($this->mergeFitmentIntoExistingItem($existingItemId, $data)) {
                 return [false, false];
@@ -269,6 +271,7 @@ class ItemCsvImporter
         $details = $this->buildDetailsHtml($data);
 
         $price = $this->parsePrice($this->firstValue($data, ['adjusted price', 'scraped price']));
+        $stock = $this->stockFromRow($data) ?? 100;
 
         $baseSlug = Str::slug($title);
         $slug = $this->uniqueSlug($baseSlug);
@@ -307,7 +310,7 @@ class ItemCsvImporter
             'is_type' => 'undefine',
             'previous_price' => $price,
             'discount_price' => $price,
-            'stock' => 100,
+            'stock' => $stock,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -644,6 +647,51 @@ class ItemCsvImporter
             'discount_price' => $price,
             'updated_at' => now(),
         ]);
+    }
+
+    /**
+     * Update existing stock only when the spreadsheet contains a valid value.
+     * Blank or invalid cells must not overwrite the current inventory.
+     *
+     * @param  array<string,string>  $data  normalized lowercase keys
+     */
+    private function syncStockOnExistingItem(int $itemId, array $data): void
+    {
+        $stock = $this->stockFromRow($data);
+        if ($stock === null) {
+            return;
+        }
+
+        DB::table('items')->where('id', $itemId)->update([
+            'stock' => $stock,
+            'updated_at' => now(),
+        ]);
+    }
+
+    /**
+     * @param  array<string,string>  $data  normalized lowercase keys
+     */
+    private function stockFromRow(array $data): ?int
+    {
+        $rawStock = $this->firstValue($data, [
+            'stock',
+            'stock quantity',
+            'inventory',
+            'inventory quantity',
+            'quantity',
+            'qty',
+        ]);
+
+        if ($rawStock === '') {
+            return null;
+        }
+
+        $normalized = str_replace([',', ' '], '', $rawStock);
+        if (! is_numeric($normalized)) {
+            return null;
+        }
+
+        return max(0, (int) floor((float) $normalized));
     }
 
     private function fillExistingItemMediaIfMissing(int $itemId, array $data): void
