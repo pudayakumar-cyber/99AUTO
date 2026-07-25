@@ -138,13 +138,12 @@ class ItemCsvImporter
 
         $existingItemId = $this->findExistingItemId($data, $title);
         if ($existingItemId !== null) {
+            $didUpdate = $this->syncExistingItem($existingItemId, $data, $title);
             $this->fillExistingItemMediaIfMissing($existingItemId, $data);
-            $this->syncProductPartNumberOnExistingItem($existingItemId, $data);
-            $this->syncPriceOnExistingItem($existingItemId, $data);
-            $this->syncStockOnExistingItem($existingItemId, $data);
             // Same SKU/Transit SKU rows should extend fitment, not be dropped.
-            if ($this->mergeFitmentIntoExistingItem($existingItemId, $data)) {
-                return [false, false];
+            $didMergeFitment = $this->mergeFitmentIntoExistingItem($existingItemId, $data);
+            if ($didUpdate || $didMergeFitment) {
+                return [true, false];
             }
 
             return [false, true];
@@ -235,16 +234,7 @@ class ItemCsvImporter
         $brandName = trim($data['brand'] ?? '');
         $brandId = $brandName !== '' ? $this->resolveBrandId($brandName) : null;
 
-        $categoryName = trim($this->firstValue($data, [
-            'product category',
-            'category group',
-            'category',
-            'suggested categories',
-        ]));
-        if ($categoryName !== '') {
-            $categoryName = trim(explode(',', $categoryName, 2)[0]);
-            $categoryName = trim(preg_replace('/\s*[>|].*$/u', '', $categoryName) ?? '');
-        }
+        $categoryName = $this->categoryNameFromRow($data);
         if ($categoryName === '') {
             $categoryName = $this->defaultCategoryName;
         }
@@ -270,7 +260,7 @@ class ItemCsvImporter
 
         $details = $this->buildDetailsHtml($data);
 
-        $price = $this->parsePrice($this->firstValue($data, ['adjusted price', 'scraped price']));
+        $price = $this->priceFromRow($data) ?? 0.0;
         $stock = $this->stockFromRow($data) ?? 100;
 
         $baseSlug = Str::slug($title);
@@ -281,27 +271,28 @@ class ItemCsvImporter
             $taxId = (int) $data['tax_id'];
         }
 
-        $sku = $this->firstValue($data, ['internal sku', 'prod number']);
-        if ($sku === '') {
-            $sku = trim((string) ($data['transit sku'] ?? ''));
-        }
+        $identifiers = $this->identifiersFromRow($data);
 
         $productPartNumber = trim($this->firstValue($data, ['product part number']));
         $productPartNumber = $productPartNumber !== '' ? $productPartNumber : null;
+        $keywords = $this->firstValue($data, ['product keywords', 'keywords', 'tags']);
+        $metaDescription = $this->firstValue($data, ['meta description']);
 
         $itemId = DB::table('items')->insertGetId([
             'category_id' => $categoryId,
             'brand_id' => $brandId,
             'tax_id' => $taxId,
             'name' => $title,
-            'prod_number' => $sku,
-            'moog' => $this->firstValue($data, ['moog', 'interchange part number']) ?: null,
+            'prod_number' => $identifiers['prod_number'],
+            'moog' => $this->firstValue($data, ['moog', 'interchange part number', 'interchange part numbers']) ?: null,
             'product_part_number' => $productPartNumber,
             'slug' => $slug,
-            'sku' => $sku ?: null,
-            'tags' => 'automotive, parts',
+            'sku' => $identifiers['sku'],
+            'tags' => $keywords !== '' ? $keywords : 'automotive, parts',
             'sort_details' => $sortDetails,
             'details' => $details,
+            'meta_keywords' => $keywords !== '' ? $keywords : null,
+            'meta_description' => $metaDescription !== '' ? $metaDescription : null,
             'photo' => $photoPath,
             'thumbnail' => $photoPath,
             'status' => 1,
@@ -386,11 +377,60 @@ class ItemCsvImporter
         return $id;
     }
 
-    private function parsePrice(string $raw): float
+    /**
+     * @param  array<string,string>  $data  normalized lowercase keys
+     */
+    private function categoryNameFromRow(array $data): string
     {
-        $raw = str_replace([',', '$', ' '], '', $raw);
+        $categoryName = trim($this->firstValue($data, [
+            'product category',
+            'category group',
+            'category',
+            'suggested category',
+            'suggested categories',
+        ]));
+        if ($categoryName === '') {
+            return '';
+        }
 
-        return is_numeric($raw) ? (float) $raw : 0.0;
+        $categoryName = trim(explode(',', $categoryName, 2)[0]);
+
+        return trim(preg_replace('/\s*[>|].*$/u', '', $categoryName) ?? '');
+    }
+
+    /**
+     * @param  array<string,string>  $data  normalized lowercase keys
+     * @return array{sku:?string,prod_number:?string}
+     */
+    private function identifiersFromRow(array $data): array
+    {
+        $internal = $this->firstValue($data, ['internal sku', 'prod number']);
+        $transit = trim((string) ($data['transit sku'] ?? ''));
+
+        return [
+            'sku' => $transit !== '' ? $transit : ($internal !== '' ? $internal : null),
+            'prod_number' => $internal !== '' ? $internal : ($transit !== '' ? $transit : null),
+        ];
+    }
+
+    /**
+     * @param  array<string,string>  $data  normalized lowercase keys
+     */
+    private function priceFromRow(array $data): ?float
+    {
+        $rawPrice = $this->firstValue($data, ['adjusted price', 'scraped price']);
+        if ($rawPrice === '') {
+            return null;
+        }
+
+        $normalized = str_replace([',', '$', ' '], '', $rawPrice);
+        if (! is_numeric($normalized)) {
+            return null;
+        }
+
+        $price = (float) $normalized;
+
+        return $price >= 0 ? $price : null;
     }
 
     /**
@@ -540,40 +580,75 @@ class ItemCsvImporter
             return false;
         }
 
-        preg_match_all(
-            '/<tr[^>]*>\s*<td[^>]*>(.*?)<\/td>\s*<td[^>]*>(.*?)<\/td>\s*<td[^>]*>(.*?)<\/td>\s*<\/tr>/si',
-            $fitmentHtml,
-            $newRows,
-            PREG_SET_ORDER
-        );
+        $newRows = $this->extractFitmentRows($fitmentHtml);
         if ($newRows === []) {
             return false;
         }
 
         $details = (string) (DB::table('items')->where('id', $itemId)->value('details') ?? '');
+        [$updatedDetails, $didChange] = $this->mergeFitmentRowsIntoDetails($details, $newRows);
+
+        if ($didChange) {
+            DB::table('items')->where('id', $itemId)->update([
+                'details' => $updatedDetails,
+                'updated_at' => now(),
+            ]);
+        }
+
+        return true;
+    }
+
+    private function preserveExistingFitment(string $updatedDetails, string $existingDetails): string
+    {
+        $existingRows = $this->extractFitmentRows($existingDetails);
+        if ($existingRows === []) {
+            return $updatedDetails;
+        }
+
+        [$mergedDetails] = $this->mergeFitmentRowsIntoDetails($updatedDetails, $existingRows);
+
+        return $mergedDetails;
+    }
+
+    /**
+     * @return list<array<int,string>>
+     */
+    private function extractFitmentRows(string $html): array
+    {
         preg_match_all(
             '/<tr[^>]*>\s*<td[^>]*>(.*?)<\/td>\s*<td[^>]*>(.*?)<\/td>\s*<td[^>]*>(.*?)<\/td>\s*<\/tr>/si',
-            $details,
-            $existingRows,
+            $html,
+            $rows,
             PREG_SET_ORDER
         );
 
+        return $rows;
+    }
+
+    /**
+     * @param  list<array<int,string>>  $rows
+     * @return array{0:string,1:bool}
+     */
+    private function mergeFitmentRowsIntoDetails(string $details, array $rows): array
+    {
         $existingKeys = [];
-        foreach ($existingRows as $row) {
+        foreach ($this->extractFitmentRows($details) as $row) {
             $existingKeys[$this->fitmentRowKey($row[1], $row[2], $row[3])] = true;
         }
 
         $rowsToAdd = [];
-        foreach ($newRows as $row) {
+        foreach ($rows as $row) {
             $key = $this->fitmentRowKey($row[1], $row[2], $row[3]);
-            if (! isset($existingKeys[$key])) {
-                $rowsToAdd[] = '<tr><td>'.trim($row[1]).'</td><td>'.trim($row[2]).'</td><td>'.trim($row[3]).'</td></tr>';
-                $existingKeys[$key] = true;
+            if (isset($existingKeys[$key])) {
+                continue;
             }
+
+            $rowsToAdd[] = '<tr><td>'.trim($row[1]).'</td><td>'.trim($row[2]).'</td><td>'.trim($row[3]).'</td></tr>';
+            $existingKeys[$key] = true;
         }
 
         if ($rowsToAdd === []) {
-            return true;
+            return [$details, false];
         }
 
         $rowsBlock = implode('', $rowsToAdd);
@@ -589,12 +664,7 @@ class ItemCsvImporter
                 .'<table class="pa-fitment-table"><tbody>'.$rowsBlock.'</tbody></table>';
         }
 
-        DB::table('items')->where('id', $itemId)->update([
-            'details' => $details,
-            'updated_at' => now(),
-        ]);
-
-        return true;
+        return [$details, true];
     }
 
     private function fitmentRowKey(string $year, string $make, string $model): string
@@ -603,69 +673,128 @@ class ItemCsvImporter
     }
 
     /**
-     * For duplicate SKU rows, do not re-upload images when product already has photo.
-     * Only fill media if current item photo is empty.
-     *
-     * @param  array<string,string>  $data
-     */
-    /**
-     * When a row matches an existing item (same internal SKU, transit SKU in `sku`/`prod_number`, or name),
-     * persist Product Part Number from CSV when the column is non-empty.
+     * Update a matched product from non-empty CSV cells without erasing curated data.
      *
      * @param  array<string,string>  $data  normalized lowercase keys
      */
-    private function syncProductPartNumberOnExistingItem(int $itemId, array $data): void
+    private function syncExistingItem(int $itemId, array $data, string $title): bool
     {
-        $productPartNumber = trim($this->firstValue($data, ['product part number']));
-        if ($productPartNumber === '') {
-            return;
+        $updates = $this->existingItemScalarUpdates($data, $title);
+
+        if (array_key_exists('details', $updates)) {
+            $existingDetails = (string) (DB::table('items')->where('id', $itemId)->value('details') ?? '');
+            $updates['details'] = $this->preserveExistingFitment($updates['details'], $existingDetails);
         }
 
-        DB::table('items')->where('id', $itemId)->update([
-            'product_part_number' => $productPartNumber,
-            'updated_at' => now(),
-        ]);
+        $brandName = trim((string) ($data['brand'] ?? ''));
+        if ($brandName !== '') {
+            $updates['brand_id'] = $this->resolveBrandId($brandName);
+        }
+
+        $categoryName = $this->categoryNameFromRow($data);
+        if ($categoryName !== '') {
+            $updates['category_id'] = $this->resolveCategoryId($categoryName);
+        }
+
+        if ($updates === []) {
+            return false;
+        }
+
+        $updates['updated_at'] = now();
+        DB::table('items')->where('id', $itemId)->update($updates);
+
+        return true;
     }
 
     /**
-     * When a row matches an existing item, persist CSV price onto item prices
-     * when ADJUSTED PRICE or Scraped Price is present.
-     *
      * @param  array<string,string>  $data  normalized lowercase keys
+     * @return array<string,mixed>
      */
-    private function syncPriceOnExistingItem(int $itemId, array $data): void
+    private function existingItemScalarUpdates(array $data, string $title): array
     {
-        $rawPrice = $this->firstValue($data, ['adjusted price', 'scraped price']);
-        if (trim($rawPrice) === '') {
-            return;
+        $updates = [];
+
+        if ($title !== '') {
+            $updates['name'] = $title;
         }
 
-        $price = $this->parsePrice($rawPrice);
+        $identifiers = $this->identifiersFromRow($data);
+        if ($identifiers['sku'] !== null) {
+            $updates['sku'] = $identifiers['sku'];
+        }
+        if ($identifiers['prod_number'] !== null) {
+            $updates['prod_number'] = $identifiers['prod_number'];
+        }
 
-        DB::table('items')->where('id', $itemId)->update([
-            'previous_price' => $price,
-            'discount_price' => $price,
-            'updated_at' => now(),
-        ]);
-    }
+        $productPartNumber = $this->firstValue($data, ['product part number']);
+        if ($productPartNumber !== '') {
+            $updates['product_part_number'] = $productPartNumber;
+        }
 
-    /**
-     * Update existing stock only when the spreadsheet contains a valid value.
-     * Blank or invalid cells must not overwrite the current inventory.
-     *
-     * @param  array<string,string>  $data  normalized lowercase keys
-     */
-    private function syncStockOnExistingItem(int $itemId, array $data): void
-    {
+        $moog = $this->firstValue($data, ['moog', 'interchange part number', 'interchange part numbers']);
+        if ($moog !== '') {
+            $updates['moog'] = $moog;
+        }
+
+        $features = $this->firstValue($data, ['product features', 'product highlights', 'features']);
+        if ($features !== '') {
+            $updates['sort_details'] = $features;
+        }
+
+        if ($this->hasAnyValue($data, [
+            'description',
+            'product description',
+            'long description',
+            'product overview',
+            'specifications',
+            'fitting vehicles',
+        ])) {
+            $updates['details'] = $this->buildDetailsHtml($data);
+        }
+
+        $price = $this->priceFromRow($data);
+        if ($price !== null) {
+            $updates['previous_price'] = $price;
+            $updates['discount_price'] = $price;
+        }
+
         $stock = $this->stockFromRow($data);
-        if ($stock === null) {
-            return;
+        if ($stock !== null) {
+            $updates['stock'] = $stock;
         }
 
-        DB::table('items')->where('id', $itemId)->update([
-            'stock' => $stock,
-            'updated_at' => now(),
-        ]);
+        $keywords = $this->firstValue($data, ['product keywords', 'keywords', 'tags']);
+        if ($keywords !== '') {
+            $updates['tags'] = $keywords;
+            $updates['meta_keywords'] = $keywords;
+        }
+
+        $metaDescription = $this->firstValue($data, ['meta description']);
+        if ($metaDescription !== '') {
+            $updates['meta_description'] = $metaDescription;
+        }
+
+        $taxId = trim((string) ($data['tax_id'] ?? ''));
+        if ($taxId !== '' && is_numeric($taxId)) {
+            $updates['tax_id'] = (int) $taxId;
+        }
+
+        return $updates;
+    }
+
+    /**
+     * @param  array<string,string>  $data
+     * @param  list<string>  $keys
+     */
+    private function hasAnyValue(array $data, array $keys): bool
+    {
+        foreach ($keys as $key) {
+            if (trim((string) ($data[$key] ?? '')) !== '') {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -694,6 +823,12 @@ class ItemCsvImporter
         return max(0, (int) floor((float) $normalized));
     }
 
+    /**
+     * For duplicate SKU rows, do not re-upload images when product already has photo.
+     * Only fill media if current item photo is empty.
+     *
+     * @param  array<string,string>  $data
+     */
     private function fillExistingItemMediaIfMissing(int $itemId, array $data): void
     {
         $item = DB::table('items')->where('id', $itemId)->first(['photo', 'thumbnail']);
