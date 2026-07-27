@@ -19,7 +19,9 @@ class ProcessProductUploadChunkJob implements ShouldQueue
 
     public $timeout = 1200;
 
-    public $tries = 8;
+    public $tries = 100;
+
+    public $maxExceptions = 3;
 
     protected int $uploadId;
 
@@ -49,7 +51,7 @@ class ProcessProductUploadChunkJob implements ShouldQueue
 
         $lock = Cache::lock('product-import-write-lock', $this->timeout + 60);
         if (! $lock->get()) {
-            $this->release(10);
+            $this->release(30);
 
             return;
         }

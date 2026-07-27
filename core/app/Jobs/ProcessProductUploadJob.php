@@ -72,7 +72,9 @@ class ProcessProductUploadJob implements ShouldQueue
             $offsets
         );
 
-        Bus::batch($jobs)
+        // Product writes are serialized, so queue this upload as one chain instead of
+        // making every chunk consume attempts while competing for the same lock.
+        Bus::batch([$jobs])
             ->name('product-upload-'.$upload->id)
             ->allowFailures()
             ->then(function (Batch $batch) use ($upload): void {
