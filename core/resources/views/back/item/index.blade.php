@@ -88,8 +88,27 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-lg-12 mt-2">
-                            <button type="submit" class="btn btn-primary  py-2  d-inline-block">{{__('Filter Product')}}</button>
+                        <div class="col-lg-12">
+                            <div class="form-group px-0">
+                                <label class="sr-only" for="product-search">{{ __('Product name or model number') }}</label>
+                                <div class="input-group">
+                                    <input
+                                        type="search"
+                                        class="form-control"
+                                        id="product-search"
+                                        name="search"
+                                        value="{{ request()->input('search') }}"
+                                        placeholder="{{ __('Search by product name or model number') }}"
+                                        maxlength="255"
+                                    >
+                                    <div class="input-group-append">
+                                        <button type="submit" class="btn btn-primary px-4">
+                                            <i class="fas fa-search mr-1" aria-hidden="true"></i>
+                                            {{ __('Filter Product') }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

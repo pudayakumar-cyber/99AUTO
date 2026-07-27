@@ -62,8 +62,10 @@ class ItemController extends Controller
         $is_type = $request->has('is_type') ? ($request->is_type ? $request->is_type : '') : '';
         $category_id = $request->has('category_id') ? ($request->category_id ? $request->category_id : '') : '';
         $orderby = $request->has('orderby') ? ($request->orderby ? $request->orderby : 'desc') : 'desc';
+        $search = trim((string) $request->input('search', ''));
 
-        $datas = Item::when($item_type, function ($query, $item_type) {
+        $datas = Item::searchByNameOrModel($search)
+            ->when($item_type, function ($query, $item_type) {
                 return $query->where('item_type', $item_type);
             })
             ->when($is_type, function ($query, $is_type) {
