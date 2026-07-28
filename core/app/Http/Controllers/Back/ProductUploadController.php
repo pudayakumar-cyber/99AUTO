@@ -18,9 +18,9 @@ class ProductUploadController extends Controller
 
         $chunkJobs = DB::table('jobs')
             ->select(['id', 'queue', 'attempts', 'reserved_at', 'available_at', 'created_at', 'payload'])
-            ->where('payload', 'like', '%ProcessProductUploadChunkJob%')
+            ->where('queue', 'imports')
             ->orderByDesc('id')
-            ->paginate(20, ['*'], 'chunk_jobs_page');
+            ->simplePaginate(20, ['*'], 'chunk_jobs_page');
 
         $batchRuns = DB::table('job_batches')
             ->select(['id', 'name', 'total_jobs', 'pending_jobs', 'failed_jobs', 'created_at', 'finished_at'])
