@@ -171,14 +171,6 @@ class ItemCsvImporter
             static fn (string $c): bool => trim($c) !== ''
         )));
 
-        Log::info('ItemCsvImporter findExistingItemId codes', [
-            'title' => $title,
-            'internal_sku' => $internal,
-            'transit_sku' => $transit,
-            'product_part_number' => $productPartNumber,
-            'codes' => $codes,
-        ]);
-
         foreach ($codes as $code) {
             $id = DB::table('items')
                 ->where(function ($q) use ($code): void {
