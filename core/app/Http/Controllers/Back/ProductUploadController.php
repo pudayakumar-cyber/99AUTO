@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 use App\Models\ProductUpload;
 use App\Jobs\ProcessProductUploadJob;
 use App\Services\SpreadsheetCsvConverter;
-use Illuminate\Support\Facades\DB;
 use Throwable;
 
 class ProductUploadController extends Controller
@@ -16,19 +15,7 @@ class ProductUploadController extends Controller
     {
         $uploads = ProductUpload::orderByDesc('id')->paginate(15, ['*'], 'uploads_page');
 
-        $chunkJobs = DB::table('jobs')
-            ->select(['id', 'queue', 'attempts', 'reserved_at', 'available_at', 'created_at', 'payload'])
-            ->where('queue', 'imports')
-            ->orderByDesc('id')
-            ->simplePaginate(20, ['*'], 'chunk_jobs_page');
-
-        $batchRuns = DB::table('job_batches')
-            ->select(['id', 'name', 'total_jobs', 'pending_jobs', 'failed_jobs', 'created_at', 'finished_at'])
-            ->where('name', 'like', 'product-upload-%')
-            ->orderByDesc('created_at')
-            ->paginate(10, ['*'], 'batches_page');
-
-        return view('back.product-upload.index', compact('uploads', 'chunkJobs', 'batchRuns'));
+        return view('back.product-upload.index', compact('uploads'));
     }
 
     public function generate(Request $request, SpreadsheetCsvConverter $converter)
