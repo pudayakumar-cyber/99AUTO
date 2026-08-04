@@ -3,43 +3,14 @@
 @section('page_type', 'product')
 
 @section('title')
-    @php
-        $displayProductName = collect([
-            optional($item->brand)->name ?: null,
-            $item->product_part_number ?: $item->prod_number ?: null,
-            $item->name,
-        ])->filter(fn ($v) => trim((string) $v) !== '')->implode(' - ');
-    @endphp
+    @php $displayProductName = $item->display_name; @endphp
     {{ $displayProductName }}
 @endsection
 
 @php
-    $resolveProductImageUrl = function (?string $rawPath): string {
-        $rawPath = trim((string) $rawPath);
-        if ($rawPath === '') {
-            return url('/core/public/storage/images/placeholder.png');
-        }
-
-        // If thumbnail is already an absolute URL or contains directories, extract filename safely.
-        $pathOnly = parse_url($rawPath, PHP_URL_PATH) ?? $rawPath;
-
-        // Prefer extracting from known storage paths.
-        // Note: use '~' delimiter so '#' inside the pattern doesn't break PCRE parsing.
-        if (preg_match('~/core/public/storage/images/([^/?#]+)~i', (string) $pathOnly, $m)) {
-            return url('/core/public/storage/images/' . $m[1]);
-        }
-        if (preg_match('~/storage/images/([^/?#]+)~i', (string) $pathOnly, $m)) {
-            return url('/core/public/storage/images/' . $m[1]);
-        }
-
-        // Plain filename or any other relative string.
-        $filename = basename((string) $pathOnly);
-        if (trim($filename) === '') {
-            return url('/core/public/storage/images/placeholder.png');
-        }
-
-        return url('/core/public/storage/images/' . $filename);
-    };
+    $placeholderImageUrl = url('/core/public/storage/images/placeholder.png');
+    $resolveProductImageUrl = fn (?string $rawPath): string =>
+        \App\Support\StorefrontImage::url($rawPath, $placeholderImageUrl);
 
     $resolveProductImageFallbackUrl = function (?string $rawPath): string {
         // Avoid retrying /storage/images/... because missing files there hit Laravel 404 pages.
@@ -48,6 +19,11 @@
 
     $primaryProductImageUrl = $resolveProductImageUrl($item->photo);
     $primaryProductImageFallbackUrl = $resolveProductImageFallbackUrl($item->photo);
+    $brandImageUrl = \App\Support\StorefrontImage::url(optional($item->brand)->photo);
+    $productMetaDescription = trim((string) $item->meta_description);
+    if ($productMetaDescription === '') {
+        $productMetaDescription = Str::limit(trim(strip_tags((string) ($item->sort_details ?: $item->details))), 160, '');
+    }
     $productShareUrl = request()->fullUrl();
     $encodedProductShareUrl = rawurlencode($productShareUrl);
     $encodedProductShareTitle = rawurlencode($displayProductName);
@@ -57,17 +33,21 @@
 @section('meta')
     <link rel="preload" as="image" href="{{ $primaryProductImageUrl }}" fetchpriority="high">
 
-    <meta name="tile" content="{{ $item->title }}">
+    <meta name="title" content="{{ $displayProductName }}">
     <meta name="keywords" content="{{ $item->meta_keywords }}">
-    <meta name="description" content="{{ $item->meta_description }}">
+    <meta name="description" content="{{ $productMetaDescription }}">
 
-    <meta name="twitter:title" content="{{ $item->title }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $displayProductName }}">
     <meta name="twitter:image" content="{{ $primaryProductImageUrl }}">
-    <meta name="twitter:description" content="{{ $item->meta_description }}">
+    <meta name="twitter:description" content="{{ $productMetaDescription }}">
 
-    <meta name="og:title" content="{{ $item->title }}">
-    <meta name="og:image" content="{{ $primaryProductImageUrl }}">
-    <meta name="og:description" content="{{ $item->meta_description }}">
+    <meta property="og:title" content="{{ $displayProductName }}">
+    <meta property="og:image" content="{{ $primaryProductImageUrl }}">
+    <meta property="og:description" content="{{ $productMetaDescription }}">
+    <meta property="og:url" content="{{ $productShareUrl }}">
+    <meta property="og:type" content="product">
+    <meta property="og:site_name" content="{{ $setting->title }}">
 
 @endsection
 
@@ -149,6 +129,15 @@
 
         .product-gallery .product-details-slider:not(.owl-loaded) .item:not(:first-child) {
             display: none;
+        }
+
+        .product-brand-logo {
+            width: auto;
+            height: 28px;
+            max-width: 110px;
+            object-fit: contain;
+            margin-right: 8px;
+            vertical-align: middle;
         }
 
         .qtySelector .decreaseQty,
@@ -357,6 +346,11 @@ document.addEventListener('DOMContentLoaded', function () {
                             <div class="t-c-b-area">
                                 @if ($item->brand_id)
                                     <div class="pt-1 mb-1"><span class="text-medium">{{ __('Brand') }}:</span>
+                                        @if ($brandImageUrl)
+                                            <img class="product-brand-logo" src="{{ $brandImageUrl }}"
+                                                alt="{{ $item->brand->name }}" loading="lazy"
+                                                onerror="this.hidden=true;">
+                                        @endif
                                         <a
                                             href="{{ route('front.catalog') . '?brand=' . $item->brand->slug }}">{{ $item->brand->name }}</a>
                                     </div>
@@ -472,7 +466,14 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (! empty($sec_name) && ! empty($sec_details) && is_array($sec_name) && is_array($sec_details)) {
                             $n = min(count($sec_name), count($sec_details));
                             for ($i = 0; $i < $n; $i++) {
-                                $highlightCards[] = ['title' => $sec_name[$i], 'detail' => $sec_details[$i]];
+                                $highlightTitle = trim((string) $sec_name[$i]);
+                                $highlightDetail = trim(strip_tags((string) $sec_details[$i]));
+                                if ($highlightTitle !== '' || $highlightDetail !== '') {
+                                    $highlightCards[] = [
+                                        'title' => $highlightTitle,
+                                        'detail' => $sec_details[$i],
+                                    ];
+                                }
                             }
                         }
                         $paHighlightIcons = ['fa-gauge-high', 'fa-road', 'fa-gears', 'fa-clipboard-check', 'fa-spray-can', 'fa-car-side'];
@@ -811,7 +812,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                     <div class="product-thumb">
                                         <img class="lazy"
                                             data-src="{{ $resolveProductImageUrl($related->thumbnail) }}"
-                                            alt="{{ $related->name }}"
+                                            alt="{{ $related->display_name }}"
                                             width="300"
                                             height="300"
                                             loading="lazy"
@@ -819,10 +820,10 @@ document.addEventListener('DOMContentLoaded', function () {
                                         <div class="product-button-group">
                                             <a class="product-button wishlist_store"
                                                 href="{{ route('user.wishlist.store', $related->id) }}"
-                                                title="{{ __('Wishlist') }}" aria-label="{{ __('Add :product to wishlist', ['product' => $related->name]) }}"><i class="icon-heart" aria-hidden="true"></i></a>
+                                                title="{{ __('Wishlist') }}" aria-label="{{ __('Add :product to wishlist', ['product' => $related->display_name]) }}"><i class="icon-heart" aria-hidden="true"></i></a>
                                             <a class="product-button product_compare" href="javascript:;"
                                                 data-target="{{ route('fornt.compare.product', $related->id) }}"
-                                                title="{{ __('Compare') }}" aria-label="{{ __('Compare :product', ['product' => $related->name]) }}"><i class="icon-repeat" aria-hidden="true"></i></a>
+                                                title="{{ __('Compare') }}" aria-label="{{ __('Compare :product', ['product' => $related->display_name]) }}"><i class="icon-repeat" aria-hidden="true"></i></a>
                                             @include('includes.item_footer', ['sitem' => $related])
                                         </div>
                                     </div>
@@ -830,9 +831,10 @@ document.addEventListener('DOMContentLoaded', function () {
                                         <div class="product-category"><a
                                                 href="{{ route('front.catalog') . '?category=' . $related->category->slug }}">{{ $related->category->name }}</a>
                                         </div>
-                                        <h3 class="product-title"><a
-                                                href="{{ route('front.product', $related->slug) }}">
-                                                {{ Str::limit($related->name, 35) }}
+                                            <h3 class="product-title"><a
+                                                href="{{ route('front.product', $related->slug) }}"
+                                                title="{{ $related->display_name }}">
+                                                {{ $related->display_name }}
                                             </a></h3>
                                         <h4 class="product-price">
                                             @if (PriceHelper::showPreviousPrice($related))

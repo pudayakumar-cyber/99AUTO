@@ -1,7 +1,7 @@
 <div class="col-xxl-3 col-md-4 col-6">
     <div class="product-card" 
         data-item-id="{{ $item->id ?? $item->prod_number }}"
-        data-item-name="{{ $item->name }}"
+        data-item-name="{{ $item->display_name }}"
         data-item-brand="{{ optional($item->brand)->name }}"
         data-item-category="{{ optional($item->category)->name }}"
         data-item-category2="{{ optional($item->subcategory)->name }}"
@@ -31,7 +31,7 @@
             <div class="product-badge product-badge2 bg-info">-{{ PriceHelper::DiscountPercentage($item) }}</div>
         @endif
         <div class="product-thumb">
-            <img class="lazy" src="{{ $resolveProductImageUrl($item->thumbnail) }}" data-src="{{ $resolveProductImageUrl($item->thumbnail) }}" alt="{{ $item->name }}" loading="lazy" decoding="async" width="230" height="230">
+            <img class="lazy" src="{{ $resolveProductImageUrl($item->thumbnail) }}" data-src="{{ $resolveProductImageUrl($item->thumbnail) }}" alt="{{ $item->display_name }}" loading="lazy" decoding="async" width="230" height="230">
             <div class="product-button-group">
                 <a class="product-button wishlist_store" href="{{ route('user.wishlist.store', $item->id) }}" title="{{ __('Wishlist') }}"><i class="icon-heart"></i></a>
                 <a class="product-button product_compare" href="javascript:;" data-target="{{ route('fornt.compare.product', $item->id) }}" title="{{ __('Compare') }}"><i class="icon-repeat"></i></a>
@@ -42,12 +42,9 @@
             <div class="product-category">
                 <a href="{{ route('front.catalog') . '?category=' . $item->category->slug }}">{{ $item->category->name }}</a>
             </div>
-            <h3 class="product-title"><a href="{{ route('front.product', $item->slug) . '?item_id=' . $item->id }}">
-                {{ Str::limit(collect([
-                    optional($item->brand)->name ?: null,
-                    $item->product_part_number ?: $item->prod_number ?: null,
-                    $item->name,
-                ])->filter(fn ($v) => trim((string) $v) !== '')->implode(' - '), 38) }}
+            <h3 class="product-title"><a href="{{ route('front.product', $item->slug) . '?item_id=' . $item->id }}"
+                title="{{ $item->display_name }}">
+                {{ $item->display_name }}
             </a></h3>
             <div class="rating-stars">
                 {!! Helper::renderStarRating($item->reviews_avg_rating) !!}

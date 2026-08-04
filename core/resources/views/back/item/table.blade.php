@@ -5,7 +5,7 @@
         <img src="{{ $data->thumbnail ? url('/core/public/storage/images/'.$data->thumbnail) : url('/core/public/storage/images/placeholder.png') }}" alt="Image Not Found">
     </td>
     <td>
-        {{ $data->name }}
+        {{ $data->display_name }}
     </td>
     <td>
         {{ PriceHelper::adminCurrencyPrice($data->discount_price) }}
