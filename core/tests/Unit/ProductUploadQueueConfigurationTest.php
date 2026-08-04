@@ -17,11 +17,11 @@ class ProductUploadQueueConfigurationTest extends TestCase
         );
     }
 
-    public function test_lock_contention_has_headroom_without_unlimited_exceptions(): void
+    public function test_lock_contention_does_not_exhaust_attempts_but_real_exceptions_are_limited(): void
     {
         $job = new ProcessProductUploadChunkJob(1, 0, 500);
 
-        $this->assertSame(100, $job->tries);
+        $this->assertSame(0, $job->tries);
         $this->assertSame(3, $job->maxExceptions);
     }
 }

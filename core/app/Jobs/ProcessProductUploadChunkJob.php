@@ -19,7 +19,9 @@ class ProcessProductUploadChunkJob implements ShouldQueue
 
     public $timeout = 1200;
 
-    public $tries = 100;
+    // Waiting for another import to release the write lock is not a failure.
+    // Real processing failures remain bounded by maxExceptions.
+    public $tries = 0;
 
     public $maxExceptions = 3;
 
