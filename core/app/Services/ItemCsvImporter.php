@@ -48,6 +48,18 @@ class ItemCsvImporter
 
     private string $defaultCategoryName = 'Automotive Lubricants';
 
+    /** @var array<string,true> */
+    private array $seenRowFingerprints = [];
+
+    /** @var array<string,int> */
+    private array $itemIdByCode = [];
+
+    /** @var array<string,int> */
+    private array $itemIdByProductPartNumber = [];
+
+    /** @var array<string,int> */
+    private array $itemIdByName = [];
+
     /**
      * Process at most $chunkSize CSV data rows starting from byte offset.
      *
@@ -60,6 +72,7 @@ class ItemCsvImporter
         }
 
         $this->warmCaches();
+        $this->seenRowFingerprints = [];
 
         $file = fopen($path, 'r');
         if ($file === false) {
@@ -127,6 +140,10 @@ class ItemCsvImporter
         }
 
         $data = $this->normalizeRowKeys($combined);
+        if ($this->isRepeatedRow($data)) {
+            return [false, true];
+        }
+
         $title = trim($this->firstValue($data, ['title', 'product name']));
         $transit = trim((string) ($data['transit sku'] ?? ''));
         $productPartNumber = trim($this->firstValue($data, ['product part number']));
@@ -172,33 +189,63 @@ class ItemCsvImporter
         )));
 
         foreach ($codes as $code) {
-            $id = DB::table('items')
-                ->where(function ($q) use ($code): void {
-                    $q->where('sku', $code)->orWhere('prod_number', $code);
-                })
-                ->value('id');
+            $cacheKey = mb_strtolower($code);
+            $id = $this->itemIdByCode[$cacheKey] ?? null;
+            if ($id === null) {
+                $id = DB::table('items')
+                    ->where(function ($q) use ($code): void {
+                        $q->where('sku', $code)->orWhere('prod_number', $code);
+                    })
+                    ->value('id');
+            }
             if ($id) {
-                return (int) $id;
+                return $this->itemIdByCode[$cacheKey] = (int) $id;
             }
         }
 
         if ($productPartNumber !== '') {
-            $id = DB::table('items')->where('product_part_number', $productPartNumber)->value('id');
+            $cacheKey = mb_strtolower($productPartNumber);
+            $id = $this->itemIdByProductPartNumber[$cacheKey] ?? null;
+            if ($id === null) {
+                $id = DB::table('items')->where('product_part_number', $productPartNumber)->value('id');
+            }
             if ($id) {
-                return (int) $id;
+                return $this->itemIdByProductPartNumber[$cacheKey] = (int) $id;
             }
         }
 
         // When Transit SKU or Product Part Number is present, do not fall back to name (avoids wrong item on partial rows).
         $ignoreNameMatch = $transit !== '' || $productPartNumber !== '';
         if (! $ignoreNameMatch && $codes === [] && $title !== '') {
-            $id = DB::table('items')->where('name', $title)->value('id');
+            $cacheKey = mb_strtolower($title);
+            $id = $this->itemIdByName[$cacheKey] ?? null;
+            if ($id === null) {
+                $id = DB::table('items')->where('name', $title)->value('id');
+            }
             if ($id) {
-                return (int) $id;
+                return $this->itemIdByName[$cacheKey] = (int) $id;
             }
         }
 
         return null;
+    }
+
+    /**
+     * Identical export rows do not need repeated database writes. Rows with
+     * different fitment or inventory values retain distinct fingerprints.
+     *
+     * @param  array<string,string>  $data
+     */
+    private function isRepeatedRow(array $data): bool
+    {
+        $fingerprint = hash('sha256', serialize($data));
+        if (isset($this->seenRowFingerprints[$fingerprint])) {
+            return true;
+        }
+
+        $this->seenRowFingerprints[$fingerprint] = true;
+
+        return false;
     }
 
     private function warmCaches(): void
