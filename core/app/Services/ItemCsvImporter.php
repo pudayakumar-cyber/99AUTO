@@ -302,18 +302,17 @@ class ItemCsvImporter
         $price = $this->priceFromRow($data) ?? 0.0;
         $stock = $this->stockFromRow($data) ?? 100;
 
-        $baseSlug = Str::slug($title);
-        $slug = $this->uniqueSlug($baseSlug);
+        $identifiers = $this->identifiersFromRow($data);
+        $productPartNumber = trim($this->firstValue($data, ['product part number']));
+        $productPartNumber = $productPartNumber !== '' ? $productPartNumber : null;
+        $slugIdentifier = $productPartNumber ?? $identifiers['sku'] ?? $identifiers['prod_number'];
+        $slug = $this->uniqueSlug($this->itemSlugBase($title, $slugIdentifier));
 
         $taxId = null;
         if (isset($data['tax_id']) && $data['tax_id'] !== '' && is_numeric($data['tax_id'])) {
             $taxId = (int) $data['tax_id'];
         }
 
-        $identifiers = $this->identifiersFromRow($data);
-
-        $productPartNumber = trim($this->firstValue($data, ['product part number']));
-        $productPartNumber = $productPartNumber !== '' ? $productPartNumber : null;
         $keywords = $this->firstValue($data, ['product keywords', 'keywords', 'tags']);
         $metaDescription = $this->firstValue($data, ['meta description']);
 
@@ -368,14 +367,25 @@ class ItemCsvImporter
 
     private function uniqueSlug(string $base): string
     {
-        $slug = $base;
-        $n = 0;
-        while (DB::table('items')->where('slug', $slug)->exists()) {
-            $n++;
-            $slug = $base.'-'.$n;
+        if (! DB::table('items')->where('slug', $base)->exists()) {
+            return $base;
         }
 
+        do {
+            $slug = $base.'-'.Str::lower(Str::random(8));
+        } while (DB::table('items')->where('slug', $slug)->exists());
+
         return $slug;
+    }
+
+    private function itemSlugBase(string $title, ?string $identifier): string
+    {
+        $identifier = trim((string) $identifier);
+        if ($identifier === '' || mb_stripos($title, $identifier) !== false) {
+            return Str::slug($title);
+        }
+
+        return Str::slug($title.'-'.$identifier);
     }
 
     private function resolveBrandId(string $brandName): int
