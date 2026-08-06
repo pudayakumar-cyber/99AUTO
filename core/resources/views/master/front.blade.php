@@ -2567,6 +2567,49 @@ body_theme4 @endif
 
 </script>
 @include('includes.stripe_elements_script')
+<script>
+    (function () {
+        const verificationPattern = /^\s*google-site-verification\s*=\s*[A-Za-z0-9_-]+\s*$/i;
+        const hiddenClass = 'google-site-verification-hidden';
+
+        function hideVerificationText(root) {
+            const textNodes = [];
+
+            if (root.nodeType === Node.TEXT_NODE) {
+                textNodes.push(root);
+            } else if (root.nodeType === Node.ELEMENT_NODE) {
+                if (root.classList.contains(hiddenClass)) return;
+
+                const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+                while (walker.nextNode()) {
+                    textNodes.push(walker.currentNode);
+                }
+            }
+
+            textNodes.forEach(function (textNode) {
+                const parent = textNode.parentElement;
+                if (!parent || parent.closest('script, style, noscript, textarea, .' + hiddenClass)) return;
+                if (!verificationPattern.test(textNode.nodeValue || '')) return;
+
+                const hiddenValue = document.createElement('span');
+                hiddenValue.className = hiddenClass;
+                hiddenValue.hidden = true;
+                hiddenValue.setAttribute('aria-hidden', 'true');
+                hiddenValue.style.setProperty('display', 'none', 'important');
+                hiddenValue.textContent = textNode.nodeValue;
+                textNode.replaceWith(hiddenValue);
+            });
+        }
+
+        hideVerificationText(document.body);
+
+        new MutationObserver(function (mutations) {
+            mutations.forEach(function (mutation) {
+                mutation.addedNodes.forEach(hideVerificationText);
+            });
+        }).observe(document.body, { childList: true, subtree: true });
+    })();
+</script>
 </body>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
