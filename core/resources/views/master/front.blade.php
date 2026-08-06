@@ -60,6 +60,24 @@
         if ($seoPageKey) {
             $activePageSeo = \App\Models\PageSeo::where('page_name', $seoPageKey)->first();
         }
+
+        $defaultSocialImage = $setting->logo
+            ? url('/core/public/storage/images/' . ltrim((string) $setting->logo, '/'))
+            : url('/core/public/storage/images/placeholder.png');
+
+        $footerCopyright = trim((string) $setting->copy_right);
+        $googleAnalyticsMarkup = trim((string) $setting->google_analytics);
+        $shouldAutoPromptVehicle = in_array($routeName, ['front.index', 'front.catalog', 'front.product'], true);
+        $googleSiteVerification = null;
+        foreach ([$footerCopyright, $googleAnalyticsMarkup] as $verificationSource) {
+            if (preg_match('/google-site-verification\s*=\s*["\']?([A-Za-z0-9_-]+)/i', $verificationSource, $verificationMatch)) {
+                $googleSiteVerification = $verificationMatch[1];
+                break;
+            }
+        }
+        $plainVerificationPattern = '/\s*google-site-verification\s*=\s*["\']?[A-Za-z0-9_-]+["\']?\s*/i';
+        $footerCopyright = trim((string) preg_replace($plainVerificationPattern, '', $footerCopyright));
+        $googleAnalyticsMarkup = trim((string) preg_replace($plainVerificationPattern, '', $googleAnalyticsMarkup));
     @endphp
 
     @if ($activePageSeo)
@@ -71,6 +89,9 @@
     @endif
 
     <link rel="canonical" href="{{ url()->current() }}">
+    @if ($googleSiteVerification)
+        <meta name="google-site-verification" content="{{ $googleSiteVerification }}">
+    @endif
 
     <!-- Preload first home page slider image for LCP improvement -->
     @if (url()->current() == route('front.index'))
@@ -90,50 +111,57 @@
                 $seoKeywords = str_replace(["value","{","}","[","]",":","\""], '', $seoKeywords);
             }
         @endphp
-        <meta name="author" content="GeniusDevs">
+        <meta name="author" content="99 Auto Parts">
         <meta name="distribution" content="web">
         <meta name="description" content="{{ $activePageSeo->meta_description }}">
         <meta name="keywords" content="{{ $seoKeywords }}">
-        <meta name="image" content="{{ asset('storage/images/' . $setting->meta_image) }}">
+        <meta name="image" content="{{ $defaultSocialImage }}">
         <meta property="og:title" content="{{ $activePageSeo->title }}">
         <meta property="og:description" content="{{ $activePageSeo->meta_description }}">
-        <meta property="og:image" content="{{ asset('storage/images/' . $setting->meta_image) }}">
-        <meta property="og:image:secure_url" content="{{ asset('storage/images/' . $setting->meta_image) }}" />
-        <meta property="og:image:type" content="image/jpeg" />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="627" />
+        <meta property="og:image" content="{{ $defaultSocialImage }}">
+        <meta property="og:image:secure_url" content="{{ $defaultSocialImage }}">
         <meta property="og:url" content="{{ url()->current() }}">
         <meta property="og:site_name" content="{{ $setting->title }}">
         <meta property="og:type" content="website">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="{{ $activePageSeo->title }}">
+        <meta name="twitter:description" content="{{ $activePageSeo->meta_description }}">
+        <meta name="twitter:image" content="{{ $defaultSocialImage }}">
     @else
         @if (url()->current() == route('front.index'))
-            <meta name="author" content="GeniusDevs">
+            <meta name="author" content="99 Auto Parts">
             <meta name="distribution" content="web">
             <meta name="description" content="{{ $setting->meta_description }}">
             <meta name="keywords" content="{{ $setting->meta_keywords }}">
-            <meta name="image" content="{{ asset('storage/images/' . $setting->meta_image) }}">
+            <meta name="image" content="{{ $defaultSocialImage }}">
             <meta property="og:title" content="{{ $setting->title}}">
             <meta property="og:description" content="{{ $setting->meta_description }}">
-            <meta property="og:image" content="{{ asset('storage/images/' . $setting->meta_image) }}">
-            <meta property="og:image:secure_url" content="{{ asset('storage/images/' . $setting->meta_image) }}" />
-            <meta property="og:image:type" content="image/jpeg" />
-            <meta property="og:image:width" content="1200" />
-            <meta property="og:image:height" content="627" />
+            <meta property="og:image" content="{{ $defaultSocialImage }}">
+            <meta property="og:image:secure_url" content="{{ $defaultSocialImage }}">
             <meta property="og:url" content="{{ url()->current() }}">
             <meta property="og:site_name" content="{{ $setting->title }}">
             <meta property="og:type" content="website">
+            <meta name="twitter:card" content="summary_large_image">
+            <meta name="twitter:title" content="{{ $setting->title }}">
+            <meta name="twitter:description" content="{{ $setting->meta_description }}">
+            <meta name="twitter:image" content="{{ $defaultSocialImage }}">
         @else
             @if (View::hasSection('meta'))
                 @yield('meta')
             @else
-                <meta name="author" content="GeniusDevs">
+                <meta name="author" content="99 Auto Parts">
                 <meta name="description" content="{{ $setting->meta_description }}">
                 <meta name="keywords" content="{{ $setting->meta_keywords }}">
                 <meta property="og:title" content="@yield('title') - {{ $setting->title }}">
                 <meta property="og:description" content="{{ $setting->meta_description }}">
+                <meta property="og:image" content="{{ $defaultSocialImage }}">
                 <meta property="og:url" content="{{ url()->current() }}">
                 <meta property="og:site_name" content="{{ $setting->title }}">
                 <meta property="og:type" content="website">
+                <meta name="twitter:card" content="summary_large_image">
+                <meta name="twitter:title" content="@yield('title') - {{ $setting->title }}">
+                <meta name="twitter:description" content="{{ $setting->meta_description }}">
+                <meta name="twitter:image" content="{{ $defaultSocialImage }}">
             @endif
         @endif
     @endif
@@ -866,6 +894,13 @@
                 padding: 16px 18px;
             }
 
+            .vehicle-picker-copy {
+                margin: 0 0 14px;
+                color: #5f6670;
+                font-size: 14px;
+                line-height: 1.45;
+            }
+
             .vehicle-picker-row {
                 display: flex;
                 flex-wrap: wrap;
@@ -1406,8 +1441,8 @@
     {{-- Google AdSense End --}}
 
     {{-- Google AnalyTics Start --}}
-    @if ($setting->is_google_analytics == '1')
-        {!! $setting->google_analytics !!}
+    @if ($setting->is_google_analytics == '1' && $googleAnalyticsMarkup !== '')
+        {!! $googleAnalyticsMarkup !!}
     @endif
     {{-- Google AnalyTics End --}}
 
@@ -1416,7 +1451,7 @@
         {!! $setting->facebook_pixel !!}
     @endif
     {{-- Facebook pixel End --}}
-@if (!($setting->is_google_analytics == '1' && trim((string) $setting->google_analytics) !== ''))
+@if (!($setting->is_google_analytics == '1' && $googleAnalyticsMarkup !== ''))
 <!-- Google tag (gtag.js) Stub -->
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -2055,11 +2090,12 @@ body_theme4 @endif
         <div id="vehiclePickerModal" class="vehicle-picker-modal" role="dialog" aria-modal="true"
             aria-labelledby="vehiclePickerTitle">
             <div class="vehicle-picker-head">
-                <h2 id="vehiclePickerTitle" class="vehicle-picker-title">{{ __('Vehicle Search') }}</h2>
+                <h2 id="vehiclePickerTitle" class="vehicle-picker-title">{{ __('Select Your Vehicle') }}</h2>
                 <button type="button" id="vehiclePickerClose" class="vehicle-picker-close"
                     aria-label="{{ __('Close vehicle search') }}">×</button>
             </div>
             <div class="vehicle-picker-body">
+                <p class="vehicle-picker-copy">{{ __('Choose your vehicle to browse compatible parts and accessories.') }}</p>
                 <div class="vehicle-picker-row">
                     <select id="ymm_year" class="form-control" aria-label="{{ __('Select Year') }}">
                         <option value="">{{ __('Select Year') }}</option>
@@ -2253,7 +2289,9 @@ body_theme4 @endif
                 </div>
             </div>
             <!-- Copyright-->
-            <p class="footer-copyright"> {{ $setting->copy_right }}</p>
+            @if ($footerCopyright !== '')
+                <p class="footer-copyright">{{ $footerCopyright }}</p>
+            @endif
         </div>
     </footer>
 
@@ -2318,7 +2356,7 @@ body_theme4 @endif
                 @endif
 
                 // 2. Google Analytics (gtag.js)
-                @if (!($setting->is_google_analytics == '1' && trim((string) $setting->google_analytics) !== ''))
+                @if (!($setting->is_google_analytics == '1' && $googleAnalyticsMarkup !== ''))
                 (function() {
                     if (document.querySelector('script[src*="/metrics/gtag/js"]')) return;
                     var js = document.createElement('script');
@@ -2891,6 +2929,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const hintEl = document.getElementById('vehiclePickerHint');
     const form = document.getElementById('header_search_form');
     const ymmMsg = @json(__('Please select Year, Make, and Model.'));
+    const shouldAutoPrompt = @json($shouldAutoPromptVehicle);
+    const promptSessionKey = 'vehicle_picker_prompted';
 
     if (!toggleBtn || !backdrop) return;
 
@@ -2990,6 +3030,28 @@ document.addEventListener('DOMContentLoaded', function () {
                 form.submit();
             }
         });
+    }
+
+    let hasStoredVehicle = false;
+    let promptedThisSession = false;
+    try {
+        const storedVehicle = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+        hasStoredVehicle = Boolean(
+            storedVehicle && storedVehicle.year_id && storedVehicle.make_id && storedVehicle.model_id
+        );
+        promptedThisSession = sessionStorage.getItem(promptSessionKey) === '1';
+    } catch (error) {
+        hasStoredVehicle = false;
+    }
+
+    if (shouldAutoPrompt && !hasStoredVehicle && !promptedThisSession) {
+        try {
+            sessionStorage.setItem(promptSessionKey, '1');
+        } catch (error) {}
+
+        window.setTimeout(function () {
+            setPanelState(true);
+        }, 450);
     }
 });
 </script>

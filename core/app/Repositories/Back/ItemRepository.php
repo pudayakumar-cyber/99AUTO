@@ -244,8 +244,17 @@ public function galleryDelete($gallery)
         if ($galleries = $request->file('galleries')) {
 
             foreach($galleries as $key => $gallery){
+                $extension = match ($gallery->getMimeType()) {
+                    'image/jpeg' => 'jpg',
+                    'image/png' => 'png',
+                    'image/webp' => 'webp',
+                    default => null,
+                };
+                if ($extension === null) {
+                    continue;
+                }
 
-                $name = 'GAL_'.time().Str::random(6).'.'.$gallery->getClientOriginalExtension();
+                $name = 'GAL_'.time().Str::random(6).'.'.$extension;
 
                 Storage::disk('public')->putFileAs('images',$gallery,$name);
 

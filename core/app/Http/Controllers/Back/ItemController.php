@@ -64,7 +64,8 @@ class ItemController extends Controller
         $orderby = $request->has('orderby') ? ($request->orderby ? $request->orderby : 'desc') : 'desc';
         $search = trim((string) $request->input('search', ''));
 
-        $datas = Item::searchByNameOrModel($search)
+        $datas = Item::with('brand:id,name')
+            ->searchByNameOrModel($search)
             ->when($item_type, function ($query, $item_type) {
                 return $query->where('item_type', $item_type);
             })

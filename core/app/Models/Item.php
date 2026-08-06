@@ -11,6 +11,42 @@ class Item extends Model
 
     protected $fillable = ['prod_number','moog','product_part_number','category_id','subcategory_id','childcategory_id','brand_id','name','slug','sku','tags','video','sort_details','specification_name','specification_description','is_specification','details','photo','thumbnail','discount_price','previous_price','stock','meta_keywords','meta_description','status','is_type','tax_id','date','item_type','file','link','file_type','license_name','license_key','affiliate_link',"seller_id"];
 
+    public function getDisplayNameAttribute(): string
+    {
+        $name = trim((string) $this->name);
+        $brand = trim((string) optional($this->brand)->name);
+        $partNumber = trim((string) ($this->product_part_number ?: $this->prod_number ?: $this->sku));
+
+        $segments = [];
+        if ($brand !== '' && ! $this->titleContains($name, $brand, false)) {
+            $segments[] = $brand;
+        }
+        if ($partNumber !== '' && ! $this->titleContains($name, $partNumber, true)) {
+            $segments[] = $partNumber;
+        }
+        if ($name !== '') {
+            $segments[] = $name;
+        }
+
+        return implode(' - ', array_values(array_unique($segments)));
+    }
+
+    private function titleContains(string $title, string $value, bool $identifier): bool
+    {
+        if ($title === '' || $value === '') {
+            return false;
+        }
+
+        if (! $identifier) {
+            return mb_stripos($title, $value) !== false;
+        }
+
+        return preg_match(
+            '/(?<![\pL\pN])'.preg_quote($value, '/').'(?![\pL\pN])/iu',
+            $title
+        ) === 1;
+    }
+
     public function scopeSearchByNameOrModel(Builder $query, ?string $search): Builder
     {
         $search = trim((string) $search);

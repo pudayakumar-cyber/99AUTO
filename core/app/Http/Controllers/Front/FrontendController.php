@@ -30,6 +30,7 @@ use App\Models\Post;
 use App\Models\Service;
 use App\Models\Slider;
 use App\Models\TrackOrder;
+use App\Support\StorefrontImage;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
@@ -496,7 +497,7 @@ class FrontendController extends Controller
             'services' => Service::orderBy('id', 'desc')->get(),
             'campaign_items' => CampaignItem::with([
                 'item' => function ($query) {
-                    $query->with('category')->withAvg('reviews', 'rating');
+                    $query->with(['category', 'brand'])->withAvg('reviews', 'rating');
                 },
             ])->whereStatus(1)->whereIsFeature(1)->orderBy('id', 'desc')->get(),
             'banner_first' => json_decode($home_customize->banner_first, true),
@@ -518,7 +519,7 @@ class FrontendController extends Controller
 
     private function homepageProductQuery()
     {
-        return Item::with('category')
+        return Item::with(['category', 'brand'])
             ->withAvg('reviews', 'rating')
             ->whereStatus(1);
     }
@@ -545,7 +546,7 @@ class FrontendController extends Controller
 
         $itemQuery = Item::with([
             'category:id,name,slug',
-            'brand:id,name,slug',
+            'brand:id,name,slug,photo',
             'subcategory:id,name,slug',
             'childcategory:id,name,slug',
             'galleries:id,item_id,photo',
@@ -564,7 +565,9 @@ class FrontendController extends Controller
         }
 
         $item = $itemQuery->firstOrFail();
-        $galleries = $item->galleries;
+        $galleries = $item->galleries
+            ->filter(fn ($gallery) => StorefrontImage::isSafe($gallery->photo))
+            ->values();
         $firstGalleryPhoto = optional($galleries->first())->photo;
         if (trim((string) $item->photo) === '' && trim((string) $firstGalleryPhoto) !== '') {
             $item->photo = $firstGalleryPhoto;
@@ -594,6 +597,9 @@ class FrontendController extends Controller
                         'category_id',
                         'brand_id',
                         'name',
+                        'sku',
+                        'prod_number',
+                        'product_part_number',
                         'slug',
                         'thumbnail',
                         'discount_price',

@@ -1,7 +1,7 @@
 <div class="col-lg-12">
     <div class="product-card product-list" 
         data-item-id="{{ $item->id ?? $item->prod_number }}"
-        data-item-name="{{ $item->name }}"
+        data-item-name="{{ $item->display_name }}"
         data-item-brand="{{ optional($item->brand)->name }}"
         data-item-category="{{ optional($item->category)->name }}"
         data-item-category2="{{ optional($item->subcategory)->name }}"
@@ -31,7 +31,7 @@
                 <div class="product-badge product-badge2 bg-info">-{{ PriceHelper::DiscountPercentage($item) }}</div>
             @endif
 
-            <img class="lazy" src="{{ $resolveProductImageUrl($item->thumbnail) }}" data-src="{{ $resolveProductImageUrl($item->thumbnail) }}" alt="{{ $item->name }}" loading="lazy" decoding="async" width="230" height="230">
+            <img class="lazy" src="{{ $resolveProductImageUrl($item->thumbnail) }}" data-src="{{ $resolveProductImageUrl($item->thumbnail) }}" alt="{{ $item->display_name }}" loading="lazy" decoding="async" width="230" height="230">
         </div>
         <div class="product-card-inner">
             <div class="product-card-body">
@@ -41,12 +41,9 @@
                         <span class="product-list-brand">{{ optional($item->brand)->name }}</span>
                     @endif
                 </div>
-                <h3 class="product-title"><a href="{{ route('front.product', $item->slug) . '?item_id=' . $item->id }}">
-                    {{ Str::limit(collect([
-                        optional($item->brand)->name ?: null,
-                        $item->product_part_number ?: $item->prod_number ?: null,
-                        $item->name,
-                    ])->filter(fn ($v) => trim((string) $v) !== '')->implode(' - '), 76) }}
+                <h3 class="product-title"><a href="{{ route('front.product', $item->slug) . '?item_id=' . $item->id }}"
+                    title="{{ $item->display_name }}">
+                    {{ $item->display_name }}
                 </a></h3>
                 <div class="rating-stars">
                     {!! Helper::renderStarRating($item->reviews_avg_rating) !!}

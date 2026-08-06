@@ -1052,13 +1052,26 @@ class ItemCsvImporter
                 return null;
             }
 
-            $extension = pathinfo(parse_url($url, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION);
-            $extension = $extension ?: 'jpg';
-            $extension = preg_replace('/[^a-z0-9]/i', '', $extension) ?: 'jpg';
+            $body = $response->body();
+            if ($body === '' || strlen($body) > 15 * 1024 * 1024) {
+                return null;
+            }
+
+            $mimeType = (new \finfo(FILEINFO_MIME_TYPE))->buffer($body);
+            $extension = match ($mimeType) {
+                'image/jpeg' => 'jpg',
+                'image/png' => 'png',
+                'image/webp' => 'webp',
+                'image/gif' => 'gif',
+                'image/avif' => 'avif',
+                default => null,
+            };
+            if ($extension === null) {
+                return null;
+            }
 
             $fileName = 'OM_'.time().'_'.Str::random(8).'.'.$extension;
 
-            $body = $response->body();
             Storage::disk('public')->put('images/'.$fileName, $body);
 
             // This project serves files from public/storage/images as a real directory.
