@@ -65,19 +65,18 @@
             ? url('/core/public/storage/images/' . ltrim((string) $setting->logo, '/'))
             : url('/core/public/storage/images/placeholder.png');
 
-        $footerCopyright = trim((string) $setting->copy_right);
-        $googleAnalyticsMarkup = trim((string) $setting->google_analytics);
+        $verification = \App\Support\GoogleSiteVerification::extractAndSanitize([
+            'copyright' => $setting->copy_right,
+            'analytics' => $setting->google_analytics,
+            'adsense' => $setting->google_adsense,
+            'facebook_pixel' => $setting->facebook_pixel,
+        ]);
+        $footerCopyright = $verification['sources']['copyright'];
+        $googleAnalyticsMarkup = $verification['sources']['analytics'];
+        $googleAdsenseMarkup = $verification['sources']['adsense'];
+        $facebookPixelMarkup = $verification['sources']['facebook_pixel'];
         $shouldAutoPromptVehicle = in_array($routeName, ['front.index', 'front.catalog', 'front.product'], true);
-        $googleSiteVerification = null;
-        foreach ([$footerCopyright, $googleAnalyticsMarkup] as $verificationSource) {
-            if (preg_match('/google-site-verification\s*=\s*["\']?([A-Za-z0-9_-]+)/i', $verificationSource, $verificationMatch)) {
-                $googleSiteVerification = $verificationMatch[1];
-                break;
-            }
-        }
-        $plainVerificationPattern = '/\s*google-site-verification\s*=\s*["\']?[A-Za-z0-9_-]+["\']?\s*/i';
-        $footerCopyright = trim((string) preg_replace($plainVerificationPattern, '', $footerCopyright));
-        $googleAnalyticsMarkup = trim((string) preg_replace($plainVerificationPattern, '', $googleAnalyticsMarkup));
+        $googleSiteVerification = $verification['token'];
     @endphp
 
     @if ($activePageSeo)
@@ -1435,8 +1434,8 @@
 
     </style>
     {{-- Google AdSense Start --}}
-    @if ($setting->is_google_adsense == '1')
-        {!! $setting->google_adsense !!}
+    @if ($setting->is_google_adsense == '1' && $googleAdsenseMarkup !== '')
+        {!! $googleAdsenseMarkup !!}
     @endif
     {{-- Google AdSense End --}}
 
@@ -1447,8 +1446,8 @@
     {{-- Google AnalyTics End --}}
 
     {{-- Facebook pixel  Start --}}
-    @if ($setting->is_facebook_pixel == '1')
-        {!! $setting->facebook_pixel !!}
+    @if ($setting->is_facebook_pixel == '1' && $facebookPixelMarkup !== '')
+        {!! $facebookPixelMarkup !!}
     @endif
     {{-- Facebook pixel End --}}
 @if (!($setting->is_google_analytics == '1' && $googleAnalyticsMarkup !== ''))
@@ -1463,7 +1462,7 @@
 </script>
 @endif
 <!-- #metapixelscript -->
-@if (!($setting->is_facebook_pixel == '1' && trim((string) $setting->facebook_pixel) !== ''))
+@if (!($setting->is_facebook_pixel == '1' && $facebookPixelMarkup !== ''))
 @php
     $metaAdvancedMatching = [];
     $metaNormalize = function ($value) {
@@ -2368,7 +2367,7 @@ body_theme4 @endif
                 @endif
 
                 // 3. Meta Pixel
-                @if (!($setting->is_facebook_pixel == '1' && trim((string) $setting->facebook_pixel) !== ''))
+                @if (!($setting->is_facebook_pixel == '1' && $facebookPixelMarkup !== ''))
                 (function() {
                     if (document.querySelector('script[src*="connect.facebook.net/en_US/fbevents.js"]')) return;
                     var js = document.createElement('script');
