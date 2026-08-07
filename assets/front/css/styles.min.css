@@ -5661,6 +5661,8 @@ video {
   text-decoration: none;
   font-size: 14px;
   height: 37px;
+  overflow: hidden;
+  overflow-wrap: anywhere;
   display: block;
   font-weight: 500;
   line-height: 18px;
