@@ -1065,7 +1065,20 @@
                     width: 100%;
                     max-width: 100%;
                     padding-top: 0;
+                    overflow: visible;
+                }
+
+                .site-header .search-box-wrap .input-group .serch-result {
+                    max-height: min(380px, 55vh);
                     overflow: hidden;
+                    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
+                }
+
+                .site-header .search-box-wrap .input-group .serch-result .s-r-inner {
+                    height: auto;
+                    max-height: calc(min(380px, 55vh) - 8px);
+                    overflow-y: auto;
+                    -webkit-overflow-scrolling: touch;
                 }
 
                 /* Keep car + keyword on one row (responsive.css handles layout) */
