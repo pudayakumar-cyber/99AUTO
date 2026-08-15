@@ -60,7 +60,12 @@ class ProcessProductUploadChunkJob implements ShouldQueue
 
         try {
             $path = storage_path('app/'.$upload->file_path);
-            $result = $importer->importChunk($path, $this->startByte, $this->chunkSize);
+            $result = $importer->importChunk(
+                $path,
+                $this->startByte,
+                $this->chunkSize,
+                (string) $upload->import_mode
+            );
 
             $upload->increment('processed_rows', $result['processed']);
             $upload->increment('imported_count', $result['imported']);

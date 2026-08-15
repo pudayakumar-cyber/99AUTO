@@ -1,0 +1,2 @@
+Title,Product Part Number,Internal SKU,Transit SKU,Brand,Product Category,ADJUSTED PRICE,Stock,Description,Product Features,Images,Fitment Table
+DELETE THIS EXAMPLE ROW,EXAMPLE-PPN-1001,EXAMPLE-INTERNAL-1001,EXAMPLE-TRANSIT-1001,Example Brand,Brake Pads,79.99,10,"Delete this sample row before uploading real products.","Low dust; Quiet braking","https://example.com/main.jpg|https://example.com/second.jpg","2022|Honda|Civic"

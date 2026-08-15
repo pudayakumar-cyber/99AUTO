@@ -214,9 +214,14 @@ Route::group(['middleware' => ['adminlocalize', 'demo']], function () {
         });
 
         Route::group(['middleware' => 'permissions:uploads'], function () {
-            //------------ TRANSACTION ----------------//
             Route::get('/uploads', 'Back\ProductUploadController@index')->name('back.uploads.index');
-            Route::POST('/uploads/generate', 'Back\ProductUploadController@generate')->name('back.uploads.generate');
+            Route::get('/uploads/new', 'Back\ProductUploadController@newProducts')->name('back.uploads.new');
+            Route::post('/uploads/new', 'Back\ProductUploadController@generateNew')->name('back.uploads.new.generate');
+            Route::get('/uploads/update', 'Back\ProductUploadController@updateProducts')->name('back.uploads.update');
+            Route::post('/uploads/update', 'Back\ProductUploadController@generateUpdate')->name('back.uploads.update.generate');
+            Route::get('/uploads/template/{mode}', 'Back\ProductUploadController@downloadTemplate')->name('back.uploads.template');
+            // Keep the former endpoint safe for old bookmarks/forms: it is create-only.
+            Route::post('/uploads/generate', 'Back\ProductUploadController@generateNew')->name('back.uploads.generate');
             Route::get('/uploads/progress/{id}', 'Back\ProductUploadController@progress')->name('back.uploads.progress');
         });
 
