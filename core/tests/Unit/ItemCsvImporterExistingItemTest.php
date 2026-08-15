@@ -25,7 +25,7 @@ class ItemCsvImporterExistingItemTest extends TestCase
 
         $this->assertSame('Updated product name', $updates['name']);
         $this->assertSame('SKU-20006', $updates['sku']);
-        $this->assertSame('SKU-20006', $updates['prod_number']);
+        $this->assertArrayNotHasKey('prod_number', $updates);
         $this->assertSame('PPN-20006', $updates['product_part_number']);
         $this->assertSame('MOOG-123', $updates['moog']);
         $this->assertSame('Updated features', $updates['sort_details']);
@@ -48,6 +48,17 @@ class ItemCsvImporterExistingItemTest extends TestCase
 
         $this->assertSame('TRANSIT-200', $updates['sku']);
         $this->assertSame('INTERNAL-100', $updates['prod_number']);
+    }
+
+    public function test_updating_one_identifier_does_not_overwrite_the_other_identifier(): void
+    {
+        $internalOnly = $this->existingItemUpdates(['internal sku' => 'INTERNAL-ONLY'], '');
+        $this->assertSame('INTERNAL-ONLY', $internalOnly['prod_number']);
+        $this->assertArrayNotHasKey('sku', $internalOnly);
+
+        $transitOnly = $this->existingItemUpdates(['transit sku' => 'TRANSIT-ONLY'], '');
+        $this->assertSame('TRANSIT-ONLY', $transitOnly['sku']);
+        $this->assertArrayNotHasKey('prod_number', $transitOnly);
     }
 
     public function test_invalid_or_negative_prices_do_not_overwrite_existing_prices(): void

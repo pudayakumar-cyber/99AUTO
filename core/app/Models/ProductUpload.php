@@ -11,6 +11,7 @@ class ProductUpload extends Model
 
     protected $fillable = [
         'file_path',
+        'import_mode',
         'status',
         'total_rows',
         'processed_rows',

@@ -19,7 +19,7 @@ class CsvProductController extends Controller
 
     public function index()
     {
-        return view('back.item.bulk-upload');
+        return redirect()->route('back.uploads.new');
     }
     public function export()
     {
@@ -142,7 +142,12 @@ class CsvProductController extends Controller
     //*** POST Request
     public function import(Request $request)
     {
+        return redirect()
+            ->route('back.uploads.new')
+            ->withError(__('The legacy product importer is disabled. Choose Bulk Add New or Bulk Update so duplicate and identity safeguards are applied.'));
 
+        /* Legacy importer intentionally disabled because it inserted every CSV row
+         * without duplicate or update-identity safeguards.
         try {
             $filename = '';
             if ($file = $request->file('csv')) {
@@ -228,6 +233,7 @@ class CsvProductController extends Controller
 
             return back()->withError(__('Something is wrong!'));
         }
+        */
     }
 
 

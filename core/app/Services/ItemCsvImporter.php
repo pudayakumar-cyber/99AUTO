@@ -13,6 +13,10 @@ use Illuminate\Support\Str;
 /**
  * Header-based CSV import for bulk products (used by queued ProcessProductUploadJob).
  *
+ * Import modes are intentionally isolated:
+ * - create: Product Part Number is required; matching identifiers are skipped.
+ * - update: exact Item ID is required; unknown IDs are skipped and never inserted.
+ *
  * Column headers are matched case-insensitively after trim (UTF-8 BOM stripped).
  *
  * Core (common export / admin):
@@ -40,6 +44,12 @@ use Illuminate\Support\Str;
  */
 class ItemCsvImporter
 {
+    public const MODE_CREATE = 'create';
+
+    public const MODE_UPDATE = 'update';
+
+    public const MODES = [self::MODE_CREATE, self::MODE_UPDATE];
+
     /** @var array<string,int> lowercase name => id */
     private array $brandByLower = [];
 
@@ -65,10 +75,19 @@ class ItemCsvImporter
      *
      * @return array{processed:int,imported:int,skipped:int,next_byte:int,has_more:bool}
      */
-    public function importChunk(string $path, int $startByte, int $chunkSize): array
+    public function importChunk(
+        string $path,
+        int $startByte,
+        int $chunkSize,
+        string $mode = self::MODE_CREATE
+    ): array
     {
         if (! is_file($path)) {
             throw new \InvalidArgumentException('CSV file not found: '.$path);
+        }
+
+        if (! in_array($mode, self::MODES, true)) {
+            throw new \InvalidArgumentException('Unsupported product import mode: '.$mode);
         }
 
         $this->warmCaches();
@@ -99,7 +118,7 @@ class ItemCsvImporter
         try {
             while ($processed < $chunkSize && ($row = fgetcsv($file)) !== false) {
                 $processed++;
-                [$didImport, $didSkip] = $this->processRecord($row, $header);
+                [$didImport, $didSkip] = $this->processRecord($row, $header, $mode);
                 $imported += $didImport ? 1 : 0;
                 $skipped += $didSkip ? 1 : 0;
             }
@@ -127,7 +146,7 @@ class ItemCsvImporter
      * @param  array<int,string>  $header
      * @return array{0:bool,1:bool} [imported, skipped]
      */
-    private function processRecord(array $row, array $header): array
+    private function processRecord(array $row, array $header, string $mode): array
     {
         if ($this->rowIsEmpty($row)) {
             return [false, false];
@@ -144,35 +163,215 @@ class ItemCsvImporter
             return [false, true];
         }
 
+        return $mode === self::MODE_UPDATE
+            ? $this->processUpdateRecord($data)
+            : $this->processCreateRecord($data);
+    }
+
+    /**
+     * Create mode never modifies an existing item. Product Part Number is the
+     * required primary identity, while SKU fields provide additional duplicate checks.
+     *
+     * @param  array<string,string>  $data
+     * @return array{0:bool,1:bool}
+     */
+    private function processCreateRecord(array $data): array
+    {
         $title = trim($this->firstValue($data, ['title', 'product name']));
-        $transit = trim((string) ($data['transit sku'] ?? ''));
-        $productPartNumber = trim($this->firstValue($data, ['product part number']));
-        $canMatchExistingWithoutTitle = $transit !== '' || $productPartNumber !== '';
-
-        if ($title === '' && ! $canMatchExistingWithoutTitle) {
+        if (! $this->newRowHasRequiredValues($data, $title)) {
             return [false, true];
         }
 
-        $existingItemId = $this->findExistingItemId($data, $title);
-        if ($existingItemId !== null) {
-            $didUpdate = $this->syncExistingItem($existingItemId, $data, $title);
-            $this->fillExistingItemMediaIfMissing($existingItemId, $data);
-            // Same SKU/Transit SKU rows should extend fitment, not be dropped.
-            $didMergeFitment = $this->mergeFitmentIntoExistingItem($existingItemId, $data);
-            if ($didUpdate || $didMergeFitment) {
-                return [true, false];
-            }
-
-            return [false, true];
-        }
-
-        if ($title === '') {
+        if ($this->findExistingItemId($data, $title) !== null) {
             return [false, true];
         }
 
         $this->processRow($data, $title);
 
         return [true, false];
+    }
+
+    /**
+     * Update mode uses Item ID only. Missing/unknown IDs are skipped and this
+     * path cannot call the insert method under any circumstance.
+     *
+     * @param  array<string,string>  $data
+     * @return array{0:bool,1:bool}
+     */
+    private function processUpdateRecord(array $data): array
+    {
+        $itemId = $this->updateItemIdFromRow($data);
+        if ($itemId === null || ! DB::table('items')->where('id', $itemId)->exists()) {
+            return [false, true];
+        }
+
+        if ($this->updateIdentifiersConflict($itemId, $data)) {
+            return [false, true];
+        }
+
+        $title = trim($this->firstValue($data, ['title', 'product name']));
+        $didUpdate = $this->syncExistingItem($itemId, $data, $title);
+        $didUpdateMedia = $this->fillExistingItemMediaIfMissing($itemId, $data);
+        $didMergeFitment = $this->mergeFitmentIntoExistingItem($itemId, $data);
+
+        return ($didUpdate || $didUpdateMedia || $didMergeFitment) ? [true, false] : [false, true];
+    }
+
+    /**
+     * @param  array<string,string>  $data
+     */
+    private function newRowHasRequiredValues(array $data, string $title): bool
+    {
+        $partNumber = $this->firstValue($data, ['product part number']);
+
+        return $title !== ''
+            && $partNumber !== ''
+            && $partNumber !== 'EXAMPLE-PPN-1001'
+            && trim((string) ($data['brand'] ?? '')) !== ''
+            && $this->categoryNameFromRow($data) !== ''
+            && $this->priceFromRow($data) !== null
+            && $this->stockFromRow($data) !== null;
+    }
+
+    /**
+     * @param  array<string,string>  $data
+     */
+    private function updateItemIdFromRow(array $data): ?int
+    {
+        // The current product export names this database identifier `id`.
+        // Accept that exact alias, but never fall back to SKU or part number.
+        $rawId = $this->firstValue($data, ['item id', 'id']);
+
+        return ctype_digit($rawId) && (int) $rawId > 0 ? (int) $rawId : null;
+    }
+
+    /**
+     * Prevent an update from assigning an identifier already owned by another item.
+     *
+     * @param  array<string,string>  $data
+     */
+    private function updateIdentifiersConflict(int $itemId, array $data): bool
+    {
+        foreach ($this->explicitUpdateIdentifiers($data) as $identifier) {
+            if (DB::table('items')
+                ->where('id', '<>', $itemId)
+                ->where(function ($query) use ($identifier): void {
+                    $query->where('sku', $identifier)
+                        ->orWhere('prod_number', $identifier)
+                        ->orWhere('product_part_number', $identifier);
+                })
+                ->exists()) {
+                return true;
+            }
+        }
+
+        $partNumber = $this->firstValue($data, ['product part number']);
+
+        return $partNumber !== '' && DB::table('items')
+            ->where('id', '<>', $itemId)
+            ->where(function ($query) use ($partNumber): void {
+                $query->where('product_part_number', $partNumber)
+                    ->orWhere('sku', $partNumber)
+                    ->orWhere('prod_number', $partNumber);
+            })
+            ->exists();
+    }
+
+    /**
+     * Update mode changes only identifiers explicitly provided by the user.
+     * This avoids copying Internal SKU into sku or Transit SKU into prod_number.
+     *
+     * @param  array<string,string>  $data
+     * @return array<string,string>
+     */
+    private function explicitUpdateIdentifiers(array $data): array
+    {
+        $identifiers = [];
+        $sku = trim((string) ($data['transit sku'] ?? ''));
+        $prodNumber = $this->firstValue($data, ['internal sku', 'prod number']);
+
+        if ($sku !== '') {
+            $identifiers['sku'] = $sku;
+        }
+        if ($prodNumber !== '') {
+            $identifiers['prod_number'] = $prodNumber;
+        }
+
+        return $identifiers;
+    }
+
+    /**
+     * Validate file structure before any queue job is created.
+     *
+     * @param  array<int,string|null>  $headerLine
+     * @return list<string>
+     */
+    public static function validateHeaders(array $headerLine, string $mode): array
+    {
+        if (! in_array($mode, self::MODES, true)) {
+            return ['Invalid product import mode.'];
+        }
+
+        $headers = [];
+        foreach ($headerLine as $index => $header) {
+            $header = trim((string) $header);
+            if ($index === 0) {
+                $header = preg_replace('/^\xEF\xBB\xBF/', '', $header) ?? $header;
+            }
+            $headers[] = mb_strtolower($header);
+        }
+
+        if ($headers === [] || $headers === ['']) {
+            return ['The uploaded file is empty or has no header row.'];
+        }
+
+        if ($mode === self::MODE_UPDATE) {
+            $hasItemId = array_intersect($headers, ['item id', 'id']) !== [];
+            $errors = $hasItemId
+                ? []
+                : ['Update files must contain the exact "Item ID" column (or the "id" column from the website product export).'];
+
+            $updateColumns = [
+                'title', 'product name', 'product part number', 'internal sku', 'prod number',
+                'transit sku', 'brand', 'product category', 'category group', 'category',
+                'suggested category', 'suggested categories', 'adjusted price', 'scraped price',
+                'stock', 'stock quantity', 'inventory', 'inventory quantity', 'quantity', 'qty',
+                'description', 'product description', 'long description', 'product overview',
+                'specifications', 'fitting vehicles', 'product features', 'product highlights',
+                'features', 'images', 'image 1 url', 'image 2 url', 'image 3 url',
+                'image 4 url', 'image 5 url', 'image 6 url', 'image 7 url', 'image 8 url',
+                'image 9 url', 'image 10 url', 'image 11 url', 'image 12 url',
+                'image 13 url', 'image 14 url', 'fitment table', 'vehicle fitment table',
+                'fitment', 'vehicle fitment', 'ymm', 'ymm rows', 'year', 'make', 'model',
+                'moog', 'interchange part number', 'interchange part numbers',
+                'product keywords', 'keywords', 'tags', 'meta description', 'tax_id',
+            ];
+            if (array_intersect($headers, $updateColumns) === []) {
+                $errors[] = 'Update files must contain at least one supported product field in addition to Item ID.';
+            }
+
+            return $errors;
+        }
+
+        $requirements = [
+            'Title' => ['title', 'product name'],
+            'Product Part Number' => ['product part number'],
+            'Brand' => ['brand'],
+            'Product Category' => ['product category', 'category group', 'category', 'suggested category', 'suggested categories'],
+            'ADJUSTED PRICE' => ['adjusted price', 'scraped price'],
+            'Stock' => ['stock', 'stock quantity', 'inventory', 'inventory quantity', 'quantity', 'qty'],
+        ];
+
+        $missing = [];
+        foreach ($requirements as $label => $aliases) {
+            if (array_intersect($headers, $aliases) === []) {
+                $missing[] = $label;
+            }
+        }
+
+        return $missing === []
+            ? []
+            : ['New-product files are missing required columns: '.implode(', ', $missing).'.'];
     }
 
     /**
@@ -194,7 +393,9 @@ class ItemCsvImporter
             if ($id === null) {
                 $id = DB::table('items')
                     ->where(function ($q) use ($code): void {
-                        $q->where('sku', $code)->orWhere('prod_number', $code);
+                        $q->where('sku', $code)
+                            ->orWhere('prod_number', $code)
+                            ->orWhere('product_part_number', $code);
                     })
                     ->value('id');
             }
@@ -207,7 +408,13 @@ class ItemCsvImporter
             $cacheKey = mb_strtolower($productPartNumber);
             $id = $this->itemIdByProductPartNumber[$cacheKey] ?? null;
             if ($id === null) {
-                $id = DB::table('items')->where('product_part_number', $productPartNumber)->value('id');
+                $id = DB::table('items')
+                    ->where(function ($query) use ($productPartNumber): void {
+                        $query->where('product_part_number', $productPartNumber)
+                            ->orWhere('sku', $productPartNumber)
+                            ->orWhere('prod_number', $productPartNumber);
+                    })
+                    ->value('id');
             }
             if ($id) {
                 return $this->itemIdByProductPartNumber[$cacheKey] = (int) $id;
@@ -767,12 +974,8 @@ class ItemCsvImporter
             $updates['name'] = $title;
         }
 
-        $identifiers = $this->identifiersFromRow($data);
-        if ($identifiers['sku'] !== null) {
-            $updates['sku'] = $identifiers['sku'];
-        }
-        if ($identifiers['prod_number'] !== null) {
-            $updates['prod_number'] = $identifiers['prod_number'];
+        foreach ($this->explicitUpdateIdentifiers($data) as $column => $identifier) {
+            $updates[$column] = $identifier;
         }
 
         $productPartNumber = $this->firstValue($data, ['product part number']);
@@ -878,16 +1081,16 @@ class ItemCsvImporter
      *
      * @param  array<string,string>  $data
      */
-    private function fillExistingItemMediaIfMissing(int $itemId, array $data): void
+    private function fillExistingItemMediaIfMissing(int $itemId, array $data): bool
     {
         $item = DB::table('items')->where('id', $itemId)->first(['photo', 'thumbnail']);
         if (! $item) {
-            return;
+            return false;
         }
 
         $currentPhoto = trim((string) ($item->photo ?? ''));
         if ($currentPhoto !== '') {
-            return; // Already has image; skip upload for existing SKU.
+            return false; // Existing media is preserved in update mode.
         }
 
         // If gallery already exists, use first gallery photo as main image.
@@ -902,12 +1105,12 @@ class ItemCsvImporter
                 'updated_at' => now(),
             ]);
 
-            return;
+            return true;
         }
 
         $images = $this->collectImageUrls($data);
         if ($images === []) {
-            return;
+            return false;
         }
 
         $mainPhoto = null;
@@ -924,7 +1127,7 @@ class ItemCsvImporter
         }
 
         if ($mainPhoto === null) {
-            return;
+            return false;
         }
 
         DB::table('items')->where('id', $itemId)->update([
@@ -952,6 +1155,8 @@ class ItemCsvImporter
             ]);
             $existingGallerySet[$path] = true;
         }
+
+        return true;
     }
 
     /**
