@@ -43,7 +43,7 @@
                     <p class="text-muted mb-0">
                         {{ $isCreate
                             ? __('This uploader can create products but cannot modify an existing product.')
-                            : __('This uploader can modify products by Item ID but can never create a product.') }}
+                            : __('This uploader can modify products by Item ID or an exact unique SKU, but can never create a product.') }}
                     </p>
                 </div>
                 <div class="card-body">
@@ -52,8 +52,8 @@
                             <strong>{{ __('Main identity column: Product Part Number') }}</strong><br>
                             {{ __('Every row requires a unique Product Part Number. Existing Product Part Number, Internal SKU, PROD NUMBER, or Transit SKU matches are skipped and are not updated.') }}
                         @else
-                            <strong>{{ __('Only matching column: Item ID') }}</strong><br>
-                            {{ __('Item ID must be copied from the website database/admin export. The product export column named id is also accepted. Product Part Number and product name are not used to locate the product. Unknown IDs are skipped.') }}
+                            <strong>{{ __('Matching priority: Item ID, then exact SKU') }}</strong><br>
+                            {{ __('A valid Item ID/id is used first. If it is blank or unknown, SKU, Transit SKU, Internal SKU, or PROD NUMBER may locate one exact product. Missing or duplicate SKU matches are skipped. Product Part Number and product name are never matching keys.') }}
                         @endif
                     </div>
 
@@ -75,7 +75,7 @@
                             <label class="custom-control-label" for="confirm_rules">
                                 {{ $isCreate
                                     ? __('I confirm every row is intended to be a new product and follows the required template.')
-                                    : __('I confirm Item ID values came from the website and blank cells should keep existing values.') }}
+                                    : __('I confirm Item ID or SKU values identify existing website products and blank cells should keep existing values.') }}
                             </label>
                         </div>
 
@@ -113,20 +113,22 @@
                     @else
                         <table class="table table-sm rules-table">
                             <tbody>
-                                <tr><th>Item ID / id</th><td>{{ __('Required on every row; exact numeric website database ID') }}</td></tr>
+                                <tr><th>Item ID / id</th><td>{{ __('Preferred exact numeric website database ID') }}</td></tr>
+                                <tr><th>SKU</th><td>{{ __('Fallback when Item ID is blank or unknown; match must identify one product only') }}</td></tr>
                                 <tr><th>Other columns</th><td>{{ __('Only include fields that may be updated') }}</td></tr>
                                 <tr><th>Blank cells</th><td>{{ __('Keep the existing database value') }}</td></tr>
-                                <tr><th>Unknown Item ID</th><td>{{ __('Skip row; never insert') }}</td></tr>
+                                <tr><th>No unique match</th><td>{{ __('Skip row; never insert') }}</td></tr>
                             </tbody>
                         </table>
                         <ul class="pl-3 mb-0">
-                            <li>{{ __('Use one row per Item ID and remove the example row before uploading.') }}</li>
+                            <li>{{ __('Use one row per Item ID or SKU and remove the example row before uploading.') }}</li>
                             <li>{{ __('Product Part Number is update data, not a matching key on this page.') }}</li>
                             <li>{{ __('Changing SKU or Product Part Number to a value owned by another product is rejected.') }}</li>
                             <li>{{ __('Images only fill a missing main image; existing product images are preserved.') }}</li>
                             <li>{{ __('The website product export uses id; the example template uses Item ID. Both mean the same database value.') }}</li>
-                            <li>{{ __('Do not use external supplier IDs, SKU, or Product Part Number as Item ID.') }}</li>
-                            <li>{{ __('For a price-only update, include Item ID and ADJUSTED PRICE only.') }}</li>
+                            <li>{{ __('SKU matching checks SKU, Transit SKU, Internal SKU, and PROD NUMBER exactly; ambiguous matches are rejected.') }}</li>
+                            <li>{{ __('Do not place an external supplier ID, SKU, or Product Part Number in the Item ID column.') }}</li>
+                            <li>{{ __('For a price-only update, include Item ID or SKU plus ADJUSTED PRICE.') }}</li>
                         </ul>
                     @endif
                 </div>

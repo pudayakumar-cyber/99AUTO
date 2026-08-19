@@ -15,13 +15,14 @@ use Illuminate\Support\Str;
  *
  * Import modes are intentionally isolated:
  * - create: Product Part Number is required; matching identifiers are skipped.
- * - update: exact Item ID is required; unknown IDs are skipped and never inserted.
+ * - update: exact Item ID is preferred, with an exact unique SKU fallback;
+ *   unmatched or ambiguous rows are skipped and never inserted.
  *
  * Column headers are matched case-insensitively after trim (UTF-8 BOM stripped).
  *
  * Core (common export / admin):
- * - Title OR Product Name (required for new inserts; optional when updating by Transit SKU or Product Part Number)
- * - PROD NUMBER OR Internal SKU OR Transit SKU (used for `sku` / `prod_number`; duplicate rows skipped by these codes)
+ * - Title OR Product Name (required for new inserts; optional when updating by Item ID or SKU)
+ * - SKU OR PROD NUMBER OR Internal SKU OR Transit SKU (used for `sku` / `prod_number`; duplicate rows skipped by these codes)
  * - Product Part Number → `product_part_number` (matches existing items; also updated on duplicate SKU / transit matches when present)
  * - MOOG OR Interchange Part Number (stored in `moog` when MOOG empty)
  * - Brand, Product Category OR Category Group OR Category OR Suggested Categories
@@ -192,16 +193,16 @@ class ItemCsvImporter
     }
 
     /**
-     * Update mode uses Item ID only. Missing/unknown IDs are skipped and this
-     * path cannot call the insert method under any circumstance.
+     * Update mode prefers Item ID and falls back to an exact unique SKU match.
+     * This path cannot call the insert method under any circumstance.
      *
      * @param  array<string,string>  $data
      * @return array{0:bool,1:bool}
      */
     private function processUpdateRecord(array $data): array
     {
-        $itemId = $this->updateItemIdFromRow($data);
-        if ($itemId === null || ! DB::table('items')->where('id', $itemId)->exists()) {
+        $itemId = $this->resolveUpdateItemId($data);
+        if ($itemId === null) {
             return [false, true];
         }
 
@@ -239,10 +240,73 @@ class ItemCsvImporter
     private function updateItemIdFromRow(array $data): ?int
     {
         // The current product export names this database identifier `id`.
-        // Accept that exact alias, but never fall back to SKU or part number.
+        // Accept that exact alias; SKU fallback is handled separately.
         $rawId = $this->firstValue($data, ['item id', 'id']);
 
         return ctype_digit($rawId) && (int) $rawId > 0 ? (int) $rawId : null;
+    }
+
+    /**
+     * Resolve an update target without guessing. A valid Item ID wins. When it
+     * is missing or unknown, every supplied SKU is checked against both SKU
+     * storage columns and the row is accepted only when one unique item matches.
+     *
+     * @param  array<string,string>  $data
+     */
+    private function resolveUpdateItemId(array $data): ?int
+    {
+        $itemId = $this->updateItemIdFromRow($data);
+        if ($itemId !== null && DB::table('items')->where('id', $itemId)->exists()) {
+            return $itemId;
+        }
+
+        $matchedIds = [];
+        foreach ($this->updateSkuValuesFromRow($data) as $sku) {
+            $ids = DB::table('items')
+                ->where(function ($query) use ($sku): void {
+                    $query->where('sku', $sku)
+                        ->orWhere('prod_number', $sku);
+                })
+                ->limit(2)
+                ->pluck('id');
+
+            foreach ($ids as $id) {
+                $matchedIds[] = (int) $id;
+            }
+        }
+
+        return $this->uniqueMatchedItemId($matchedIds);
+    }
+
+    /**
+     * @param  array<string,string>  $data
+     * @return list<string>
+     */
+    private function updateSkuValuesFromRow(array $data): array
+    {
+        $values = [];
+        foreach (['sku', 'transit sku', 'internal sku', 'prod number'] as $key) {
+            $value = trim((string) ($data[$key] ?? ''));
+            $normalized = mb_strtolower($value);
+            if ($value !== '' && ! array_key_exists($normalized, $values)) {
+                $values[$normalized] = $value;
+            }
+        }
+
+        return array_values($values);
+    }
+
+    /**
+     * @param  array<int,int>  $matchedIds
+     */
+    private function uniqueMatchedItemId(array $matchedIds): ?int
+    {
+        $matchedIds = array_values(array_unique(array_filter(
+            $matchedIds,
+            static fn (int $id): bool => $id > 0
+        )));
+
+        return count($matchedIds) === 1 ? $matchedIds[0] : null;
     }
 
     /**
@@ -287,7 +351,7 @@ class ItemCsvImporter
     private function explicitUpdateIdentifiers(array $data): array
     {
         $identifiers = [];
-        $sku = trim((string) ($data['transit sku'] ?? ''));
+        $sku = $this->firstValue($data, ['sku', 'transit sku']);
         $prodNumber = $this->firstValue($data, ['internal sku', 'prod number']);
 
         if ($sku !== '') {
@@ -326,13 +390,16 @@ class ItemCsvImporter
         }
 
         if ($mode === self::MODE_UPDATE) {
-            $hasItemId = array_intersect($headers, ['item id', 'id']) !== [];
-            $errors = $hasItemId
+            $hasIdentity = array_intersect(
+                $headers,
+                ['item id', 'id', 'sku', 'transit sku', 'internal sku', 'prod number']
+            ) !== [];
+            $errors = $hasIdentity
                 ? []
-                : ['Update files must contain the exact "Item ID" column (or the "id" column from the website product export).'];
+                : ['Update files must contain Item ID/id or an exact SKU, Transit SKU, Internal SKU, or PROD NUMBER column.'];
 
             $updateColumns = [
-                'title', 'product name', 'product part number', 'internal sku', 'prod number',
+                'title', 'product name', 'product part number', 'sku', 'internal sku', 'prod number',
                 'transit sku', 'brand', 'product category', 'category group', 'category',
                 'suggested category', 'suggested categories', 'adjusted price', 'scraped price',
                 'stock', 'stock quantity', 'inventory', 'inventory quantity', 'quantity', 'qty',
@@ -347,7 +414,7 @@ class ItemCsvImporter
                 'product keywords', 'keywords', 'tags', 'meta description', 'tax_id',
             ];
             if (array_intersect($headers, $updateColumns) === []) {
-                $errors[] = 'Update files must contain at least one supported product field in addition to Item ID.';
+                $errors[] = 'Update files must contain at least one supported product field in addition to the matching identifier.';
             }
 
             return $errors;

@@ -25,19 +25,21 @@ class ProductImportModeTest extends TestCase
         $this->assertStringContainsString('Product Part Number', implode(' ', $errors));
     }
 
-    public function test_update_headers_require_item_id_and_an_update_field(): void
+    public function test_update_headers_require_item_id_or_sku_and_an_update_field(): void
     {
         $this->assertSame(
             [],
             ItemCsvImporter::validateHeaders(['Item ID', 'Stock'], ItemCsvImporter::MODE_UPDATE)
         );
 
-        $errors = ItemCsvImporter::validateHeaders(
-            ['Product Part Number', 'Stock'],
-            ItemCsvImporter::MODE_UPDATE
+        $this->assertSame(
+            [],
+            ItemCsvImporter::validateHeaders(['SKU', 'Stock'], ItemCsvImporter::MODE_UPDATE)
         );
 
-        $this->assertStringContainsString('Item ID', implode(' ', $errors));
+        $errors = ItemCsvImporter::validateHeaders(['Product Part Number', 'Stock'], ItemCsvImporter::MODE_UPDATE);
+
+        $this->assertStringContainsString('SKU', implode(' ', $errors));
     }
 
     public function test_update_headers_accept_the_current_product_export_id_column(): void
@@ -74,6 +76,32 @@ class ProductImportModeTest extends TestCase
         $this->assertNull($method->invoke($importer, ['item id' => 'not-a-number']));
         $this->assertSame(123, $method->invoke($importer, ['item id' => '123']));
         $this->assertSame(456, $method->invoke($importer, ['id' => '456']));
+    }
+
+    public function test_update_sku_fallback_accepts_supported_sku_columns_and_deduplicates_values(): void
+    {
+        $method = new ReflectionMethod(ItemCsvImporter::class, 'updateSkuValuesFromRow');
+        $method->setAccessible(true);
+
+        $this->assertSame(
+            ['SKU-100', 'INTERNAL-200'],
+            $method->invoke(new ItemCsvImporter, [
+                'sku' => ' SKU-100 ',
+                'transit sku' => 'sku-100',
+                'internal sku' => 'INTERNAL-200',
+            ])
+        );
+    }
+
+    public function test_sku_fallback_requires_one_unique_matched_item(): void
+    {
+        $method = new ReflectionMethod(ItemCsvImporter::class, 'uniqueMatchedItemId');
+        $method->setAccessible(true);
+        $importer = new ItemCsvImporter;
+
+        $this->assertSame(10, $method->invoke($importer, [10, 10]));
+        $this->assertNull($method->invoke($importer, []));
+        $this->assertNull($method->invoke($importer, [10, 20]));
     }
 
     public function test_new_rows_require_values_for_every_documented_core_column(): void
