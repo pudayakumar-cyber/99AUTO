@@ -153,6 +153,67 @@
         .p-d-f-area i {
             pointer-events: none;
         }
+
+        .relatedproduct-section .relatedproductslider .owl-stage {
+            display: flex;
+        }
+
+        .relatedproduct-section .relatedproductslider .owl-item,
+        .relatedproduct-section .relatedproductslider .slider-item {
+            display: flex;
+            height: auto;
+        }
+
+        .relatedproduct-section .product-card {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .relatedproduct-section .product-thumb > img {
+            aspect-ratio: 1 / 1;
+            object-fit: contain;
+        }
+
+        .relatedproduct-section .product-card-body {
+            display: flex;
+            flex: 1 1 auto;
+            flex-direction: column;
+            min-width: 0;
+            padding-bottom: 15px;
+        }
+
+        .relatedproduct-section .product-category {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .relatedproduct-section .product-title {
+            min-height: 40px;
+            margin: 0 0 8px;
+        }
+
+        .relatedproduct-section .product-title > a {
+            display: -webkit-box;
+            height: auto;
+            min-height: 40px;
+            max-height: 40px;
+            overflow: hidden;
+            line-height: 20px;
+            overflow-wrap: anywhere;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+        }
+
+        .relatedproduct-section .product-price {
+            display: block;
+            min-height: 20px;
+            margin: auto 0 0;
+            line-height: 20px;
+            text-align: left;
+        }
     </style>
 @endsection
 
