@@ -1236,7 +1236,6 @@ document.addEventListener('DOMContentLoaded', function () {
 @endsection
 
 @section('script')
-@if($item->is_stock())
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     var productPayload = {
@@ -1253,6 +1252,8 @@ document.addEventListener('DOMContentLoaded', function () {
             item_category: @json(optional($item->category)->name ?? ''),
             item_category2: @json(optional($item->subcategory)->name ?? ''),
             item_category3: @json(optional($item->childcategory)->name ?? ''),
+            item_url: @json($productShareUrl),
+            item_image_url: @json($primaryProductImageUrl),
             price: {{ (float) ($item->discount_price ?? $item->previous_price ?? 0) }},
             sku: @json((string) ($item->sku ?: ($item->prod_number ?: $item->id))),
             mpn: @json((string) ($item->prod_number ?: '')),
@@ -1324,9 +1325,15 @@ document.addEventListener('DOMContentLoaded', function () {
     
     productPayload.items[0].part_type = productPayload.items[0].part_typefitment;
 
+    @if($item->is_stock())
     if (typeof window.paTrack === 'function') {
         window.paTrack('ViewContent', productPayload, 'view_item');
     }
+    @else
+    if (typeof window.paKlaviyoTrack === 'function') {
+        window.paKlaviyoTrack('ViewContent', productPayload, 'view_item');
+    }
+    @endif
 
     var addToCartButton = document.getElementById('add_to_cart');
     if (!addToCartButton) {
@@ -1347,5 +1354,4 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
-@endif
 @endsection
