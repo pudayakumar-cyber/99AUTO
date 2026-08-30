@@ -7,6 +7,7 @@ use Illuminate\{
     Http\Exceptions\HttpResponseException,
     Contracts\Validation\Validator
 };
+use Illuminate\Validation\Rule;
 
 class SubscribeRequest extends FormRequest
 {
@@ -28,7 +29,8 @@ class SubscribeRequest extends FormRequest
     public function rules()
     {
         return [
-            'email' => ['required' , 'unique:subscribers,email'],
+            'email' => ['required', 'email'],
+            'consent_source' => ['nullable', Rule::in(['footer_newsletter', 'announcement_newsletter'])],
         ];
     }
 
@@ -42,7 +44,7 @@ class SubscribeRequest extends FormRequest
     {
         return [
             'email.required' => __('Email field is required.'),
-            'email.unique'   => __('This email has already been taken.')
+            'email.email' => __('The email must be a valid email address.'),
         ];
     }
 

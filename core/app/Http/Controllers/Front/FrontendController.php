@@ -37,6 +37,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use App\Services\MarketingConsentService;
 
 class FrontendController extends Controller
 {
@@ -48,9 +49,12 @@ class FrontendController extends Controller
      *
      */
     protected $repository;
-    public function __construct(FrontRepository $repository)
+    protected MarketingConsentService $marketingConsentService;
+
+    public function __construct(FrontRepository $repository, MarketingConsentService $marketingConsentService)
     {
         $this->repository = $repository;
+        $this->marketingConsentService = $marketingConsentService;
         $setting = Setting::first();
         if ($setting->recaptcha == 1) {
             Config::set('captcha.sitekey', $setting->google_recaptcha_site_key);
@@ -940,7 +944,19 @@ Regards,<br>
 
     public function subscribeSubmit(SubscribeRequest $request)
     {
-        Subscriber::create($request->all());
+        $email = strtolower(trim($request->email));
+        Subscriber::firstOrCreate(['email' => $email]);
+        $this->marketingConsentService->setConsent(
+            'email',
+            $email,
+            true,
+            $request->input('consent_source') ?: 'footer_newsletter',
+            auth()->user(),
+            MarketingConsentService::EMAIL_TEXT,
+            $request->ip(),
+            $request->userAgent()
+        );
+
         return response()->json(__('You Have Subscribed Successfully.'));
     }
 
