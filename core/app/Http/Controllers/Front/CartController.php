@@ -10,6 +10,7 @@ use App\{
 use App\Helpers\PriceHelper;
 use App\Models\ShippingService;
 use App\Services\FacebookConversionApi;
+use App\Support\StorefrontImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
@@ -94,6 +95,8 @@ class CartController extends Controller
                             'item_category2' => (string) optional($item->subcategory)->name,
                             'item_category3' => (string) optional($item->childcategory)->name,
                             'item_variant' => $itemVariant,
+                            'item_url' => route('front.product', $item->slug).'?item_id='.$item->id,
+                            'item_image_url' => StorefrontImage::url($item->photo),
                             'price' => $price,
                             'quantity' => $quantity,
                             'sku' => (string) ($item->sku ?: ($item->prod_number ?: $item->id)),
