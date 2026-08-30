@@ -85,10 +85,17 @@
                             </div>
                             <div class="col-12">
                                 <hr class="mt-2 mb-3">
-                                <div class="d-flex flex-wrap justify-content-between align-items-center">
-                                <div class="custom-control custom-checkbox d-block">
-                                    <input class="custom-control-input" name="newsletter" type="checkbox" id="subscribe_me" {{$check_newsletter ? 'checked' : ''}}>
-                                    <label class="custom-control-label" for="subscribe_me">{{__('Subscribe')}}</label>
+                                <div class="d-flex flex-wrap justify-content-between align-items-end">
+                                <div>
+                                  <div class="custom-control custom-checkbox d-block mb-2">
+                                    <input class="custom-control-input" name="email_marketing_consent" value="1" type="checkbox" id="email_marketing_consent" {{$emailMarketingConsent ? 'checked' : ''}}>
+                                    <label class="custom-control-label" for="email_marketing_consent">{{__('I agree to receive marketing emails from 99 Auto Parts. I can unsubscribe at any time.')}}</label>
+                                  </div>
+                                  <div class="custom-control custom-checkbox d-block">
+                                    <input class="custom-control-input" name="sms_marketing_consent" value="1" type="checkbox" id="sms_marketing_consent" {{$smsMarketingConsent ? 'checked' : ''}}>
+                                    <label class="custom-control-label" for="sms_marketing_consent">{{__('I agree to receive recurring marketing text messages from 99 Auto Parts. Message and data rates may apply. Reply STOP to unsubscribe.')}}</label>
+                                  </div>
+                                  <small class="text-muted d-block mt-2">{{__('Marketing consent is optional and is not a condition of purchase.')}}</small>
                                 </div>
                                 <button class="btn btn-primary margin-right-none" type="submit"><span>{{__('Update Profile')}}</span></button>
                                 </div>
