@@ -5,6 +5,8 @@ namespace App\Http\Requests;
 use App\Models\Setting;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use App\Support\MarketingIdentity;
+use InvalidArgumentException;
 
 class UserRequest extends FormRequest
 {
@@ -53,11 +55,27 @@ class UserRequest extends FormRequest
                 'max:2048'
             ],
             'last_name'  => 'required|max:255',
-            'phone'      => 'required|max:255',
+            'phone'      => [
+                'required',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    if (! $this->boolean('sms_marketing_consent')) {
+                        return;
+                    }
+
+                    try {
+                        MarketingIdentity::phone((string) $value);
+                    } catch (InvalidArgumentException $exception) {
+                        $fail($exception->getMessage());
+                    }
+                },
+            ],
             'email'      => Auth::guard('admin') ? 'required|email': 'required|email|unique:users,email'. $id,
             'password'   => $password.$check,
             'password_confirmation'   => $password,
             'honeypot'   => 'max:0',
+            'email_marketing_consent' => 'nullable|boolean',
+            'sms_marketing_consent' => 'nullable|boolean',
         ];
 
     }
