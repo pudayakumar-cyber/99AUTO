@@ -7,6 +7,9 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Cache;
 
+Route::get('/integrations/klaviyo/catalog', 'Front\KlaviyoCatalogController')
+    ->name('front.integrations.klaviyo.catalog');
+
 Route::get('/storage/images/{filename}', function (string $filename) {
     $filename = basename($filename);
     $target = public_path('storage/images/' . $filename);
