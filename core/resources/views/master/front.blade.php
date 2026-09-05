@@ -2982,7 +2982,7 @@ ymm_make.addEventListener('change', () => {
 
         if (!ymm_year.value || !ymm_make.value || !ymm_model.value) return;
 
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        const selectedVehicle = {
             year_id: ymm_year.value,
             year: ymm_year.options[ymm_year.selectedIndex].text,
 
@@ -2991,7 +2991,25 @@ ymm_make.addEventListener('change', () => {
 
             model_id: ymm_model.value,
             model: ymm_model.options[ymm_model.selectedIndex].text
-        }));
+        };
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(selectedVehicle));
+
+        @auth
+        fetch(@json(route('front.marketing.lifecycle.vehicle')), {
+            method: 'POST',
+            keepalive: true,
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': @json(csrf_token())
+            },
+            body: JSON.stringify(selectedVehicle)
+        }).catch(function () {
+            // Vehicle search must continue even if profile synchronization is temporarily unavailable.
+        });
+        @endauth
     });
 
 });

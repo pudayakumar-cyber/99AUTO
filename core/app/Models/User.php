@@ -52,6 +52,11 @@ class User extends Authenticatable
         return $this->hasMany('App\Models\Order');
     }
 
+    public function lifecycleProfile()
+    {
+        return $this->hasOne(CustomerLifecycleProfile::class);
+    }
+
     public function wishlists()
     {
         return $this->hasMany('App\Models\Wishlist');
