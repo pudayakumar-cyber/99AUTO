@@ -1549,9 +1549,160 @@ src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&e
 <!-- End Meta Pixel Stub -->
 @endif
 
+<!-- #klaviyoscript -->
+@if (config('services.klaviyo.enabled') && config('services.klaviyo.public_key'))
+@php
+    $klaviyoBrowserIdentity = [];
+    $klaviyoNormalizePhone = function ($phone) {
+        if (empty($phone)) {
+            return null;
+        }
+
+        try {
+            return \App\Support\MarketingIdentity::phone((string) $phone);
+        } catch (\InvalidArgumentException $exception) {
+            return null;
+        }
+    };
+
+    if (Auth::check()) {
+        $klaviyoUser = Auth::user();
+        $klaviyoBrowserIdentity = array_filter([
+            'email' => filter_var($klaviyoUser->email ?? null, FILTER_VALIDATE_EMAIL) ?: null,
+            'phone_number' => $klaviyoNormalizePhone($klaviyoUser->phone ?? null),
+            'first_name' => $klaviyoUser->first_name ?? null,
+            'last_name' => $klaviyoUser->last_name ?? null,
+            'external_id' => isset($klaviyoUser->id) ? 'user_' . $klaviyoUser->id : null,
+        ]);
+    } else {
+        $klaviyoGuest = Session::get('guest_meta_details');
+        if (is_array($klaviyoGuest)) {
+            $klaviyoBrowserIdentity = array_filter([
+                'email' => filter_var($klaviyoGuest['email'] ?? null, FILTER_VALIDATE_EMAIL) ?: null,
+                'phone_number' => $klaviyoNormalizePhone($klaviyoGuest['phone'] ?? null),
+                'first_name' => $klaviyoGuest['first_name'] ?? null,
+                'last_name' => $klaviyoGuest['last_name'] ?? null,
+            ]);
+        }
+    }
+@endphp
+<!-- Klaviyo onsite tracking -->
+<script>
+(function (window) {
+    if (window.klaviyo) {
+        return;
+    }
+
+    window._klOnsite = window._klOnsite || [];
+    try {
+        window.klaviyo = new Proxy({}, {
+            get: function (_, method) {
+                return function () {
+                    var args = Array.prototype.slice.call(arguments);
+                    window._klOnsite.push([method].concat(args));
+                };
+            }
+        });
+    } catch (error) {
+        window.klaviyo = {
+            identify: function (profile) { window._klOnsite.push(['identify', profile]); },
+            track: function (event, properties) { window._klOnsite.push(['track', event, properties]); },
+            trackViewedItem: function (item) { window._klOnsite.push(['trackViewedItem', item]); }
+        };
+    }
+})(window);
+</script>
+<script async src="https://static.klaviyo.com/onsite/js/{{ rawurlencode(config('services.klaviyo.public_key')) }}/klaviyo.js"></script>
+@if (!empty($klaviyoBrowserIdentity))
+<script>
+window.klaviyo.identify(@json($klaviyoBrowserIdentity));
+</script>
+@endif
+<!-- End Klaviyo onsite tracking -->
+@endif
+
 <!-- #metapixelscript -->
 <script>
 (function (window, document) {
+    @if (config('services.klaviyo.enabled') && config('services.klaviyo.public_key'))
+    window.paKlaviyoTrack = function (metaEvent, payload, googleEvent, options) {
+        var metricNames = {
+            ViewContent: 'Viewed Product',
+            AddToCart: 'Added to Cart',
+            InitiateCheckout: 'Started Checkout'
+        };
+        var metricName = metricNames[metaEvent];
+
+        if (!metricName || !window.klaviyo || typeof window.klaviyo.track !== 'function') {
+            return;
+        }
+
+        payload = payload || {};
+        options = options || {};
+        var sourceItems = Array.isArray(payload.items) ? payload.items : [];
+        var firstItem = sourceItems.length ? sourceItems[0] : {};
+        var value = parseFloat(payload.value || 0);
+        var categories = [
+            firstItem.item_category,
+            firstItem.item_category2,
+            firstItem.item_category3,
+            payload.content_category
+        ].filter(function (category, index, all) {
+            return category && all.indexOf(category) === index;
+        });
+        var items = sourceItems.map(function (item) {
+            return {
+                ProductID: String(item.item_id || ''),
+                SKU: String(item.sku || item.item_id || ''),
+                ProductName: item.item_name || '',
+                Brand: item.item_brand || item.manufacturer || '',
+                Categories: [item.item_category, item.item_category2, item.item_category3].filter(Boolean),
+                ImageURL: item.item_image_url || '',
+                URL: item.item_url || '',
+                Price: parseFloat(item.price || 0),
+                Quantity: parseInt(item.quantity || 1, 10)
+            };
+        });
+        var properties = {
+            '$event_id': options.eventId || payload.event_id || null,
+            '$value': isNaN(value) ? 0 : value,
+            Currency: payload.currency || 'CAD',
+            ItemNames: items.map(function (item) { return item.ProductName; }).filter(Boolean),
+            Categories: categories,
+            Items: items,
+            CheckoutURL: @json(route('front.checkout.billing')),
+            Source: 'Storefront'
+        };
+
+        if (metricName === 'Viewed Product' || metricName === 'Added to Cart') {
+            properties.ProductID = String(firstItem.item_id || (payload.content_ids || [])[0] || '');
+            properties.SKU = String(firstItem.sku || properties.ProductID);
+            properties.ProductName = firstItem.item_name || payload.content_name || '';
+            properties.Brand = firstItem.item_brand || firstItem.manufacturer || '';
+            properties.ImageURL = firstItem.item_image_url || '';
+            properties.URL = firstItem.item_url || '';
+            properties.Price = parseFloat(firstItem.price || payload.value || 0);
+        }
+
+        window.klaviyo.track(metricName, properties);
+
+        if (metricName === 'Viewed Product' && typeof window.klaviyo.trackViewedItem === 'function') {
+            window.klaviyo.trackViewedItem({
+                Title: properties.ProductName,
+                ItemId: properties.ProductID,
+                Categories: categories,
+                ImageUrl: properties.ImageURL,
+                Url: properties.URL,
+                Metadata: {
+                    Brand: properties.Brand,
+                    Price: properties.Price,
+                    SKU: properties.SKU
+                }
+            });
+        }
+    };
+    @endif
+
     window.paTrack = function (metaEvent, payload, googleEvent, options) {
         payload = payload || {};
         options = options || {};
@@ -1676,6 +1827,14 @@ src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&e
             }
         } catch (error) {
             console.warn('Meta tracking failed', error);
+        }
+
+        try {
+            if (typeof window.paKlaviyoTrack === 'function') {
+                window.paKlaviyoTrack(metaEvent, payload, googleEvent, options);
+            }
+        } catch (error) {
+            console.warn('Klaviyo tracking failed', error);
         }
     };
 
@@ -2160,6 +2319,7 @@ body_theme4 @endif
                     <p>{{ $setting->announcement_details }}</p>
                     <form class="subscriber-form" action="{{ route('front.subscriber.submit') }}" method="post">
                         @csrf
+                        <input type="hidden" name="consent_source" value="announcement_newsletter">
                         <div class="input-group">
                             <input class="form-control" type="email" name="email"
                                 aria-label="{{ __('Newsletter email address') }}"
@@ -2173,6 +2333,7 @@ body_theme4 @endif
                         <button class="btn btn-primary btn-block mt-2" type="submit">
                             <span>{{ __('Subscribe') }}</span>
                         </button>
+                        <small class="d-block mt-2">{{ __('By subscribing, you agree to receive marketing emails from 99 Auto Parts. You can unsubscribe at any time.') }}</small>
                     </form>
                 </div>
             </div>
@@ -2253,6 +2414,7 @@ body_theme4 @endif
                         <form class="row subscriber-form" action="{{ route('front.subscriber.submit') }}"
                             method="post">
                             @csrf
+                            <input type="hidden" name="consent_source" value="footer_newsletter">
                             <div class="col-sm-12">
                                 <div class="input-group">
                                     <input class="form-control" type="email" name="email"
@@ -2273,7 +2435,7 @@ body_theme4 @endif
                             </div>
                             <div class="col-lg-12">
                                 <p class="text-sm opacity-80 pt-2">
-                                    {{ __('Subscribe to our Newsletter to receive early discount offers, latest news, sales and promo information.') }}
+                                    {{ __('By subscribing, you agree to receive marketing emails from 99 Auto Parts, including offers, news and promotions. You can unsubscribe at any time.') }}
                                 </p>
                             </div>
                         </form>
@@ -2820,7 +2982,7 @@ ymm_make.addEventListener('change', () => {
 
         if (!ymm_year.value || !ymm_make.value || !ymm_model.value) return;
 
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        const selectedVehicle = {
             year_id: ymm_year.value,
             year: ymm_year.options[ymm_year.selectedIndex].text,
 
@@ -2829,7 +2991,25 @@ ymm_make.addEventListener('change', () => {
 
             model_id: ymm_model.value,
             model: ymm_model.options[ymm_model.selectedIndex].text
-        }));
+        };
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(selectedVehicle));
+
+        @auth
+        fetch(@json(route('front.marketing.lifecycle.vehicle')), {
+            method: 'POST',
+            keepalive: true,
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': @json(csrf_token())
+            },
+            body: JSON.stringify(selectedVehicle)
+        }).catch(function () {
+            // Vehicle search must continue even if profile synchronization is temporarily unavailable.
+        });
+        @endauth
     });
 
 });

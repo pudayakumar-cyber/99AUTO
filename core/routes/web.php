@@ -7,6 +7,9 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Cache;
 
+Route::get('/integrations/klaviyo/catalog', 'Front\KlaviyoCatalogController')
+    ->name('front.integrations.klaviyo.catalog');
+
 Route::get('/storage/images/{filename}', function (string $filename) {
     $filename = basename($filename);
     $target = public_path('storage/images/' . $filename);
@@ -413,6 +416,9 @@ Route::group(['middleware' => 'maintainance'], function () {
         Route::get('/', 'Front\FrontendController@index')->name('front.index');
         Route::get('/extra-index', 'Front\FrontendController@extraIndex')->name('front.extraindex');
         Route::get('/product/{slug}', 'Front\FrontendController@product')->name('front.product');
+        Route::post('/marketing/lifecycle/vehicle', 'Front\KlaviyoLifecycleController@vehicle')
+            ->middleware('auth')
+            ->name('front.marketing.lifecycle.vehicle');
         Route::get('/campaign/products', 'Front\FrontendController@compaignProduct')->name('front.campaign');
         Route::get('/blog', 'Front\FrontendController@blog')->name('front.blog');
         Route::get('/brands', 'Front\FrontendController@brands')->name('front.brand');

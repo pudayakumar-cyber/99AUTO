@@ -107,4 +107,50 @@ class KlaviyoClientTest extends TestCase
 
         (new KlaviyoClient)->trackEvent(' ', ['email' => 'customer@example.com']);
     }
+
+    public function test_it_sends_a_list_scoped_email_subscription(): void
+    {
+        Http::fake([
+            'a.klaviyo.test/api/profile-subscription-bulk-create-jobs' => Http::response('', 202),
+        ]);
+
+        (new KlaviyoClient)->subscribeProfile(
+            'email',
+            ['email' => 'customer@example.com'],
+            'email-list-id',
+            'footer_newsletter'
+        );
+
+        Http::assertSent(function ($request): bool {
+            $data = $request['data'];
+
+            return $request->url() === 'https://a.klaviyo.test/api/profile-subscription-bulk-create-jobs'
+                && $data['attributes']['custom_source'] === 'footer_newsletter'
+                && $data['attributes']['historical_import'] === false
+                && $data['attributes']['profiles']['data'][0]['attributes']['email'] === 'customer@example.com'
+                && $data['attributes']['profiles']['data'][0]['attributes']['subscriptions']['email']['marketing']['consent'] === 'SUBSCRIBED'
+                && $data['relationships']['list']['data']['id'] === 'email-list-id';
+        });
+    }
+
+    public function test_it_sends_a_list_scoped_sms_unsubscribe(): void
+    {
+        Http::fake([
+            'a.klaviyo.test/api/profile-subscription-bulk-delete-jobs' => Http::response('', 202),
+        ]);
+
+        (new KlaviyoClient)->unsubscribeProfile(
+            'sms',
+            ['phone_number' => '+14165551234'],
+            'sms-list-id'
+        );
+
+        Http::assertSent(function ($request): bool {
+            $data = $request['data'];
+
+            return $request->url() === 'https://a.klaviyo.test/api/profile-subscription-bulk-delete-jobs'
+                && $data['attributes']['profiles']['data'][0]['attributes']['phone_number'] === '+14165551234'
+                && $data['relationships']['list']['data']['id'] === 'sms-list-id';
+        });
+    }
 }

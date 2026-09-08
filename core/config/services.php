@@ -57,6 +57,10 @@ return [
         'timeout' => (int) env('KLAVIYO_TIMEOUT', 10),
         'connect_timeout' => (int) env('KLAVIYO_CONNECT_TIMEOUT', 5),
         'queue' => env('KLAVIYO_QUEUE', 'default'),
+        'email_list_id' => env('KLAVIYO_EMAIL_LIST_ID'),
+        'sms_list_id' => env('KLAVIYO_SMS_LIST_ID'),
+        'catalog_feed_token' => env('KLAVIYO_CATALOG_FEED_TOKEN'),
+        'catalog_currency' => env('KLAVIYO_CATALOG_CURRENCY', 'CAD'),
     ],
 
     'eshipper' => [

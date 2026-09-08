@@ -27,6 +27,36 @@
         </div>
     </div>
 
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{{ __('Klaviyo Catalog Feed') }}</h6>
+        </div>
+        <div class="card-body">
+            @if($klaviyoCatalogFeedUrl)
+                <p class="mb-2">
+                    <span class="badge badge-success">{{ __('Configured') }}</span>
+                    {{ __('Use this protected, read-only URL as the custom catalog source in Klaviyo.') }}
+                </p>
+                <div class="input-group">
+                    <input id="klaviyoCatalogFeedUrl" type="text" class="form-control"
+                           value="{{ $klaviyoCatalogFeedUrl }}" readonly>
+                    <div class="input-group-append">
+                        <button type="button" class="btn btn-outline-primary"
+                                onclick="navigator.clipboard.writeText(document.getElementById('klaviyoCatalogFeedUrl').value)">
+                            {{ __('Copy URL') }}
+                        </button>
+                    </div>
+                </div>
+                <small class="form-text text-muted">{{ __('Keep this URL private because it contains the catalog feed token.') }}</small>
+            @else
+                <p class="mb-0">
+                    <span class="badge badge-warning">{{ __('Waiting for configuration') }}</span>
+                    {{ __('Set KLAVIYO_CATALOG_FEED_TOKEN on the server, then clear the Laravel configuration cache.') }}
+                </p>
+            @endif
+        </div>
+    </div>
+
     {{-- Export History Table --}}
     <div class="card shadow mb-4">
         <div class="card-body">

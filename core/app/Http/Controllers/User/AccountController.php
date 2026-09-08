@@ -14,9 +14,13 @@ use App\Models\Subscriber;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
+use App\Services\MarketingConsentService;
 
 class AccountController extends Controller
 {
+    protected UserRepository $repository;
+
+    protected MarketingConsentService $marketingConsentService;
 
     /**
      * Constructor Method.
@@ -26,11 +30,12 @@ class AccountController extends Controller
      * @param  \App\Repositories\Back\UserRepository $repository
      *
      */
-    public function __construct(UserRepository $repository)
+    public function __construct(UserRepository $repository, MarketingConsentService $marketingConsentService)
     {
         $this->middleware('auth');
         $this->middleware('localize');
         $this->repository = $repository;
+        $this->marketingConsentService = $marketingConsentService;
     }
 
     public function index()
@@ -50,10 +55,13 @@ class AccountController extends Controller
     public function profile()
     {
         $user = Auth::user();
-        $check_newsletter = Subscriber::where('email',$user->email)->exists();
+        $emailMarketingConsent = Subscriber::where('email', $user->email)->exists()
+            || $this->marketingConsentService->isSubscribed('email', $user->email);
+        $smsMarketingConsent = $this->marketingConsentService->isSubscribed('sms', $user->phone);
         return view('user.dashboard.index',[
             'user' => $user,
-            'check_newsletter' => $check_newsletter,
+            'emailMarketingConsent' => $emailMarketingConsent,
+            'smsMarketingConsent' => $smsMarketingConsent,
         ]);
     }
 
