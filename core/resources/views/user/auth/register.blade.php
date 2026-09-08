@@ -83,6 +83,17 @@
                           </div>
                         </div>
                         <input type="text" name="honeypot" id="honeypot" value="" style="display:none;">
+                        <div class="col-12 mb-3">
+                          <div class="custom-control custom-checkbox mb-2">
+                            <input class="custom-control-input" name="email_marketing_consent" value="1" type="checkbox" id="reg-email-consent" {{old('email_marketing_consent') ? 'checked' : ''}}>
+                            <label class="custom-control-label" for="reg-email-consent">{{__('I agree to receive marketing emails from 99 Auto Parts. I can unsubscribe at any time.')}}</label>
+                          </div>
+                          <div class="custom-control custom-checkbox">
+                            <input class="custom-control-input" name="sms_marketing_consent" value="1" type="checkbox" id="reg-sms-consent" {{old('sms_marketing_consent') ? 'checked' : ''}}>
+                            <label class="custom-control-label" for="reg-sms-consent">{{__('I agree to receive recurring marketing text messages from 99 Auto Parts. Message and data rates may apply. Reply STOP to unsubscribe.')}}</label>
+                          </div>
+                          <small class="text-muted d-block mt-2">{{__('Marketing consent is optional and is not a condition of purchase.')}}</small>
+                        </div>
                         @if ($setting->recaptcha == 1)
                         <div class="col-lg-12">
                             {!! NoCaptcha::renderJs() !!}

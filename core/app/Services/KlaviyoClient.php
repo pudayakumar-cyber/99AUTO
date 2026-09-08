@@ -83,6 +83,68 @@ class KlaviyoClient
         ])->throw();
     }
 
+    public function subscribeProfile(
+        string $channel,
+        array $profile,
+        string $listId,
+        string $source
+    ): void {
+        $this->ensureEnabled();
+        $this->validateChannel($channel);
+        $this->validateProfile($profile);
+
+        $identifier = $channel === 'email'
+            ? ['email' => $profile['email'] ?? null]
+            : ['phone_number' => $profile['phone_number'] ?? null];
+
+        $identifier['subscriptions'] = [
+            $channel => ['marketing' => ['consent' => 'SUBSCRIBED']],
+        ];
+
+        $this->request()->post('/api/profile-subscription-bulk-create-jobs', [
+            'data' => [
+                'type' => 'profile-subscription-bulk-create-job',
+                'attributes' => [
+                    'custom_source' => $source,
+                    'profiles' => [
+                        'data' => [[
+                            'type' => 'profile',
+                            'attributes' => $this->withoutEmptyValues($identifier),
+                        ]],
+                    ],
+                    'historical_import' => false,
+                ],
+                'relationships' => $this->listRelationship($listId),
+            ],
+        ])->throw();
+    }
+
+    public function unsubscribeProfile(string $channel, array $profile, string $listId): void
+    {
+        $this->ensureEnabled();
+        $this->validateChannel($channel);
+        $this->validateProfile($profile);
+
+        $identifier = $channel === 'email'
+            ? ['email' => $profile['email'] ?? null]
+            : ['phone_number' => $profile['phone_number'] ?? null];
+
+        $this->request()->post('/api/profile-subscription-bulk-delete-jobs', [
+            'data' => [
+                'type' => 'profile-subscription-bulk-delete-job',
+                'attributes' => [
+                    'profiles' => [
+                        'data' => [[
+                            'type' => 'profile',
+                            'attributes' => $this->withoutEmptyValues($identifier),
+                        ]],
+                    ],
+                ],
+                'relationships' => $this->listRelationship($listId),
+            ],
+        ])->throw();
+    }
+
     private function request(): PendingRequest
     {
         return Http::baseUrl(rtrim((string) config('services.klaviyo.base_url'), '/'))
@@ -119,6 +181,29 @@ class KlaviyoClient
         if (trim($metricName) === '') {
             throw new InvalidArgumentException('A Klaviyo event requires a metric name.');
         }
+    }
+
+    private function validateChannel(string $channel): void
+    {
+        if (! in_array($channel, ['email', 'sms'], true)) {
+            throw new InvalidArgumentException('Klaviyo consent channel must be email or sms.');
+        }
+    }
+
+    private function listRelationship(string $listId): array
+    {
+        if (trim($listId) === '') {
+            throw new InvalidArgumentException('A Klaviyo list ID is required for consent synchronization.');
+        }
+
+        return [
+            'list' => [
+                'data' => [
+                    'type' => 'list',
+                    'id' => trim($listId),
+                ],
+            ],
+        ];
     }
 
     private function withoutEmptyValues(array $values): array

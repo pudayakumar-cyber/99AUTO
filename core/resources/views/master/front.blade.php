@@ -2160,6 +2160,7 @@ body_theme4 @endif
                     <p>{{ $setting->announcement_details }}</p>
                     <form class="subscriber-form" action="{{ route('front.subscriber.submit') }}" method="post">
                         @csrf
+                        <input type="hidden" name="consent_source" value="announcement_newsletter">
                         <div class="input-group">
                             <input class="form-control" type="email" name="email"
                                 aria-label="{{ __('Newsletter email address') }}"
@@ -2173,6 +2174,7 @@ body_theme4 @endif
                         <button class="btn btn-primary btn-block mt-2" type="submit">
                             <span>{{ __('Subscribe') }}</span>
                         </button>
+                        <small class="d-block mt-2">{{ __('By subscribing, you agree to receive marketing emails from 99 Auto Parts. You can unsubscribe at any time.') }}</small>
                     </form>
                 </div>
             </div>
@@ -2253,6 +2255,7 @@ body_theme4 @endif
                         <form class="row subscriber-form" action="{{ route('front.subscriber.submit') }}"
                             method="post">
                             @csrf
+                            <input type="hidden" name="consent_source" value="footer_newsletter">
                             <div class="col-sm-12">
                                 <div class="input-group">
                                     <input class="form-control" type="email" name="email"
@@ -2273,7 +2276,7 @@ body_theme4 @endif
                             </div>
                             <div class="col-lg-12">
                                 <p class="text-sm opacity-80 pt-2">
-                                    {{ __('Subscribe to our Newsletter to receive early discount offers, latest news, sales and promo information.') }}
+                                    {{ __('By subscribing, you agree to receive marketing emails from 99 Auto Parts, including offers, news and promotions. You can unsubscribe at any time.') }}
                                 </p>
                             </div>
                         </form>
