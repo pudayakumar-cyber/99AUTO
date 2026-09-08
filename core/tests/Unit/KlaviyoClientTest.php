@@ -72,6 +72,21 @@ class KlaviyoClientTest extends TestCase
         });
     }
 
+    public function test_it_validates_credentials_with_a_read_only_profile_request(): void
+    {
+        Http::fake([
+            'a.klaviyo.test/api/profiles/*' => Http::response(['data' => []]),
+        ]);
+
+        (new KlaviyoClient)->validateCredentials();
+
+        Http::assertSent(function ($request): bool {
+            return $request->method() === 'GET'
+                && str_starts_with($request->url(), 'https://a.klaviyo.test/api/profiles/')
+                && $request->hasHeader('Authorization', 'Klaviyo-API-Key test-private-key');
+        });
+    }
+
     public function test_it_upserts_a_profile_with_custom_properties(): void
     {
         Http::fake([

@@ -10,6 +10,18 @@ use InvalidArgumentException;
 
 class KlaviyoClient
 {
+    public function validateCredentials(): void
+    {
+        if (trim((string) config('services.klaviyo.private_api_key')) === '') {
+            throw new InvalidArgumentException('A Klaviyo private API key is required.');
+        }
+
+        // This endpoint is read-only and cannot create profiles or send messages.
+        $this->request()->get('/api/profiles/', [
+            'page[size]' => 1,
+        ])->throw();
+    }
+
     public function enabled(): bool
     {
         return (bool) config('services.klaviyo.enabled')
