@@ -12,6 +12,7 @@ use App\{
 use Illuminate\Http\Request;
 use App\Jobs\GenerateProductFeedJob;
 use App\Models\Item;
+use App\Services\KlaviyoCatalogService;
 use Illuminate\Support\Facades\Storage;
 
 class ProductFeedController extends Controller
@@ -23,10 +24,12 @@ class ProductFeedController extends Controller
         $this->repository = $repository;
     }
     
-    public function index()
+    public function index(KlaviyoCatalogService $klaviyoCatalog)
     {
         $exports = ProductExport::latest()->get();
-        return view('back.feeds.index', compact('exports'));
+        $klaviyoCatalogFeedUrl = $klaviyoCatalog->feedUrl();
+
+        return view('back.feeds.index', compact('exports', 'klaviyoCatalogFeedUrl'));
     }
 
     public function generate()
