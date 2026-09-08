@@ -48,6 +48,17 @@ return [
         'tag_manager_id' => env('GOOGLE_TAG_MANAGER_ID', 'GTM-TG9DD6RK'),
     ],
 
+    'klaviyo' => [
+        'enabled' => env('KLAVIYO_ENABLED', false),
+        'public_key' => env('KLAVIYO_PUBLIC_KEY'),
+        'private_api_key' => env('KLAVIYO_PRIVATE_API_KEY'),
+        'revision' => env('KLAVIYO_API_REVISION', '2026-07-15'),
+        'base_url' => env('KLAVIYO_API_URL', 'https://a.klaviyo.com'),
+        'timeout' => (int) env('KLAVIYO_TIMEOUT', 10),
+        'connect_timeout' => (int) env('KLAVIYO_CONNECT_TIMEOUT', 5),
+        'queue' => env('KLAVIYO_QUEUE', 'default'),
+    ],
+
     'eshipper' => [
         'enabled' => env('ESHIPPER_ENABLED', false),
         'mode' => env('ESHIPPER_MODE', 'live'),
