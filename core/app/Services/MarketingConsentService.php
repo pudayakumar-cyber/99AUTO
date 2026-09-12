@@ -50,6 +50,7 @@ class MarketingConsentService
             $identity,
             $identityHash,
             $status,
+            $subscribed,
             $source,
             $user,
             $consentText,
