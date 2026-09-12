@@ -22,9 +22,14 @@ class KlaviyoCatalogService
     {
         $token = trim((string) config('services.klaviyo.catalog_feed_token'));
 
-        return $token === ''
-            ? null
-            : url('/integrations/klaviyo/catalog?token='.rawurlencode($token));
+        if ($token === '') {
+            return null;
+        }
+
+        $applicationUrl = rtrim((string) config('app.url'), '/');
+        $storefrontUrl = preg_replace('#/core$#i', '', $applicationUrl) ?: $applicationUrl;
+
+        return $storefrontUrl.'/integrations/klaviyo/catalog?token='.rawurlencode($token);
     }
 
     public function query(): Builder
