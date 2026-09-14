@@ -1572,7 +1572,7 @@ src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&e
             'phone_number' => $klaviyoNormalizePhone($klaviyoUser->phone ?? null),
             'first_name' => $klaviyoUser->first_name ?? null,
             'last_name' => $klaviyoUser->last_name ?? null,
-            'external_id' => isset($klaviyoUser->id) ? 'user_' . $klaviyoUser->id : null,
+            'external_id' => isset($klaviyoUser->id) ? (string) $klaviyoUser->id : null,
         ]);
     } else {
         $klaviyoGuest = Session::get('guest_meta_details');
