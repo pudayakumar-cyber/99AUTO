@@ -11,6 +11,10 @@ Route::get('/sitemap.xml', 'Front\SitemapController@index')->name('front.sitemap
 Route::get('/sitemaps/pages.xml', 'Front\SitemapController@pages')->name('front.sitemap.pages');
 Route::get('/sitemaps/products-{page}.xml', 'Front\SitemapController@products')
     ->where('page', '[0-9]+')->name('front.sitemap.products');
+Route::get('/cart/recover/{token}', 'Front\CartRecoveryController@show')
+    ->where('token', '[a-f0-9]{64}')->middleware(['throttle:30,1', 'doNotCacheResponse'])->name('front.cart.recover');
+Route::post('/cart/recover/{token}', 'Front\CartRecoveryController@restore')
+    ->where('token', '[a-f0-9]{64}')->middleware(['throttle:10,1', 'doNotCacheResponse'])->name('front.cart.recover.restore');
 
 Route::get('/integrations/klaviyo/catalog', 'Front\KlaviyoCatalogController')
     ->name('front.integrations.klaviyo.catalog');

@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', function () {
             value: {{ $checkoutValue }},
             currency: 'CAD',
             items: @json($checkoutItems)
-        }, 'begin_checkout', { eventId: '{{ Session::get('checkout_event_id') }}' });
+        }, 'begin_checkout', { eventId: '{{ Session::get('checkout_event_id') }}', klaviyo: @json($klaviyoCartProperties ?? []) });
     }
 
     function googleNormalizeCountry(value) {

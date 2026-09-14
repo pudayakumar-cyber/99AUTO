@@ -31,6 +31,7 @@ class ValidateKlaviyoIntegration extends Command
         $this->check($checks, 'Catalog feed token', trim((string) config('services.klaviyo.catalog_feed_token')) !== '');
 
         foreach ([
+            'cart_recovery_links',
             'marketing_consents',
             'marketing_consent_events',
             'customer_lifecycle_profiles',

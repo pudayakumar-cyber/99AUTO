@@ -29,7 +29,7 @@ Project: `D:\laragon\www\omini_org`, Laravel: `core`. Repository: `pudayakumar-c
 | Flow | Required configuration | Code/data status | Remaining launch work |
 | --- | --- | --- | --- |
 | Welcome (4) | Email list signup; immediate, day 2, day 4, day 7; exit after cart/checkout/purchase | Explicit newsletter and registration email consent paths exist | Verify list/opt-in, build or inspect all four messages, first-order coupon restrictions/expiry, actual DIY/Trade links and SMS signup |
-| Cart (3) | Added to Cart; total elapsed 1h, 24h, 72h; exit after checkout/purchase | Browser event carries Items, image/price and CheckoutURL | Configure delays as 1h +23h +48h, dynamic event item block, real single-use coupon and cross-session cart restoration; current CheckoutURL is only the billing route |
+| Cart (3) | Added to Cart; total elapsed 1h, 24h, 72h; exit after checkout/purchase | Browser event carries Items, image/price and CheckoutURL | Configure delays as 1h +23h +48h, dynamic event item block, real single-use coupon and production verification of the new expiring cart recovery links (see cart-recovery.md) |
 | Browse (1) | Same product viewed 2+ times in 24h; 2h after last view; no cart/purchase | Viewed Product is emitted | Verify same-product counting/last-view timing is supported by chosen configuration; related products must match vehicle; no discount |
 | Post-purchase (3) | Delivered +3d installation help, +14d review; category due date reminder | Fulfilled Order means admin marked Delivered; maintenance profile date exists | Configure +3d then +11d; separate date-property reminder, category help/review URLs, exact-SKU reorder; no working recurring subscription established |
 | Referral (2) | Verified delivery or positive review; reminder +14d if unused | Code and eligibility reserved only | Implement tracked referral link, first-order $15 reward, referrer $15 reward, single-use redemption and unused-state tracking; positive review event is not established |
@@ -58,7 +58,7 @@ php artisan klaviyo:validate --email-only --full-catalog
 php artisan queue:failed
 ```
 
-No migration is introduced by this branch. Do not run missing local migrations against production blindly. Before recalculating existing maintenance dates, review `klaviyo:sync-lifecycle --dry-run` and keep dependent flows controlled: backfill queues profile updates and may affect date-triggered flows.
+The cart recovery follow-up adds one migration; see cart-recovery.md for the targeted deployment command. Do not run missing local migrations against production blindly. Before recalculating existing maintenance dates, review `klaviyo:sync-lifecycle --dry-run` and keep dependent flows controlled: backfill queues profile updates and may affect date-triggered flows.
 
 Full-catalog validation reads the database and serializes records; it does not test public HTTP retrieval. On the VPS, test the generated protected feed URL privately for HTTP 200, complete valid JSON, download time and size. Keep the token out of screenshots and reports. Confirm the actual imported item count in Klaviyo.
 
@@ -86,4 +86,8 @@ To inspect account state, use an authenticated Klaviyo session or a locally stor
 
 ## Rollback
 
-Revert this branch's commit, deploy, clear configuration/views and restart the queue worker. No schema rollback is required. Already delivered messages or already synchronized profiles cannot be undone by a code rollback.
+Revert this branch's commit, deploy, clear configuration/views and restart the queue worker. The readiness fixes need no schema rollback; the cart recovery follow-up has a separate targeted migration rollback described in cart-recovery.md. Already delivered messages or already synchronized profiles cannot be undone by a code rollback.
+
+## Cart recovery follow-up
+
+Implemented expiring, token-protected cart recovery with explicit confirmation and live price/stock checks. The new `cart_recovery_links` table is required. This is website-side readiness, not proof that the corresponding Klaviyo flows are created or activated. See [cart-recovery.md](cart-recovery.md).
