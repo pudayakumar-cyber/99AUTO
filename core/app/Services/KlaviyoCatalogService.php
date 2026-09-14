@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\Item;
-use App\Support\StorefrontImage;
+use App\Support\KlaviyoUrl;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 
@@ -26,10 +26,7 @@ class KlaviyoCatalogService
             return null;
         }
 
-        $applicationUrl = rtrim((string) config('app.url'), '/');
-        $storefrontUrl = preg_replace('#/core$#i', '', $applicationUrl) ?: $applicationUrl;
-
-        return $storefrontUrl.'/integrations/klaviyo/catalog?token='.rawurlencode($token);
+        return KlaviyoUrl::to('/integrations/klaviyo/catalog?token='.rawurlencode($token));
     }
 
     public function query(): Builder
@@ -50,21 +47,21 @@ class KlaviyoCatalogService
         $compareAtPrice = (float) $item->previous_price > $price
             ? (float) $item->previous_price
             : null;
-        $image = StorefrontImage::url($item->photo)
-            ?: StorefrontImage::url($item->thumbnail)
-            ?: StorefrontImage::url(optional($item->galleries->first())->photo);
+        $image = KlaviyoUrl::image($item->photo)
+            ?: KlaviyoUrl::image($item->thumbnail)
+            ?: KlaviyoUrl::image(optional($item->galleries->first())->photo);
         $categories = collect([
             optional($item->category)->name,
             optional($item->subcategory)->name,
             optional($item->childcategory)->name,
         ])->filter(fn ($name) => trim((string) $name) !== '')->values()->all();
 
-        $image = $image ?: url('/core/public/storage/images/placeholder.png');
+        $image = $image ?: KlaviyoUrl::to('/core/public/storage/images/placeholder.png');
 
         return [
             'id' => (string) $item->id,
             'title' => trim((string) $item->display_name) ?: 'Product '.$item->id,
-            'link' => url('/product/'.ltrim($item->slug, '/').'?item_id='.$item->id),
+            'link' => KlaviyoUrl::to('/product/'.ltrim($item->slug, '/').'?item_id='.$item->id),
             'image_link' => $image,
             'description' => $this->description($item) ?: 'Automotive product',
             'sku' => trim((string) ($item->sku ?: $item->product_part_number ?: $item->prod_number)),

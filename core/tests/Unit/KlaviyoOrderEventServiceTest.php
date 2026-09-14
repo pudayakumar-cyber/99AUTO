@@ -110,4 +110,12 @@ class KlaviyoOrderEventServiceTest extends TestCase
 
         return $order;
     }
+
+    public function test_worker_product_and_image_urls_do_not_inherit_core_prefix(): void
+    {
+        config(['app.url' => 'https://99autoparts.ca/core/']);
+        $events = (new KlaviyoOrderEventService)->placedOrderEvents($this->order());
+        $this->assertSame('https://99autoparts.ca/product/brake-pad?item_id=10', $events[1]['properties']['ProductURL']);
+        $this->assertSame('https://99autoparts.ca/core/public/storage/images/pad.jpg', $events[1]['properties']['ImageURL']);
+    }
 }
