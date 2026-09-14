@@ -1684,6 +1684,13 @@ window.klaviyo.identify(@json($klaviyoBrowserIdentity));
             properties.Price = parseFloat(firstItem.price || payload.value || 0);
         }
 
+        // Recovery URLs and full cart content are only sent to Klaviyo, not Meta/Google.
+        if ((metricName === 'Added to Cart' || metricName === 'Started Checkout') && options.klaviyo) {
+            Object.keys(options.klaviyo).forEach(function (key) {
+                properties[key] = options.klaviyo[key];
+            });
+        }
+
         window.klaviyo.track(metricName, properties);
 
         if (metricName === 'Viewed Product' && typeof window.klaviyo.trackViewedItem === 'function') {
