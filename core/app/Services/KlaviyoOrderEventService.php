@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Jobs\SendKlaviyoEvent;
 use App\Models\Order;
 use App\Support\MarketingIdentity;
-use App\Support\StorefrontImage;
+use App\Support\KlaviyoUrl;
 use DateTimeInterface;
 use Throwable;
 
@@ -185,8 +185,8 @@ class KlaviyoOrderEventService
                 'Quantity' => $quantity,
                 'ItemPrice' => round($itemPrice, 2),
                 'RowTotal' => round($itemPrice * $quantity, 2),
-                'ProductURL' => $slug !== '' ? url('/product/'.$slug.'?item_id='.$productId) : null,
-                'ImageURL' => StorefrontImage::url($cartItem['photo'] ?? null),
+                'ProductURL' => $slug !== '' ? KlaviyoUrl::to('/product/'.$slug.'?item_id='.$productId) : null,
+                'ImageURL' => KlaviyoUrl::image($cartItem['photo'] ?? null),
             ], fn ($value) => $value !== null && $value !== '');
         }
 

@@ -7,6 +7,11 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Cache;
 
+Route::get('/cart/recover/{token}', 'Front\CartRecoveryController@show')
+    ->where('token', '[a-f0-9]{64}')->middleware(['throttle:30,1', 'doNotCacheResponse'])->name('front.cart.recover');
+Route::post('/cart/recover/{token}', 'Front\CartRecoveryController@restore')
+    ->where('token', '[a-f0-9]{64}')->middleware(['throttle:10,1', 'doNotCacheResponse'])->name('front.cart.recover.restore');
+
 Route::get('/integrations/klaviyo/catalog', 'Front\KlaviyoCatalogController')
     ->name('front.integrations.klaviyo.catalog');
 

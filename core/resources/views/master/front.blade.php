@@ -1572,7 +1572,7 @@ src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&e
             'phone_number' => $klaviyoNormalizePhone($klaviyoUser->phone ?? null),
             'first_name' => $klaviyoUser->first_name ?? null,
             'last_name' => $klaviyoUser->last_name ?? null,
-            'external_id' => isset($klaviyoUser->id) ? 'user_' . $klaviyoUser->id : null,
+            'external_id' => isset($klaviyoUser->id) ? (string) $klaviyoUser->id : null,
         ]);
     } else {
         $klaviyoGuest = Session::get('guest_meta_details');
@@ -1682,6 +1682,13 @@ window.klaviyo.identify(@json($klaviyoBrowserIdentity));
             properties.ImageURL = firstItem.item_image_url || '';
             properties.URL = firstItem.item_url || '';
             properties.Price = parseFloat(firstItem.price || payload.value || 0);
+        }
+
+        // Recovery URLs and full cart content are only sent to Klaviyo, not Meta/Google.
+        if ((metricName === 'Added to Cart' || metricName === 'Started Checkout') && options.klaviyo) {
+            Object.keys(options.klaviyo).forEach(function (key) {
+                properties[key] = options.klaviyo[key];
+            });
         }
 
         window.klaviyo.track(metricName, properties);

@@ -380,14 +380,17 @@ class CartRepository
 
     public function getDiscount($discount, $type, $price)
     {
-        if ($type == 'amount') {
-            $sub = $discount;
-            $total = $price - $sub;
+        // Existing records and session snapshots may predate admin validation.
+        $price = is_numeric($price) && is_finite((float) $price) ? max(0.0, (float) $price) : 0.0;
+        $discount = is_numeric($discount) && is_finite((float) $discount) ? max(0.0, (float) $discount) : 0.0;
+        if ($type === 'amount') {
+            $sub = min($discount, $price);
+        } elseif ($type === 'percentage') {
+            $sub = $price * min($discount, 100.0) / 100;
         } else {
-            $val = $price / 100;
-            $sub = $val * $discount;
-            $total = $price - $sub;
+            $sub = 0.0;
         }
+        $total = max(0.0, $price - $sub);
 
         return [
             'sub' => $sub,

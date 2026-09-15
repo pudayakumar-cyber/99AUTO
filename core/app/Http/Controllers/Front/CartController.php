@@ -69,6 +69,7 @@ class CartController extends Controller
 
                 $price = (float) ($item->discount_price ?? $item->previous_price ?? 0);
                 $msg['tracking'] = [
+                    'klaviyo' => app(\App\Services\CartRecoveryService::class)->eventProperties($request->session()),
                     'event_id' => $eventId,
                     'meta_event' => 'AddToCart',
                     'google_event' => 'add_to_cart',

@@ -189,6 +189,8 @@ class CheckoutController extends Controller
             });
         }
 
+        $data['klaviyoCartProperties'] = app(\App\Services\CartRecoveryService::class)->eventProperties($request->session());
+
         return view('front.checkout.billing', $data);
     }
 
