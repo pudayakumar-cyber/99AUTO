@@ -18,7 +18,7 @@ Project: `D:\laragon\www\omini_org`, Laravel: `core`. Repository: `pudayakumar-c
 
 ## Verification results
 
-- 25 focused PHPUnit tests, 62 assertions passed. Existing PHPUnit configuration deprecation remains.
+- 45 focused PHPUnit tests, 159 assertions passed (final review 2026-09-16). Existing PHPUnit configuration deprecation remains.
 - Full local database scan executed: 2,924 records, 2,232,780 JSON bytes. Local URLs failed HTTPS validation, as this checkout uses a local HTTP address. This is not evidence of a production feed failure.
 - Local email list ID and catalog token are missing; local marketing consent tables are missing. Outbound Klaviyo delivery is disabled locally. Do not copy this local environment to production.
 - Previous task recorded passing production prerequisites and a working newsletter subscription. Those historical results are not a current production check.
@@ -52,6 +52,7 @@ After review/merge and pulling main on the VPS, run:
 
 ```bash
 cd /var/www/html/core
+php artisan migrate --path=database/migrations/2026_09_15_000000_create_cart_recovery_links_table.php --force
 php artisan optimize:clear
 sudo supervisorctl restart laravel-worker:*
 php artisan klaviyo:validate --email-only --full-catalog
@@ -86,8 +87,14 @@ To inspect account state, use an authenticated Klaviyo session or a locally stor
 
 ## Rollback
 
-Revert this branch's commit, deploy, clear configuration/views and restart the queue worker. The readiness fixes need no schema rollback; the cart recovery follow-up has a separate targeted migration rollback described in cart-recovery.md. Already delivered messages or already synchronized profiles cannot be undone by a code rollback.
+Revert the merged PR, deploy, clear configuration/views and restart the queue worker. The readiness fixes need no schema rollback; the cart recovery follow-up has a separate targeted migration rollback described in cart-recovery.md. Already delivered messages or already synchronized profiles cannot be undone by a code rollback.
 
 ## Cart recovery follow-up
 
 Implemented expiring, token-protected cart recovery with explicit confirmation and live price/stock checks. The new `cart_recovery_links` table is required. This is website-side readiness, not proof that the corresponding Klaviyo flows are created or activated. See [cart-recovery.md](cart-recovery.md).
+
+## Final PR scope and merge handoff
+
+Cart recovery, public catalog URLs, identity consistency, reminder intervals, read-only catalog validation and coupon calculation validation are complete for review. The recovery routes bypass cookie-banner injection because the standalone page does not load scripts; normal storefront pages retain the existing banner behavior. See coupon-readiness.md for deferred redemption work.
+
+The broader application suite did not complete in the local environment and was stopped; it is not recorded as passing. Focused PR tests, PHP/JavaScript syntax, route registration and whitespace checks are the merge verification evidence. Production deployment and a controlled recovery smoke test still follow the merge. No production changes or customer messages were made.
