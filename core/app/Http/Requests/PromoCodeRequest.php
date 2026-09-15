@@ -28,10 +28,11 @@ class PromoCodeRequest extends FormRequest
         $id = $this->code ? ',' . $this->code->id : '';
 
         return  [
-            'code_name' => 'required|max:255|unique:promo_codes,code_name' . $id,
+            'code_name' => 'required|string|max:255|unique:promo_codes,code_name' . $id,
             'title' => 'required|max:255',
-            'no_of_times' => 'required|numeric|max:9999999999',
-            'discount' => 'required|numeric|max:9999999999',
+            'no_of_times' => 'required|integer|min:0|max:9999999999',
+            'type' => 'required|in:amount,percentage',
+            'discount' => 'required|numeric|min:0|max:' . ($this->input('type') === 'percentage' ? '100' : '9999999999'),
         ];
     }
 
