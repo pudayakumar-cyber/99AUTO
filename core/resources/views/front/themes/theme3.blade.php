@@ -175,7 +175,7 @@
                                             <div class="product-card-inner">
                                             <div class="product-card-body">
                                                 <div class="product-category"><a href="{{route('front.catalog').'?category='.$item->category->slug}}">{{$item->category->name}}</a></div>
-                                                <h3 class="product-title"><a href="{{route('front.product',$item->slug)}}">
+                                                <h3 class="product-title"><a href="{{\App\Support\ProductUrl::for($item)}}">
                                                     {{ Str::limit($item->name,35) }}
                                                 </a></h3>
                                                 <div class="rating-stars">
@@ -239,7 +239,7 @@
                                                 <div class="product-card-body">
 
                                                     <div class="product-category"><a href="{{route('front.catalog').'?category='.$item->category->slug}}">{{$item->category->name}}</a></div>
-                                                    <h3 class="product-title"><a href="{{route('front.product',$item->slug)}}">
+                                                    <h3 class="product-title"><a href="{{\App\Support\ProductUrl::for($item)}}">
                                                         {{ Str::limit($item->name,50) }}
                                                     </a></h3>
                                                     <div class="rating-stars">
@@ -367,7 +367,7 @@
                                     </div>
                                     <div class="product-card-body">
                                         <div class="product-category"><a href="{{route('front.catalog').'?category='.$popular_category_item->category->slug}}">{{$popular_category_item->category->name}}</a></div>
-                                        <h3 class="product-title"><a href="{{route('front.product',$popular_category_item->slug)}}">
+                                        <h3 class="product-title"><a href="{{\App\Support\ProductUrl::for($popular_category_item)}}">
                                             {{ Str::limit($popular_category_item->name,35) }}
                                         </a></h3>
                                         <div class="rating-stars">
@@ -408,7 +408,7 @@
                                 <div class="slider-item">
                                     @foreach ($two_column_category_itemt as $two_column_category_item)
                                     <div class="product-card p-col">
-                                        <a class="product-thumb" href="{{route('front.product',$two_column_category_item->slug)}}">
+                                        <a class="product-thumb" href="{{\App\Support\ProductUrl::for($two_column_category_item)}}">
                                             @if(!$two_column_category_item->is_stock())
                                                 <div class="product-badge bg-secondary border-default text-body
                                                 ">{{__('out of stock')}}</div>
@@ -416,7 +416,7 @@
 
                                             <img class="lazy" data-src="{{asset('storage/images/'.$two_column_category_item->thumbnail)}}" alt="{{ $two_column_category_item->name }}"></a>
                                         <div class="product-card-body">
-                                            <h3 class="product-title"><a href="{{route('front.product',$two_column_category_item->slug)}}">
+                                            <h3 class="product-title"><a href="{{\App\Support\ProductUrl::for($two_column_category_item)}}">
                                                 {{ Str::limit($two_column_category_item->name,40) }}
                                             </a></h3>
                                             <div class="rating-stars">

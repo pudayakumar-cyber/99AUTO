@@ -80,7 +80,7 @@
                     <div class="product-card-body">
 
                         <div class="product-category"><a href="{{route('front.catalog').'?category='.$compaign_item->item->category->slug}}">{{$compaign_item->item->category->name}}</a></div>
-                        <h3 class="product-title"><a href="{{route('front.product',$compaign_item->item->slug)}}">
+                        <h3 class="product-title"><a href="{{\App\Support\ProductUrl::for($compaign_item->item)}}">
                             {{ Str::limit($compaign_item->item->name, 35) }}
                         </a></h3>
                         <div class="rating-stars">

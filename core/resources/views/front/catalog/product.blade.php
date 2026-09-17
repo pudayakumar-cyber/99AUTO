@@ -893,7 +893,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                                 href="{{ route('front.catalog') . '?category=' . $related->category->slug }}">{{ $related->category->name }}</a>
                                         </div>
                                             <h3 class="product-title"><a
-                                                href="{{ route('front.product', $related->slug) }}"
+                                                href="{{ \App\Support\ProductUrl::for($related) }}"
                                                 title="{{ $related->display_name }}">
                                                 {{ $related->display_name }}
                                             </a></h3>
