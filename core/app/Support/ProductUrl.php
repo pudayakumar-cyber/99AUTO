@@ -8,7 +8,7 @@ final class ProductUrl
 {
     public static function for(Item $item): string
     {
-        // Slugs are not unique; the ID is part of the product's public URL.
+        // The ID keeps the URL tied to one product if slugs are reused or changed.
         return route('front.product', ['slug' => $item->slug, 'item_id' => $item->id]);
     }
 }

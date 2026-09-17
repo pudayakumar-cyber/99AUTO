@@ -11,3 +11,7 @@ Validation: three focused tests and eight assertions pass for duplicate slugs, a
 Before release, test two real products with the same slug. Confirm each catalog card opens its intended product, each page has one matching canonical, and the product sitemap URL matches the canonical. Also change one test product slug and confirm its old `?item_id=` URL redirects to the new slug, while a nonexistent or inactive product remains 404. Then inspect sample Search Console URLs for duplicate, crawled-not-indexed, and 404 groups. This repair cannot establish how many exclusions it will resolve without those examples or a later crawl.
 
 Hermes is optional for the investigation. It cannot force Google indexing. A staging clone can be useful for broader releases but is not required to develop and test this local repair. Do not submit staging pages for indexing.
+
+## Local catalog audit
+
+The local database has 2,925 active products, one active product without a slug, and zero duplicate active-slug groups. This does not establish the production catalog state; the Search Console screenshots concern the live site and show a much larger URL set. The missing local slug is excluded from the current product sitemap generator and should be corrected in catalog data before expecting that product to appear there.
