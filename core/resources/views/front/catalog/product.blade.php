@@ -313,7 +313,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <input type="hidden" value="{{ PriceHelper::setCurrencySign() }}" id="set_currency">
                         <input type="hidden" value="{{ PriceHelper::setCurrencyValue() }}" id="set_currency_val">
                         <input type="hidden" value="{{ $setting->currency_direction }}" id="currency_direction">
-                        <h4 class="mb-2 p-title-main">{{ $displayProductName }}</h4>
+                        <h1 class="mb-2 p-title-main">{{ $displayProductName }}</h1>
                         <div class="mb-3">
                             <div class="rating-stars d-inline-block gmr-3">
                                 {!! Helper::renderStarRating($item->reviews_avg_rating) !!}
