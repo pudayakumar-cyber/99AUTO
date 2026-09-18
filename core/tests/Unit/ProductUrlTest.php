@@ -35,5 +35,6 @@ class ProductUrlTest extends TestCase
 
         $this->assertSame('https://99autoparts.ca/product/brake-pads?item_id=31', ProductUrl::for($first));
         $this->assertSame('https://99autoparts.ca/product/brake-pads?item_id=32', ProductUrl::for($second));
+        $this->assertSame('https://99autoparts.ca/product/brake-pads?item_id=32', ProductUrl::forSlugAndId('brake-pads', 32));
     }
 }
