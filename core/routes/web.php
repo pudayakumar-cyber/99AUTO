@@ -7,6 +7,11 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Cache;
 
+Route::get('/sitemap.xml', 'Front\SitemapController@index')->name('front.sitemap');
+Route::get('/sitemaps/pages.xml', 'Front\SitemapController@pages')->name('front.sitemap.pages');
+Route::get('/sitemaps/products-{page}.xml', 'Front\SitemapController@products')
+    ->where('page', '[0-9]+')->name('front.sitemap.products');
+
 Route::get('/integrations/klaviyo/catalog', 'Front\KlaviyoCatalogController')
     ->name('front.integrations.klaviyo.catalog');
 

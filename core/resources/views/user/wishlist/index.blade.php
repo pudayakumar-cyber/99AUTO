@@ -43,9 +43,9 @@
                 @foreach ($wishlist_items as $product)
                 <tr>
                     <td>
-                      <div class="product-item"><a class="product-thumb" href="{{route('front.product',$product->slug)}}"><img src="{{asset('storage/images/'.$product->photo)}}" alt="{{ $product->name }}"></a>
+                      <div class="product-item"><a class="product-thumb" href="{{\App\Support\ProductUrl::for($product)}}"><img src="{{asset('storage/images/'.$product->photo)}}" alt="{{ $product->name }}"></a>
                         <div class="product-info">
-                          <h4 class="product-title"><a href="{{route('front.product',$product->slug)}}">{{$product->name}}</a></h4>
+                          <h4 class="product-title"><a href="{{\App\Support\ProductUrl::for($product)}}">{{$product->name}}</a></h4>
                           <div class="text-lg mb-1">{{PriceHelper::grandCurrencyPrice($product)}}</div>
                           <div class="text-sm">{{__('Availability')}}:
                             <div class="d-inline text-{{$product->stock == 0 ? 'danger' : 'success'}}">{{$product->stock == 0 ? __('Out of stock') : __('In Stock')}}</div>
@@ -61,7 +61,7 @@
                       @endif
                    
                       @else
-                      <a class="product-button btn btn-primary btn-sm" href="{{route('front.product',$product->slug)}}"><i class="icon-arrow-right"></i><span>{{__('Details')}}</span></a>
+                      <a class="product-button btn btn-primary btn-sm" href="{{\App\Support\ProductUrl::for($product)}}"><i class="icon-arrow-right"></i><span>{{__('Details')}}</span></a>
                     @endif
                     </td>
                     <td class="text-center"><a class="remove-from-cart" href="{{route('user.wishlist.delete',$product->getWishlistItemId())}}" data-toggle="tooltip" title="Remove item"><i class="icon-x"></i></a></td>

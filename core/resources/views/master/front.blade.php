@@ -87,7 +87,9 @@
         <title>@yield('title') - {{ $setting->title }}</title>
     @endif
 
-    <link rel="canonical" href="{{ url()->current() }}">
+    <link rel="canonical" href="{{ $routeName === 'front.product' && isset($item)
+        ? \App\Support\ProductUrl::for($item)
+        : url()->current() }}">
     @if ($googleSiteVerification)
         <meta name="google-site-verification" content="{{ $googleSiteVerification }}">
     @endif

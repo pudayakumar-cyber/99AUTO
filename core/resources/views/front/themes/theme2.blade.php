@@ -167,7 +167,7 @@
                                                                 href="{{ route('front.catalog') . '?category=' . $item->category->slug }}">{{ $item->category->name }}</a>
                                                         </div>
                                                         <h3 class="product-title"><a
-                                                                href="{{ route('front.product', $item->slug) }}">
+                                                                href="{{ \App\Support\ProductUrl::for($item) }}">
                                                                 {{ Str::limit($item->name, 50) }}
                                                             </a></h3>
                                                         <div class="rating-stars">
@@ -249,7 +249,7 @@
                                                             href="{{ route('front.catalog') . '?category=' . $item->category->slug }}">{{ $item->category->name }}</a>
                                                     </div>
                                                     <h3 class="product-title"><a
-                                                            href="{{ route('front.product', $item->slug) }}">
+                                                            href="{{ \App\Support\ProductUrl::for($item) }}">
                                                             {{ Str::limit($item->name, 35) }}
                                                         </a></h3>
                                                     <div class="rating-stars">
@@ -379,7 +379,7 @@
                                                         href="{{ route('front.catalog') . '?category=' . $item->category->slug }}">{{ $item->category->name }}</a>
                                                 </div>
                                                 <h3 class="product-title"><a
-                                                        href="{{ route('front.product', $item->slug) }}">
+                                                        href="{{ \App\Support\ProductUrl::for($item) }}">
                                                         {{ Str::limit($item->name, 35) }}
                                                     </a></h3>
                                                 <div class="rating-stars">
@@ -453,7 +453,7 @@
                                                         href="{{ route('front.catalog') . '?category=' . $item->category->slug }}">{{ $item->category->name }}</a>
                                                 </div>
                                                 <h3 class="product-title"><a
-                                                        href="{{ route('front.product', $item->slug) }}">
+                                                        href="{{ \App\Support\ProductUrl::for($item) }}">
                                                         {{ Str::limit($item->name, 35) }}
                                                     </a></h3>
                                                 <div class="rating-stars">
@@ -526,7 +526,7 @@
                                                         href="{{ route('front.catalog') . '?category=' . $item->category->slug }}">{{ $item->category->name }}</a>
                                                 </div>
                                                 <h3 class="product-title"><a
-                                                        href="{{ route('front.product', $item->slug) }}">
+                                                        href="{{ \App\Support\ProductUrl::for($item) }}">
                                                         {{ Str::limit($item->name, 35) }}
                                                     </a></h3>
                                                 <div class="rating-stars">
@@ -605,7 +605,7 @@
                                         @foreach ($two_column_category_itemt as $two_column_category_item)
                                             <div class="product-card p-col">
                                                 <a class="product-thumb"
-                                                    href="{{ route('front.product', $two_column_category_item->slug) }}">
+                                                    href="{{ \App\Support\ProductUrl::for($two_column_category_item) }}">
                                                     @if (!$two_column_category_item->is_stock())
                                                         <div
                                                             class="product-badge bg-secondary border-default text-body
@@ -619,7 +619,7 @@
                                                 </a>
                                                 <div class="product-card-body">
                                                     <h3 class="product-title"><a
-                                                            href="{{ route('front.product', $two_column_category_item->slug) }}">
+                                                            href="{{ \App\Support\ProductUrl::for($two_column_category_item) }}">
                                                             {{ Str::limit($two_column_category_item->name, 40) }}
                                                         </a></h3>
                                                     <div class="rating-stars">

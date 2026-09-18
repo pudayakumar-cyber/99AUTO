@@ -31,6 +31,7 @@ use App\Models\Service;
 use App\Models\Slider;
 use App\Models\TrackOrder;
 use App\Support\StorefrontImage;
+use App\Support\ProductUrl;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
@@ -564,11 +565,23 @@ class FrontendController extends Controller
             ->whereSlug($slug);
 
         $requestedItemId = request()->query('item_id');
-        if (is_numeric($requestedItemId)) {
-            $itemQuery->where('id', (int) $requestedItemId);
+        if ($requestedItemId !== null) {
+            $itemId = is_scalar($requestedItemId)
+                ? filter_var($requestedItemId, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]])
+                : false;
+            abort_if($itemId === false, 404);
+            $itemQuery->whereKey($itemId);
         }
 
-        $item = $itemQuery->firstOrFail();
+        $item = $itemQuery->first();
+        if (! $item && $requestedItemId !== null) {
+            // An imported product may have a new slug while its ID stays stable.
+            $currentItem = Item::whereKey($itemId)->whereStatus(1)->first(['id', 'slug']);
+            if ($currentItem && $currentItem->slug !== $slug && $currentItem->slug !== '') {
+                return redirect()->to(ProductUrl::for($currentItem), 301);
+            }
+        }
+        abort_if(! $item, 404);
         $galleries = $item->galleries
             ->filter(fn ($gallery) => StorefrontImage::isSafe($gallery->photo))
             ->values();
