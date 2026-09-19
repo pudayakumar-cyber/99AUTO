@@ -20,10 +20,7 @@
     $primaryProductImageUrl = $resolveProductImageUrl($item->photo);
     $primaryProductImageFallbackUrl = $resolveProductImageFallbackUrl($item->photo);
     $brandImageUrl = \App\Support\StorefrontImage::url(optional($item->brand)->photo);
-    $productMetaDescription = trim((string) $item->meta_description);
-    if ($productMetaDescription === '') {
-        $productMetaDescription = Str::limit(trim(strip_tags((string) ($item->sort_details ?: $item->details))), 160, '');
-    }
+    $productMetaDescription = \App\Support\ProductMetaDescription::for($item);
     $productShareUrl = request()->fullUrl();
     $encodedProductShareUrl = rawurlencode($productShareUrl);
     $encodedProductShareTitle = rawurlencode($displayProductName);
