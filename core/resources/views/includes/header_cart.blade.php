@@ -60,9 +60,9 @@
     $grandSubtotal += ($cartPrice + $cartAttributePrice) * $cartQty;
 @endphp
 <div class="entry">
-  <div class="entry-thumb"><a href="{{route('front.product',$cart['slug']) . '?item_id=' . $itemId}}"><img src="{{ $resolveCartImageUrl($cart['photo'] ?? '') }}" alt="{{ $cart['name'] }}"></a></div>
+  <div class="entry-thumb"><a href="{{\App\Support\ProductUrl::forSlugAndId($cart['slug'], (int) $itemId)}}"><img src="{{ $resolveCartImageUrl($cart['photo'] ?? '') }}" alt="{{ $cart['name'] }}"></a></div>
   <div class="entry-content">
-    <h4 class="entry-title"><a href="{{route('front.product',$cart['slug']) . '?item_id=' . $itemId}}">
+    <h4 class="entry-title"><a href="{{\App\Support\ProductUrl::forSlugAndId($cart['slug'], (int) $itemId)}}">
         {{ Str::limit($cart['name'], 45) }}
     </a></h4>
     <span class="entry-meta">{{$cartQty}} x {{PriceHelper::setCurrencyPrice($cartPrice)}}</span>
