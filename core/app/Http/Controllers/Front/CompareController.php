@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Front;
 use App\Http\Controllers\Controller;
 use App\Helpers\PriceHelper;
 use App\Models\Item;
+use App\Support\ProductUrl;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
@@ -134,7 +135,7 @@ class CompareController extends Controller
                     ])->filter(fn ($value) => trim((string) $value) !== '')->implode(' - '),
                     'brand' => optional($item->brand)->name,
                     'price' => PriceHelper::grandCurrencyPrice($item),
-                    'product_url' => route('front.product', $item->slug),
+                    'product_url' => ProductUrl::for($item),
                     'compare_url' => route('fornt.compare.product', $item->id),
                     'image_url' => $this->resolveCompareImageUrl($item->thumbnail ?? ''),
                 ];
