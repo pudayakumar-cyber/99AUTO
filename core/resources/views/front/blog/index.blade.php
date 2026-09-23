@@ -31,12 +31,18 @@
             <div class="col-xl-9 col-lg-8 order-lg-2">
                 <div class="row">
                     @forelse ($posts as $post)
+                        @php
+                            $postImage = \App\Support\BlogImage::url(
+                                $post->photo,
+                                url('/core/public/storage/images/placeholder.png')
+                            );
+                        @endphp
                         <div class="col-md-6">
                             <a href="{{ route('front.blog.details', $post->slug) }}" class="blog-post">
                                 <div class="post-thumb">
                                     <img class="lazy"
-                                        data-src="{{ url('/core/public/storage/images/' . json_decode($post->photo, true)[array_key_first(json_decode($post->photo, true))]) }}"
-                                        alt="Blog Post" loading="lazy">
+                                        data-src="{{ $postImage }}"
+                                        alt="{{ $post->title }}" loading="lazy">
                                 </div>
                                 <div class="post-body">
 
@@ -100,10 +106,16 @@
                     <section class="widget widget-featured-posts card rounded p-4">
                         <h3 class="widget-title">{{ __('Most Recent Added Posts') }}</h3>
                         @foreach ($recent_posts as $recent)
+                            @php
+                                $recentImage = \App\Support\BlogImage::url(
+                                    $recent->photo,
+                                    url('/core/public/storage/images/placeholder.png')
+                                );
+                            @endphp
                             <div class="entry">
                                 <div class="entry-thumb"><a href="{{ route('front.blog.details', $recent->slug) }}"><img
-                                            src="{{ url('/core/public/storage/images/' . json_decode($recent->photo, true)[array_key_first(json_decode($recent->photo, true))]) }}"
-                                            alt="Post" loading="lazy"></a></div>
+                                            src="{{ $recentImage }}"
+                                            alt="{{ $recent->title }}" loading="lazy"></a></div>
                                 <div class="entry-content">
                                     <h4 class="entry-title"><a href="{{ route('front.blog.details', $recent->slug) }}">
                                             {{ Str::limit($recent->title, 55) }}

@@ -9,8 +9,8 @@
     } else {
         $keyword = $post->title;
     }
-    $photos = json_decode($post->photo, true);
-    $postImage = isset($photos[0]) ? url('/core/public/storage/images/' . $photos[0]) : url('/core/public/storage/images/placeholder.png');
+    $postImages = \App\Support\BlogImage::urls($post->photo);
+    $postImage = $postImages[0] ?? url('/core/public/storage/images/placeholder.png');
 @endphp
 @section('meta')
     <meta name="title" content="{{ $post->title }}">
@@ -59,9 +59,11 @@
                     <!-- Gallery-->
                     <div class="blog-details-slider owl-carousel">
 
-                        @foreach (json_decode($post->photo, true) as $photo)
-                            <img src="{{ url('/core/public/storage/images/' . $photo) }}" alt="Image">
-                        @endforeach
+                        @forelse ($postImages as $photo)
+                            <img src="{{ $photo }}" alt="{{ $post->title }}">
+                        @empty
+                            <img src="{{ $postImage }}" alt="{{ $post->title }}">
+                        @endforelse
                     </div>
                     <div class="blog-details-main-content">
                         <h4 class="pt-4 b-d-title">{{ $post->title }}</h4>
@@ -163,10 +165,16 @@
                     <section class="widget widget-featured-posts card rounded p-4 mb-30">
                         <h3 class="widget-title">{{ __('Most Recent Added Posts') }}</h3>
                         @foreach ($posts as $recent)
+                            @php
+                                $recentImage = \App\Support\BlogImage::url(
+                                    $recent->photo,
+                                    url('/core/public/storage/images/placeholder.png')
+                                );
+                            @endphp
                             <div class="entry">
                                 <div class="entry-thumb"><a href="{{ route('front.blog.details', $recent->slug) }}"><img
-                                            src="{{ url('/core/public/storage/images/' . json_decode($recent->photo, true)[array_key_first(json_decode($recent->photo, true))]) }}"
-                                            alt="Post"></a></div>
+                                            src="{{ $recentImage }}"
+                                            alt="{{ $recent->title }}"></a></div>
                                 <div class="entry-content">
                                     <h4 class="entry-title"><a href="{{ route('front.blog.details', $recent->slug) }}">
                                             {{ Str::limit($recent->title, 55) }}

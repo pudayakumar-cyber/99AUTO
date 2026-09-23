@@ -887,12 +887,16 @@
                                     <a href="{{ route('front.blog.details', $post->slug) }}" class="blog-post">
                                         <div class="post-thumb">
                                             @php
-                                                $blogPhotoName = json_decode($post->photo, true)[array_key_first(json_decode($post->photo, true))];
+                                                $blogImage = \App\Support\BlogImage::url(
+                                                    $post->photo,
+                                                    url('/core/public/storage/images/placeholder.png')
+                                                );
+                                                $blogPhotoName = basename(parse_url($blogImage, PHP_URL_PATH));
                                                 $blogSize = $getImageSize($blogPhotoName, 370, 240);
                                             @endphp
                                             <img class="lazy"
-                                                data-src="{{ url('/core/public/storage/images/' . $blogPhotoName) }}"
-                                                alt="Blog Post"
+                                                data-src="{{ $blogImage }}"
+                                                alt="{{ $post->title }}"
                                                 width="{{ $blogSize['width'] }}"
                                                 height="{{ $blogSize['height'] }}">
                                         </div>
