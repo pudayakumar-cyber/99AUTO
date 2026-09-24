@@ -7,6 +7,10 @@
 
 @section('content')
 
+    <div class="container pt-3">
+        <h1 class="h4 mb-3">{{ __('Shop Auto Parts Online in Canada') }}</h1>
+    </div>
+
     @if ($setting->is_slider == 1)
         @php
             $getImageSize = function($filename, $defaultWidth = 300, $defaultHeight = 300) {
