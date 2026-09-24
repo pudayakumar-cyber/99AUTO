@@ -5,6 +5,15 @@
  
     RewriteEngine On
 
+    # Use one canonical hostname so search engines do not index duplicate pages.
+    RewriteCond %{HTTP_HOST} ^www\.99autoparts\.ca$ [NC]
+    RewriteRule ^ https://99autoparts.ca%{REQUEST_URI} [R=301,L,NE]
+
+    # Product media is stored below core/public. Serve valid image requests
+    # internally instead of sending every crawler through a temporary redirect.
+    RewriteCond %{DOCUMENT_ROOT}/core/public/storage/images/$1 -f
+    RewriteRule ^storage/images/([^/]+)$ core/public/storage/images/$1 [L]
+
     # ====================================================================
     # GOOGLE TAG GATEWAY ROUTING RULES (PHP PROXY)
     # ====================================================================
@@ -27,6 +36,10 @@
 </IfModule>
 
 <IfModule mod_headers.c>
+    # Enable HSTS after a successful HTTPS response. includeSubDomains and
+    # preload can be considered after every subdomain is confirmed on HTTPS.
+    Header always set Strict-Transport-Security "max-age=31536000" "expr=%{HTTPS} == 'on'"
+
     <FilesMatch "\.(css|js|mjs|jpg|jpeg|png|gif|webp|svg|ico|woff|woff2|ttf|eot)$">
         Header unset Set-Cookie
     </FilesMatch>
