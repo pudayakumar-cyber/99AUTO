@@ -2401,7 +2401,7 @@ body_theme4 @endif
                             </li>
                             @if ($setting->is_faq == 1)
                                 <li>
-                                    <a class="" href="{{ route('front.faq') }}">{{ __('Faq') }}</a>
+                                    <a class="" href="{{ \App\Support\FaqUrl::primary() }}">{{ __('Faq') }}</a>
                                 </li>
                             @endif
                             @foreach ($footer_pages as $page)

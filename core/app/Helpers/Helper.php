@@ -3,6 +3,7 @@
 namespace App\Helpers;
 
 use App\Models\Page;
+use App\Support\FaqUrl;
 
 class Helper
 {
@@ -47,7 +48,7 @@ class Helper
             $href = route('front.blog');
         }
         else if ($link["type"] == 'faq') {
-            $href = route('front.faq');
+            $href = FaqUrl::primary();
         } 
         else if ($link["type"] == 'contact') {
             $href = route('front.contact');

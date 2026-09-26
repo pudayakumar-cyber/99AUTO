@@ -731,7 +731,7 @@ class FrontendController extends Controller
             return view('front.faq.index', ['fcategories' => collect()]);
         }
 
-        return redirect()->route('front.faq.details', $category->slug);
+        return redirect()->route('front.faq.details', $category->slug, 301);
     }
 
     public function show($slug)

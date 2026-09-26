@@ -680,7 +680,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             <div id="collapsePaFaq" class="accordion-collapse collapse" aria-labelledby="headingPaFaq">
                                 <div class="accordion-body">
                                     <p class="text-muted small mb-2">{{ __('For answers about ordering, shipping, returns, and more, visit our help center.') }}</p>
-                                    <a href="{{ route('front.faq') }}" class="btn btn-sm btn-primary">{{ __('View all FAQs') }}</a>
+                                    <a href="{{ \App\Support\FaqUrl::primary() }}" class="btn btn-sm btn-primary">{{ __('View all FAQs') }}</a>
                                 </div>
                             </div>
                         </div>
