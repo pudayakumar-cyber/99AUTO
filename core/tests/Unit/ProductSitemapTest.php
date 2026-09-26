@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Services\ProductSitemap;
+use App\Support\FaqUrl;
 use Illuminate\Config\Repository;
 use Illuminate\Container\Container;
 use Illuminate\Database\Capsule\Manager as Capsule;
@@ -36,6 +37,15 @@ class ProductSitemapTest extends TestCase
             ['sitemaps/products-{page}.xml', 'front.sitemap.products'],
             ['/', 'front.index'],
             ['catalog', 'front.catalog'],
+            ['brands', 'front.brand'],
+            ['blog', 'front.blog'],
+            ['blog/{slug}', 'front.blog.details'],
+            ['faq', 'front.faq'],
+            ['faq/{slug}', 'front.faq.details'],
+            ['contact', 'front.contact'],
+            ['reviews', 'front.reviews'],
+            ['track/order', 'front.order.track'],
+            ['page/{slug}', 'front.page'],
         ] as [$path, $name]) {
             $routes->add((new Route('GET', $path, fn () => null))->name($name));
         }
@@ -55,6 +65,40 @@ class ProductSitemapTest extends TestCase
             ['id' => 2, 'slug' => 'brake-pads', 'status' => 1, 'updated_at' => null],
             ['id' => 3, 'slug' => 'hidden', 'status' => 0, 'updated_at' => null],
             ['id' => 4, 'slug' => null, 'status' => 1, 'updated_at' => null],
+        ]);
+        $this->database->schema()->create('settings', function (Blueprint $table) {
+            $table->id();
+            $table->boolean('is_brands')->default(false);
+            $table->boolean('is_blog')->default(false);
+            $table->boolean('is_faq')->default(false);
+            $table->boolean('is_contact')->default(false);
+        });
+        $this->database->table('settings')->insert([
+            'id' => 1, 'is_brands' => 1, 'is_blog' => 1, 'is_faq' => 1, 'is_contact' => 1,
+        ]);
+        $this->database->schema()->create('posts', function (Blueprint $table) {
+            $table->id();
+            $table->string('slug')->nullable();
+            $table->timestamp('updated_at')->nullable();
+        });
+        $this->database->table('posts')->insert([
+            'id' => 1, 'slug' => 'winter-driving', 'updated_at' => '2026-09-02 12:00:00',
+        ]);
+        $this->database->schema()->create('fcategories', function (Blueprint $table) {
+            $table->id();
+            $table->string('slug')->nullable();
+            $table->boolean('status');
+        });
+        $this->database->table('fcategories')->insert([
+            ['id' => 1, 'slug' => 'frequently-asked-questions', 'status' => 1],
+            ['id' => 2, 'slug' => 'hidden-faq', 'status' => 0],
+        ]);
+        $this->database->schema()->create('pages', function (Blueprint $table) {
+            $table->id();
+            $table->string('slug')->nullable();
+        });
+        $this->database->table('pages')->insert([
+            ['id' => 1, 'slug' => 'about-us'],
         ]);
     }
 
@@ -100,5 +144,23 @@ class ProductSitemapTest extends TestCase
         $pages = $this->xml(fn () => $sitemap->pages());
         $this->assertSame('https://99autoparts.ca', (string) $pages->url[0]->loc);
         $this->assertSame('https://99autoparts.ca/catalog', (string) $pages->url[1]->loc);
+        $locations = [];
+        foreach ($pages->url as $url) {
+            $locations[] = (string) $url->loc;
+        }
+        $this->assertContains('https://99autoparts.ca/brands', $locations);
+        $this->assertContains('https://99autoparts.ca/blog/winter-driving', $locations);
+        $this->assertContains('https://99autoparts.ca/faq/frequently-asked-questions', $locations);
+        $this->assertContains('https://99autoparts.ca/page/about-us', $locations);
+        $this->assertNotContains('https://99autoparts.ca/faq', $locations);
+        $this->assertNotContains('https://99autoparts.ca/faq/hidden-faq', $locations);
+    }
+
+    public function test_primary_faq_url_points_directly_to_the_preferred_active_category(): void
+    {
+        $this->assertSame(
+            'https://99autoparts.ca/faq/frequently-asked-questions',
+            FaqUrl::primary()
+        );
     }
 }

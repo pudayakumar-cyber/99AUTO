@@ -3,6 +3,10 @@
 namespace App\Services;
 
 use App\Models\Item;
+use App\Models\Fcategory;
+use App\Models\Page;
+use App\Models\Post;
+use App\Models\Setting;
 use App\Support\ProductUrl;
 
 class ProductSitemap
@@ -33,8 +37,31 @@ class ProductSitemap
     public function pages(): void
     {
         $this->openUrls();
-        foreach (['front.index', 'front.catalog'] as $name) {
+        foreach (['front.index', 'front.catalog', 'front.reviews', 'front.order.track'] as $name) {
             $this->location(route($name), 'url');
+        }
+
+        $setting = Setting::query()->first();
+        if ($setting?->is_brands) {
+            $this->location(route('front.brand'), 'url');
+        }
+        if ($setting?->is_contact) {
+            $this->location(route('front.contact'), 'url');
+        }
+        if ($setting?->is_blog) {
+            $this->location(route('front.blog'), 'url');
+            foreach (Post::query()->select(['slug', 'updated_at'])->whereNotNull('slug')->where('slug', '<>', '')->cursor() as $post) {
+                $this->location(route('front.blog.details', $post->slug), 'url', $post->updated_at?->toAtomString());
+            }
+        }
+        if ($setting?->is_faq) {
+            foreach (Fcategory::query()->select('slug')->whereStatus(1)->whereNotNull('slug')->where('slug', '<>', '')->cursor() as $category) {
+                $this->location(route('front.faq.details', $category->slug), 'url');
+            }
+        }
+
+        foreach (Page::query()->select('slug')->whereNotNull('slug')->where('slug', '<>', '')->cursor() as $page) {
+            $this->location(route('front.page', $page->slug), 'url');
         }
         $this->closeUrls();
     }
