@@ -152,6 +152,7 @@ class ProductSitemapTest extends TestCase
         $this->assertContains('https://99autoparts.ca/blog/winter-driving', $locations);
         $this->assertContains('https://99autoparts.ca/faq/frequently-asked-questions', $locations);
         $this->assertContains('https://99autoparts.ca/page/about-us', $locations);
+        $this->assertNotContains('https://99autoparts.ca/reviews', $locations);
         $this->assertNotContains('https://99autoparts.ca/faq', $locations);
         $this->assertNotContains('https://99autoparts.ca/faq/hidden-faq', $locations);
     }
