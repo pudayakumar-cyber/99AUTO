@@ -37,7 +37,7 @@ class ProductSitemap
     public function pages(): void
     {
         $this->openUrls();
-        foreach (['front.index', 'front.catalog', 'front.reviews', 'front.order.track'] as $name) {
+        foreach (['front.index', 'front.catalog', 'front.order.track'] as $name) {
             $this->location(route($name), 'url');
         }
 
