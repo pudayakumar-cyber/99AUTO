@@ -83,6 +83,8 @@
         <title>{{ $activePageSeo->title }}</title>
     @elseif (url()->current() == route('front.index'))
         <title>@yield('hometitle')</title>
+    @elseif ($routeName === 'front.product')
+        <title>@yield('title')</title>
     @else
         <title>@yield('title') - {{ $setting->title }}</title>
     @endif
