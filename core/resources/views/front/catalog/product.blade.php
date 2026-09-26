@@ -3,11 +3,12 @@
 @section('page_type', 'product')
 
 @section('title')
-    @php $displayProductName = $item->display_name; @endphp
-    {{ $displayProductName }}
+    {{ \App\Support\ProductMetaTitle::for($item) }}
 @endsection
 
 @php
+    $displayProductName = $item->display_name;
+    $productSeoTitle = \App\Support\ProductMetaTitle::for($item);
     $placeholderImageUrl = url('/core/public/storage/images/placeholder.png');
     $resolveProductImageUrl = fn (?string $rawPath): string =>
         \App\Support\StorefrontImage::url($rawPath, $placeholderImageUrl);
@@ -30,16 +31,16 @@
 @section('meta')
     <link rel="preload" as="image" href="{{ $primaryProductImageUrl }}" fetchpriority="high">
 
-    <meta name="title" content="{{ $displayProductName }}">
+    <meta name="title" content="{{ $productSeoTitle }}">
     <meta name="keywords" content="{{ $item->meta_keywords }}">
     <meta name="description" content="{{ $productMetaDescription }}">
 
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{{ $displayProductName }}">
+    <meta name="twitter:title" content="{{ $productSeoTitle }}">
     <meta name="twitter:image" content="{{ $primaryProductImageUrl }}">
     <meta name="twitter:description" content="{{ $productMetaDescription }}">
 
-    <meta property="og:title" content="{{ $displayProductName }}">
+    <meta property="og:title" content="{{ $productSeoTitle }}">
     <meta property="og:image" content="{{ $primaryProductImageUrl }}">
     <meta property="og:description" content="{{ $productMetaDescription }}">
     <meta property="og:url" content="{{ $productShareUrl }}">
