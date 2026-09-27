@@ -194,16 +194,16 @@
 
     <!-- Preload critical stylesheets -->
     <link rel="preload" href="{{ asset('assets/front/css/plugins.min.css') }}" as="style">
-    <link rel="preload" href="{{ asset('assets/front/css/styles.min.css') }}" as="style">
-    <link rel="preload" href="{{ asset('assets/front/css/responsive.css') }}" as="style">
+    <link rel="preload" href="{{ asset('assets/front/css/styles.optimized.min.css?v=20260927') }}" as="style">
+    <link rel="preload" href="{{ asset('assets/front/css/responsive.optimized.min.css?v=20260927') }}" as="style">
 
     <!-- Vendor Styles including: Bootstrap, Font Icons, Plugins, etc.-->
     <link rel="stylesheet" href="{{ asset('assets/front/css/plugins.min.css') }}">
     @yield('styleplugins')
 
-    <link id="mainStyles" rel="stylesheet" href="{{ asset('assets/front/css/styles.min.css') }}">
+    <link id="mainStyles" rel="stylesheet" href="{{ asset('assets/front/css/styles.optimized.min.css?v=20260927') }}">
 
-    <link id="mainStyles" rel="stylesheet" href="{{ asset('assets/front/css/responsive.css') }}">
+    <link id="mainStyles" rel="stylesheet" href="{{ asset('assets/front/css/responsive.optimized.min.css?v=20260927') }}">
 
     <!-- Non-critical Stylesheet Loaded Asynchronously -->
     <link rel="stylesheet" href="{{ asset('assets/front/css/paymentfont.min.css') }}" media="print" onload="this.media='all'; this.onload=null;">
@@ -217,7 +217,7 @@
     <script src="{{ asset('assets/front/js/modernizr.min.js') }}" defer></script>
 
     @if (optional($default_language)->rtl == 1)
-        <link rel="stylesheet" href="{{ asset('assets/front/css/rtl.css') }}">
+        <link rel="stylesheet" href="{{ asset('assets/front/css/rtl.optimized.min.css?v=20260927') }}">
     @endif
     <style>
         {{ $setting->custom_css }}
@@ -2513,10 +2513,10 @@ body_theme4 @endif
     <!-- JavaScript (jQuery) libraries, plugins and custom scripts-->
     <script type="text/javascript" src="{{ asset('assets/front/js/plugins.min.js') }}" defer></script>
     <script type="text/javascript" src="{{ asset('assets/back/js/plugin/bootstrap-notify/bootstrap-notify.min.js') }}" defer></script>
-    <script type="text/javascript" src="{{ asset('assets/front/js/scripts.min.js') }}" defer></script>
-    <script type="text/javascript" src="{{ asset('assets/front/js/lazy.min.js') }}" defer></script>
-    <script type="text/javascript" src="{{ asset('assets/front/js/lazy.plugin.js') }}" defer></script>
-    <script type="text/javascript" src="{{ asset('assets/front/js/myscript.js') }}" defer></script>
+    <script type="text/javascript" src="{{ asset('assets/front/js/scripts.optimized.min.js?v=20260927') }}" defer></script>
+    <script type="text/javascript" src="{{ asset('assets/front/js/lazy.optimized.min.js?v=20260927') }}" defer></script>
+    <script type="text/javascript" src="{{ asset('assets/front/js/lazy.plugin.optimized.min.js?v=20260927') }}" defer></script>
+    <script type="text/javascript" src="{{ asset('assets/front/js/myscript.optimized.min.js?v=20260927') }}" defer></script>
     @yield('script')
 
     <!-- Lazy load tracking scripts (GTM, GA, Facebook Pixel) on first user interaction -->
