@@ -66,7 +66,7 @@
                         @endforelse
                     </div>
                     <div class="blog-details-main-content">
-                        <h4 class="pt-4 b-d-title">{{ $post->title }}</h4>
+                        <h1 class="h4 pt-4 b-d-title">{{ $post->title }}</h1>
                         <ul class="post-meta mb-4">
                             <li><i class="icon-user"></i><a href="javascript:;}">{{ __('Admin') }}</a></li>
                             <li><i class="icon-tag"></i><a

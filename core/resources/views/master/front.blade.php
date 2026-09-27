@@ -80,7 +80,7 @@
     @endphp
 
     @if ($activePageSeo)
-        <title>{{ $activePageSeo->title }}</title>
+        <title>{{ $activePageSeo->title }}@if ($routeName === 'front.catalog' && request()->integer('page') > 1) - Page {{ request()->integer('page') }}@endif</title>
     @elseif (url()->current() == route('front.index'))
         <title>@yield('hometitle')</title>
     @elseif ($routeName === 'front.product')
@@ -91,7 +91,9 @@
 
     <link rel="canonical" href="{{ $routeName === 'front.product' && isset($item)
         ? \App\Support\ProductUrl::for($item)
-        : url()->current() }}">
+        : ($routeName === 'front.catalog'
+            ? \App\Support\CatalogUrl::canonical(url()->current(), request()->query())
+            : url()->current()) }}">
     @if ($googleSiteVerification)
         <meta name="google-site-verification" content="{{ $googleSiteVerification }}">
     @endif
