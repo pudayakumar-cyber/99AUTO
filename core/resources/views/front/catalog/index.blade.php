@@ -56,6 +56,7 @@
         }
     @endphp
     {{ implode(' ', $titleParts) }}
+    @if (request()->integer('page') > 1) - {{ __('Page') }} {{ request()->integer('page') }} @endif
 @endsection
 
 @section('styleplugins')

@@ -24,12 +24,13 @@
   </div>
   <!-- Page Content-->
   <div class="container">
+    <h1 class="h4 mb-4">{{ __('Auto Parts Brands') }}</h1>
     <div class="row g-3">
         @foreach ($brands as $brand)
             <div class="col-xxl-2 col-xl-3 col-lg-4 col-md-4 col-6">
                 <a class="b-p-s-b" href="{{ route('front.catalog') . '?brand=' . $brand->slug }}">
                     <img class="d-block hi-50"
-                        src="{{ url('/core/public/storage/images/' . $brand->photo) }}"
+                        src="{{ \App\Support\StorefrontImage::url($brand->photo, url('/core/public/storage/images/placeholder.png')) }}"
                         alt="{{ $brand->name }}" title="{{ $brand->name }}">
                 </a>
             </div>

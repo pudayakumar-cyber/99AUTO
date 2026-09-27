@@ -26,6 +26,7 @@
     </div>
 
     <div class="container blog-page">
+        <h1 class="h4 mb-4">{{ __('Auto Parts Blog') }}</h1>
         <div class="row ">
             <!-- Content-->
             <div class="col-xl-9 col-lg-8 order-lg-2">

@@ -938,12 +938,16 @@ Regards,<br>
 
     public function reviews()
     {
-        return view('front.reviews');
+        $reviews = \App\Models\Review::query()->where('status', 1)
+            ->whereHas('item', fn ($query) => $query->where('status', 1))
+            ->with('item')->latest('id')->paginate(20);
+
+        return view('front.reviews', compact('reviews'));
     }
 
     public function topReviews()
     {
-        return view('front.top-reviews');
+        return redirect()->route('front.reviews', [], 301);
     }
 
     public function reviewSubmit(ReviewRequest $request)
