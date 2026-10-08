@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Services\KlaviyoCatalogService;
 use App\Services\KlaviyoCatalogAudit;
 use App\Services\KlaviyoClient;
+use App\Services\KlaviyoQueueReadiness;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Schema;
 use Throwable;
@@ -40,8 +41,7 @@ class ValidateKlaviyoIntegration extends Command
             $this->check($checks, 'Database table: '.$table, Schema::hasTable($table));
         }
 
-        $queueConnection = (string) config('queue.default');
-        $this->check($checks, 'Queue connection', $queueConnection !== '' && $queueConnection !== 'sync', $queueConnection ?: 'not configured');
+        $checks = array_merge($checks, (new KlaviyoQueueReadiness)->checks());
         $this->check($checks, 'Klaviyo queue name', trim((string) config('services.klaviyo.queue')) !== '');
 
         try {
