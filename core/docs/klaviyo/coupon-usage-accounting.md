@@ -53,9 +53,19 @@ stale models, depleted balances, malformed/deleted coupon references, rollback o
 marker-write failure, and historical migration behavior. PHP syntax and Git
 whitespace checks pass. The existing PHPUnit XML deprecation remains.
 
-SQLite verifies transaction rollback and repeat handling, not InnoDB's concurrent
-row-lock behavior. Concurrent MySQL checkout validation and real gateway sandbox
-tests remain staging requirements; no gateway charges were made in development.
+Additional opt-in tests ran on a separate disposable MySQL 8.0.30 server. Eight
+parallel workers for one order decremented once; eight distinct orders decremented
+eight times; competing orders never drove a two-use balance below zero. The engine
+guard is also tested against MyISAM. The test creates/drops only randomly named
+`coupon_usage_test_` databases and never loads the application's environment.
+
+To repeat on a disposable local server, explicitly set `COUPON_TEST_MYSQL_ENABLED=1`
+and run `tests/Integration/CouponUsageMysqlTest.php` with PHPUnit. The default port
+is 33379; optional `COUPON_TEST_MYSQL_PORT`, `COUPON_TEST_MYSQL_USER` and
+`COUPON_TEST_MYSQL_PASSWORD` configure that test server. Never point it at production.
+
+Real gateway sandbox tests remain staging requirements; no gateway charges were
+made in development. Concurrent usage accounting does not verify payment reservation.
 
 ## Remaining work
 
