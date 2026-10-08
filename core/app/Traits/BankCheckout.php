@@ -13,7 +13,6 @@ use App\{
 use App\Helpers\SmsHelper;
 use App\Jobs\EmailSendJob;
 use App\Models\Item;
-use App\Models\PromoCode;
 use App\Models\ShippingService;
 use App\Models\State;
 use Carbon\Carbon;
@@ -109,12 +108,7 @@ trait BankCheckout
             $email->sendTemplateMail($emailData, "template");
         }
 
-        if($discount){
-            $coupon_id = $discount['code']['id'];
-            $get_coupon = PromoCode::findOrFail($coupon_id);
-            $get_coupon->no_of_times -= 1;
-            $get_coupon->update();
-        }
+        app(\App\Services\CouponUsageService::class)->record($order);
 
         if($setting->is_twilio == 1){
             // message
