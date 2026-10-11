@@ -52,11 +52,11 @@
                             <h3 class="widget-title">{{ __('Items In Your Cart') }}</h3>
                             @foreach ($cart as $key => $item)
                                 <div class="entry">
-                                    <div class="entry-thumb"><a href="{{ route('front.product', $item['slug']) }}"><img
+                                    <div class="entry-thumb"><a href="{{ \App\Support\ProductUrl::forSlugAndId($item['slug'], (int) \PriceHelper::GetItemId($key)) }}"><img
                                                 src="{{ $resolveCheckoutImageUrl($item['photo'] ?? '') }}" alt="{{ $item['name'] }}"></a>
                                     </div>
                                     <div class="entry-content">
-                                        <h4 class="entry-title"><a href="{{ route('front.product', $item['slug']) }}">
+                                        <h4 class="entry-title"><a href="{{ \App\Support\ProductUrl::forSlugAndId($item['slug'], (int) \PriceHelper::GetItemId($key)) }}">
                                                 {{ Str::limit($item['name'], 45) }}
 
                                             </a></h4>

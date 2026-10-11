@@ -3,11 +3,12 @@
 @section('page_type', 'product')
 
 @section('title')
-    @php $displayProductName = $item->display_name; @endphp
-    {{ $displayProductName }}
+    {{ \App\Support\ProductMetaTitle::for($item) }}
 @endsection
 
 @php
+    $displayProductName = $item->display_name;
+    $productSeoTitle = \App\Support\ProductMetaTitle::for($item);
     $placeholderImageUrl = url('/core/public/storage/images/placeholder.png');
     $resolveProductImageUrl = fn (?string $rawPath): string =>
         \App\Support\StorefrontImage::url($rawPath, $placeholderImageUrl);
@@ -20,10 +21,7 @@
     $primaryProductImageUrl = $resolveProductImageUrl($item->photo);
     $primaryProductImageFallbackUrl = $resolveProductImageFallbackUrl($item->photo);
     $brandImageUrl = \App\Support\StorefrontImage::url(optional($item->brand)->photo);
-    $productMetaDescription = trim((string) $item->meta_description);
-    if ($productMetaDescription === '') {
-        $productMetaDescription = Str::limit(trim(strip_tags((string) ($item->sort_details ?: $item->details))), 160, '');
-    }
+    $productMetaDescription = \App\Support\ProductMetaDescription::for($item);
     $productShareUrl = request()->fullUrl();
     $encodedProductShareUrl = rawurlencode($productShareUrl);
     $encodedProductShareTitle = rawurlencode($displayProductName);
@@ -33,16 +31,16 @@
 @section('meta')
     <link rel="preload" as="image" href="{{ $primaryProductImageUrl }}" fetchpriority="high">
 
-    <meta name="title" content="{{ $displayProductName }}">
+    <meta name="title" content="{{ $productSeoTitle }}">
     <meta name="keywords" content="{{ $item->meta_keywords }}">
     <meta name="description" content="{{ $productMetaDescription }}">
 
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{{ $displayProductName }}">
+    <meta name="twitter:title" content="{{ $productSeoTitle }}">
     <meta name="twitter:image" content="{{ $primaryProductImageUrl }}">
     <meta name="twitter:description" content="{{ $productMetaDescription }}">
 
-    <meta property="og:title" content="{{ $displayProductName }}">
+    <meta property="og:title" content="{{ $productSeoTitle }}">
     <meta property="og:image" content="{{ $primaryProductImageUrl }}">
     <meta property="og:description" content="{{ $productMetaDescription }}">
     <meta property="og:url" content="{{ $productShareUrl }}">
@@ -313,7 +311,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <input type="hidden" value="{{ PriceHelper::setCurrencySign() }}" id="set_currency">
                         <input type="hidden" value="{{ PriceHelper::setCurrencyValue() }}" id="set_currency_val">
                         <input type="hidden" value="{{ $setting->currency_direction }}" id="currency_direction">
-                        <h4 class="mb-2 p-title-main">{{ $displayProductName }}</h4>
+                        <h1 class="mb-2 p-title-main">{{ $displayProductName }}</h1>
                         <div class="mb-3">
                             <div class="rating-stars d-inline-block gmr-3">
                                 {!! Helper::renderStarRating($item->reviews_avg_rating) !!}
@@ -682,7 +680,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             <div id="collapsePaFaq" class="accordion-collapse collapse" aria-labelledby="headingPaFaq">
                                 <div class="accordion-body">
                                     <p class="text-muted small mb-2">{{ __('For answers about ordering, shipping, returns, and more, visit our help center.') }}</p>
-                                    <a href="{{ route('front.faq') }}" class="btn btn-sm btn-primary">{{ __('View all FAQs') }}</a>
+                                    <a href="{{ \App\Support\FaqUrl::primary() }}" class="btn btn-sm btn-primary">{{ __('View all FAQs') }}</a>
                                 </div>
                             </div>
                         </div>
@@ -893,7 +891,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                                 href="{{ route('front.catalog') . '?category=' . $related->category->slug }}">{{ $related->category->name }}</a>
                                         </div>
                                             <h3 class="product-title"><a
-                                                href="{{ route('front.product', $related->slug) }}"
+                                                href="{{ \App\Support\ProductUrl::for($related) }}"
                                                 title="{{ $related->display_name }}">
                                                 {{ $related->display_name }}
                                             </a></h3>

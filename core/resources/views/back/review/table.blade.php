@@ -6,7 +6,7 @@
     </td>
 
     <td>
-        <a href="{{route('front.product',$data->item->slug)}}">{{ $data->item->name }}</a>
+        <a href="{{\App\Support\ProductUrl::for($data->item)}}">{{ $data->item->name }}</a>
     </td>
     <td>
         {{ $data->rating }}

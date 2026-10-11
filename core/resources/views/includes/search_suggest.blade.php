@@ -26,10 +26,10 @@
 <div class="s-r-inner">
     @foreach ($items as $item)
     <div class="product-card p-col">
-        <a class="product-thumb" href="{{route('front.product',$item->slug)}}">
+        <a class="product-thumb" href="{{\App\Support\ProductUrl::for($item)}}">
             <img class="lazy" alt="{{ $item->name }}" src="{{ $resolveSearchImageUrl($item->thumbnail ?? '') }}" style=""></a>
         <div class="product-card-body">
-            <h3 class="product-title"><a href="{{route('front.product',$item->slug)}}">
+            <h3 class="product-title"><a href="{{\App\Support\ProductUrl::for($item)}}">
                 {{ Str::limit($item->name, 35) }}
             </a></h3>
             <div class="rating-stars">

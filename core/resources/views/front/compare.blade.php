@@ -249,10 +249,10 @@
                                             <td>
                                                 <div class="comparison-item">
                                                     <span class="remove-item compare_remove" data-href="{{ route('front.compare.remove', $item->id) }}"><i class="icon-x"></i></span>
-                                                    <a class="comparison-item-thumb" href="{{ route('front.product', $item->slug) }}">
+                                                    <a class="comparison-item-thumb" href="{{ \App\Support\ProductUrl::for($item) }}">
                                                         <img src="{{ $resolveCompareImageUrl($item->thumbnail) }}" alt="{{ $item->name }}">
                                                     </a>
-                                                    <a class="comparison-item-title" href="{{ route('front.product', $item->slug) }}">{{ $item->name }}</a>
+                                                    <a class="comparison-item-title" href="{{ \App\Support\ProductUrl::for($item) }}">{{ $item->name }}</a>
                                                     @if ($item->item_type != 'affiliate')
                                                         <a class="btn btn-outline-primary btn-sm add_to_single_cart" href="javascript:;" data-target="{{ $item->id }}">{{ __('Add to Cart') }}</a>
                                                     @endif
@@ -293,10 +293,10 @@
                                             <td>
                                                 <div class="comparison-item">
                                                     <span class="remove-item compare_remove" data-href="{{ route('front.compare.remove', $item->id) }}"><i class="icon-x"></i></span>
-                                                    <a class="comparison-item-thumb" href="{{ route('front.product', $item->slug) }}">
+                                                    <a class="comparison-item-thumb" href="{{ \App\Support\ProductUrl::for($item) }}">
                                                         <img src="{{ $resolveCompareImageUrl($item->thumbnail) }}" alt="{{ $item->name }}">
                                                     </a>
-                                                    <a class="comparison-item-title" href="{{ route('front.product', $item->slug) }}">{{ $item->name }}</a>
+                                                    <a class="comparison-item-title" href="{{ \App\Support\ProductUrl::for($item) }}">{{ $item->name }}</a>
                                                     @if ($item->item_type != 'affiliate')
                                                         <a class="btn btn-outline-primary btn-sm add_to_single_cart" href="javascript:;" data-target="{{ $item->id }}">{{ __('Add to Cart') }}</a>
                                                     @endif

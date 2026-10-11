@@ -31,6 +31,7 @@ use App\Models\Service;
 use App\Models\Slider;
 use App\Models\TrackOrder;
 use App\Support\StorefrontImage;
+use App\Support\ProductUrl;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
@@ -564,11 +565,23 @@ class FrontendController extends Controller
             ->whereSlug($slug);
 
         $requestedItemId = request()->query('item_id');
-        if (is_numeric($requestedItemId)) {
-            $itemQuery->where('id', (int) $requestedItemId);
+        if ($requestedItemId !== null) {
+            $itemId = is_scalar($requestedItemId)
+                ? filter_var($requestedItemId, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]])
+                : false;
+            abort_if($itemId === false, 404);
+            $itemQuery->whereKey($itemId);
         }
 
-        $item = $itemQuery->firstOrFail();
+        $item = $itemQuery->first();
+        if (! $item && $requestedItemId !== null) {
+            // An imported product may have a new slug while its ID stays stable.
+            $currentItem = Item::whereKey($itemId)->whereStatus(1)->first(['id', 'slug']);
+            if ($currentItem && $currentItem->slug !== $slug && $currentItem->slug !== '') {
+                return redirect()->to(ProductUrl::for($currentItem), 301);
+            }
+        }
+        abort_if(! $item, 404);
         $galleries = $item->galleries
             ->filter(fn ($gallery) => StorefrontImage::isSafe($gallery->photo))
             ->values();
@@ -718,7 +731,7 @@ class FrontendController extends Controller
             return view('front.faq.index', ['fcategories' => collect()]);
         }
 
-        return redirect()->route('front.faq.details', $category->slug);
+        return redirect()->route('front.faq.details', $category->slug, 301);
     }
 
     public function show($slug)
@@ -925,12 +938,16 @@ Regards,<br>
 
     public function reviews()
     {
-        return view('front.reviews');
+        $reviews = \App\Models\Review::query()->where('status', 1)
+            ->whereHas('item', fn ($query) => $query->where('status', 1))
+            ->with('item')->latest('id')->paginate(20);
+
+        return view('front.reviews', compact('reviews'));
     }
 
     public function topReviews()
     {
-        return view('front.top-reviews');
+        return redirect()->route('front.reviews', [], 301);
     }
 
     public function reviewSubmit(ReviewRequest $request)

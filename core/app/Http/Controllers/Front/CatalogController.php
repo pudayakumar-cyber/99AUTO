@@ -33,6 +33,10 @@ class CatalogController extends Controller
 
 	public function index(Request $request)
 	{
+        // Fragment parameters must not turn ordinary crawler visits into partial documents.
+        if (! $request->ajax() && $request->hasAny(['catalog_chunk', 'catalog_chunk_size'])) {
+            return redirect()->to(\App\Support\CatalogUrl::canonical($request->url(), $request->query()), 301);
+        }
 
         $year  = $request->year;
         $make  = $request->make;

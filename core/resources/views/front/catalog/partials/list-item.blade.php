@@ -41,7 +41,7 @@
                         <span class="product-list-brand">{{ optional($item->brand)->name }}</span>
                     @endif
                 </div>
-                <h3 class="product-title"><a href="{{ route('front.product', $item->slug) . '?item_id=' . $item->id }}"
+                <h3 class="product-title"><a href="{{ \App\Support\ProductUrl::for($item) }}"
                     title="{{ $item->display_name }}">
                     {{ $item->display_name }}
                 </a></h3>

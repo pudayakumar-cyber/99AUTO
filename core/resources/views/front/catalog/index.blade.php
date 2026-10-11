@@ -56,6 +56,7 @@
         }
     @endphp
     {{ implode(' ', $titleParts) }}
+    @if (request()->integer('page') > 1) - {{ __('Page') }} {{ request()->integer('page') }} @endif
 @endsection
 
 @section('styleplugins')
@@ -240,6 +241,7 @@
   <div class="container padding-bottom-3x mb-1">
         <div class="row">
             <div class="col-lg-12">
+                <h1 class="h4 mb-3">@yield('title')</h1>
                 <div class="shop-top-filter-wrapper">
                     <div class="row">
                         <div class="col-md-10 gd-text-sm-center">

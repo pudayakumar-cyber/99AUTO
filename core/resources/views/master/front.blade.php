@@ -80,14 +80,20 @@
     @endphp
 
     @if ($activePageSeo)
-        <title>{{ $activePageSeo->title }}</title>
+        <title>{{ $activePageSeo->title }}@if ($routeName === 'front.catalog' && request()->integer('page') > 1) - Page {{ request()->integer('page') }}@endif</title>
     @elseif (url()->current() == route('front.index'))
         <title>@yield('hometitle')</title>
+    @elseif ($routeName === 'front.product')
+        <title>@yield('title')</title>
     @else
         <title>@yield('title') - {{ $setting->title }}</title>
     @endif
 
-    <link rel="canonical" href="{{ url()->current() }}">
+    <link rel="canonical" href="{{ $routeName === 'front.product' && isset($item)
+        ? \App\Support\ProductUrl::for($item)
+        : ($routeName === 'front.catalog'
+            ? \App\Support\CatalogUrl::canonical(url()->current(), request()->query())
+            : url()->current()) }}">
     @if ($googleSiteVerification)
         <meta name="google-site-verification" content="{{ $googleSiteVerification }}">
     @endif
@@ -2404,7 +2410,7 @@ body_theme4 @endif
                             </li>
                             @if ($setting->is_faq == 1)
                                 <li>
-                                    <a class="" href="{{ route('front.faq') }}">{{ __('Faq') }}</a>
+                                    <a class="" href="{{ \App\Support\FaqUrl::primary() }}">{{ __('Faq') }}</a>
                                 </li>
                             @endif
                             @foreach ($footer_pages as $page)

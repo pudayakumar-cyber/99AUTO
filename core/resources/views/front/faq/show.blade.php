@@ -233,7 +233,7 @@
                     <li><a href="{{route('front.index')}}">{{__('Home')}}</a>
                     </li>
                     <li class="separator">&nbsp;</li>
-                    <li><a href="{{route('front.faq')}}">{{__('FAQ')}}</a>
+                    <li><a href="{{ \App\Support\FaqUrl::primary() }}">{{__('FAQ')}}</a>
                     </li>
                     <li class="separator">&nbsp;</li>
                     <li>{{$category->name}}</li>

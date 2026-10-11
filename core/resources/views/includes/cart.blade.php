@@ -58,10 +58,10 @@
                         <tr>
                             <td>
                                 <div class="product-item"><a class="product-thumb"
-                                        href="{{ route('front.product', $item['slug']) }}"><img
+                                        href="{{ \App\Support\ProductUrl::forSlugAndId($item['slug'], (int) $itemId) }}"><img
                                             src="{{ $resolveCartImageUrl($item['photo'] ?? '') }}" alt="{{ $item['name'] }}"></a>
                                     <div class="product-info">
-                                        <h4 class="product-title"><a href="{{ route('front.product', $item['slug']) }}">
+                                        <h4 class="product-title"><a href="{{ \App\Support\ProductUrl::forSlugAndId($item['slug'], (int) $itemId) }}">
                                                 {{ Str::limit($item['name'], 45) }}
 
                                             </a></h4>

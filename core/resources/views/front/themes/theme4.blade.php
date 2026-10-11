@@ -105,7 +105,7 @@
                                             <div class="product-card-inner">
                                             <div class="product-card-body">
                                                 <div class="product-category"><a href="{{route('front.catalog').'?category='.$item->category->slug}}">{{$item->category->name}}</a></div>
-                                                <h3 class="product-title"><a href="{{route('front.product',$item->slug)}}">
+                                                <h3 class="product-title"><a href="{{\App\Support\ProductUrl::for($item)}}">
                                                     {{ Str::limit($item->name,35) }}
                                                 </a></h3>
                                                 <div class="rating-stars">
@@ -217,7 +217,7 @@
                                                 <div class="product-card-body">
 
                                                     <div class="product-category"><a href="{{route('front.catalog').'?category='.$item->category->slug}}">{{$item->category->name}}</a></div>
-                                                    <h3 class="product-title"><a href="{{route('front.product',$item->slug)}}">
+                                                    <h3 class="product-title"><a href="{{\App\Support\ProductUrl::for($item)}}">
                                                         {{ Str::limit($item->name,50) }}
                                                     </a></h3>
                                                     <div class="rating-stars">
@@ -353,7 +353,7 @@
                                                 <div class="product-card-body">
 
                                                     <div class="product-category"><a href="{{route('front.catalog').'?category='.$item->category->slug}}">{{$item->category->name}}</a></div>
-                                                    <h3 class="product-title"><a href="{{route('front.product',$item->slug)}}">
+                                                    <h3 class="product-title"><a href="{{\App\Support\ProductUrl::for($item)}}">
                                                         {{ Str::limit($item->name,35) }}
                                                     </a></h3>
                                                     <div class="rating-stars">
@@ -432,11 +432,17 @@
                     <div class="col-lg-12">
                         <div class="home-blog-slider owl-carousel">
                             @foreach ($posts as $post)
+                                @php
+                                    $blogImage = \App\Support\BlogImage::url(
+                                        $post->photo,
+                                        url('/core/public/storage/images/placeholder.png')
+                                    );
+                                @endphp
                                 <div class="slider-item">
                                     <a href="{{route('front.blog.details',$post->slug)}}" class="blog-post">
                                         <div class="post-thumb">
-                                            <img class="lazy" data-src="{{ asset('storage/images/' . json_decode($post->photo, true)[array_key_first(json_decode($post->photo, true))]) }}"
-                                                alt="Blog Post">
+                                            <img class="lazy" data-src="{{ $blogImage }}"
+                                                alt="{{ $post->title }}">
                                             </div>
                                         <div class="post-body">
 

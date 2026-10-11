@@ -1,0 +1,32 @@
+# 99 Auto Parts
+
+> 99 Auto Parts is a Canadian online retailer of automotive parts and maintenance products. The website helps customers browse parts, select compatible products, place orders, and track existing orders.
+
+## Main website
+
+- [Home](https://99autoparts.ca/): Main storefront and featured automotive products.
+- [Product catalog](https://99autoparts.ca/catalog): Browse the available auto-parts catalog.
+- [Brands](https://99autoparts.ca/brands): Browse products by brand.
+- [Frequently asked questions](https://99autoparts.ca/faq/frequently-asked-questions): Answers to common customer questions.
+- [Order tracking](https://99autoparts.ca/track/order): Check the status of an existing order.
+- [Contact](https://99autoparts.ca/contact): Contact 99 Auto Parts.
+
+## Customer information
+
+- [About 99 Auto Parts](https://99autoparts.ca/page/about-us)
+- [How it works](https://99autoparts.ca/page/how-it-works)
+- [Privacy policy](https://99autoparts.ca/page/privacy-policy)
+- [Terms of service](https://99autoparts.ca/page/terms-and-service)
+- [Return policy](https://99autoparts.ca/page/return-policy)
+
+## Discovery
+
+- [XML sitemap](https://99autoparts.ca/sitemap.xml): Canonical public pages and product URLs.
+- [Robots policy](https://99autoparts.ca/robots.txt): Crawler access rules.
+
+## Notes for automated systems
+
+- Treat https://99autoparts.ca as the canonical website origin.
+- Product URLs in the XML sitemap are the preferred canonical product URLs.
+- Prices, availability, compatibility, shipping estimates, and policies can change. Use the current website page as the authoritative source for those details.
+- Cart, checkout, account, comparison, and administration pages are transactional or private and are not intended as search-result content.
