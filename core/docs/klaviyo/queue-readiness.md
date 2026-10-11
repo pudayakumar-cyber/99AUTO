@@ -1,8 +1,7 @@
 # Queue readiness validation
 
-This follow-up targets `fix/klaviyo-email-readiness` (PR #201) until that
-branch is merged. It does not depend on coupon usage accounting. If #201 is
-squash-merged, reconcile this branch with main before changing the PR base.
+This follow-up targets `main` after PR #201 was merged. It does not depend
+on coupon usage accounting.
 
 Previously `klaviyo:validate` accepted any nonempty queue connection name other
 than `sync`. A typo, null driver or custom-named synchronous connection could
