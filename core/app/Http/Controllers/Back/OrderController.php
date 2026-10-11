@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Back;
 use App\{
     Helpers\EmailHelper,
     Models\Order,
-    Models\PromoCode,
     Models\TrackOrder,
     Http\Controllers\Controller
 };
@@ -234,13 +233,7 @@ class OrderController extends Controller
 
     public function setPromoCode($order)
     {
-
-        $discount = json_decode($order->discount, true);
-        if($discount != null){
-            $code = PromoCode::find($discount['code']['id']);
-            $code->no_of_times--;
-            $code->update();
-        }
+        app(\App\Services\CouponUsageService::class)->record($order);
     }
 
 

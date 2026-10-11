@@ -12,7 +12,6 @@ use App\Models\Item;
 use App\Models\Notification;
 use App\Models\Order;
 use App\Models\PaymentSetting;
-use App\Models\PromoCode;
 use App\Models\Setting;
 use App\Models\ShippingService;
 use App\Models\State;
@@ -278,12 +277,7 @@ class SslCommerzController extends Controller
                 Session::forget('cart');
                 Session::forget('discount');
                 Session::forget('coupon');
-                if ($discount) {
-                    $coupon_id = $discount['code']['id'];
-                    $get_coupon = PromoCode::findOrFail($coupon_id);
-                    $get_coupon->no_of_times -= 1;
-                    $get_coupon->update();
-                }
+                app(\App\Services\CouponUsageService::class)->record($order);
                 $setting = Setting::first();
                 if ($setting->is_twilio == 1) {
                     // message

@@ -10,7 +10,6 @@ use Mollie\Laravel\Facades\Mollie;
 use App\Models\Item;
 use App\Models\Notification;
 use App\Models\Order;
-use App\Models\PromoCode;
 use App\Models\Setting;
 use App\Models\ShippingService;
 use App\Models\State;
@@ -190,12 +189,7 @@ trait MollieCheckout
             $email = new EmailHelper();
             $email->sendTemplateMail($emailData, "template");
         }
-        if($discount){
-            $coupon_id = $discount['code']['id'];
-            $get_coupon = PromoCode::findOrFail($coupon_id);
-            $get_coupon->no_of_times -= 1;
-            $get_coupon->update();
-        }
+        app(\App\Services\CouponUsageService::class)->record($order);
         Session::put('order_id',$order->id);
         Session::forget('cart');
         Session::forget('discount');

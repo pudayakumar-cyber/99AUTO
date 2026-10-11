@@ -4,7 +4,6 @@ namespace App\Traits;
 
 use App\{
     Models\Setting,
-    Models\PromoCode,
     Models\TrackOrder,
     Helpers\EmailHelper,
     Helpers\PriceHelper,
@@ -229,12 +228,7 @@ trait StripeElementsCheckout
             PriceHelper::stockDecrese();
             PriceHelper::LicenseQtyDecrese($cart);
 
-            if ($discount) {
-                $coupon_id = $discount['code']['id'];
-                $get_coupon = PromoCode::findOrFail($coupon_id);
-                $get_coupon->no_of_times -= 1;
-                $get_coupon->update();
-            }
+            app(\App\Services\CouponUsageService::class)->record($order);
 
             TrackOrder::create([
                 'title' => 'Pending',
