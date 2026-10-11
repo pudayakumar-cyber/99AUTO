@@ -30,4 +30,11 @@ class MaintenanceScheduleTest extends TestCase
             MaintenanceSchedule::forDescriptions(['Control Arm'])
         );
     }
+
+    public function test_oil_filters_use_the_filter_interval_and_plural_fluids_are_recognized(): void
+    {
+        $this->assertSame(180, MaintenanceSchedule::forDescriptions(['Engine Oil Filter'])['days']);
+        $this->assertSame(90, MaintenanceSchedule::forDescriptions(['Transmission Fluids'])['days']);
+        $this->assertSame(90, MaintenanceSchedule::forDescriptions(['Automotive Lubricants'])['days']);
+    }
 }

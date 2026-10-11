@@ -1369,7 +1369,7 @@ $(function ($) {
                                     data.tracking.meta_event,
                                     data.tracking.payload,
                                     data.tracking.google_event,
-                                    { eventId: data.tracking.event_id }
+                                    { eventId: data.tracking.event_id, klaviyo: data.tracking.klaviyo }
                                 );
                             }
                             $(".cart_count").text(data.qty);

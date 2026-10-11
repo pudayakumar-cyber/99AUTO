@@ -90,4 +90,20 @@ class KlaviyoCatalogServiceTest extends TestCase
         $this->assertSame(1, $record['inventory_policy']);
         $this->assertTrue($record['in_stock']);
     }
+
+    public function test_catalog_record_and_feed_urls_use_public_root_from_worker_configuration(): void
+    {
+        config(['app.url' => 'https://99autoparts.ca/core/']);
+        $item = new Item;
+        $item->setRawAttributes(['id' => 10, 'name' => 'Filter', 'slug' => 'filter', 'photo' => 'filter.jpg']);
+        foreach (['brand', 'category', 'subcategory', 'childcategory'] as $relation) {
+            $item->setRelation($relation, null);
+        }
+        $item->setRelation('galleries', new Collection);
+        $catalog = new KlaviyoCatalogService;
+        $record = $catalog->map($item);
+        $this->assertSame('https://99autoparts.ca/integrations/klaviyo/catalog?token=secret-token', $catalog->feedUrl());
+        $this->assertSame('https://99autoparts.ca/product/filter?item_id=10', $record['link']);
+        $this->assertSame('https://99autoparts.ca/core/public/storage/images/filter.jpg', $record['image_link']);
+    }
 }
