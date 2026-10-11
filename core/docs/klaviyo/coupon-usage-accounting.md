@@ -15,8 +15,8 @@ The service does not invoke order observers or change the order's payment status
 
 ## Deployment: staging before production
 
-This branch is independent of `fix/klaviyo-readiness-resume` and is based on
-main at `4a2ccf6` (PR #211).
+This branch is based on main at `b980ff2`, after email readiness PR #201 and
+queue readiness PR #213 were merged. It contains coupon accounting only.
 
 The new nullable `orders.coupon_usage_recorded_at` column must exist before the
 new PHP handlers run. The migration checks that orders and promo_codes use
