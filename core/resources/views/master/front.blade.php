@@ -1600,20 +1600,33 @@ src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&e
     }
 
     window._klOnsite = window._klOnsite || [];
+    function queueCall(method, args) {
+        var callback = typeof args[args.length - 1] === 'function' ? args.pop() : null;
+        return new Promise(function (resolve) {
+            window._klOnsite.push([method].concat(args, [function (result) {
+                if (callback) callback(result);
+                resolve(result);
+            }]));
+        });
+    }
+    function pushCalls() {
+        window._klOnsite.push.apply(window._klOnsite, arguments);
+    }
     try {
         window.klaviyo = new Proxy({}, {
             get: function (_, method) {
+                if (method === 'push') return pushCalls;
                 return function () {
-                    var args = Array.prototype.slice.call(arguments);
-                    window._klOnsite.push([method].concat(args));
+                    return queueCall(method, Array.prototype.slice.call(arguments));
                 };
             }
         });
     } catch (error) {
         window.klaviyo = {
-            identify: function (profile) { window._klOnsite.push(['identify', profile]); },
-            track: function (event, properties) { window._klOnsite.push(['track', event, properties]); },
-            trackViewedItem: function (item) { window._klOnsite.push(['trackViewedItem', item]); }
+            push: pushCalls,
+            identify: function () { return queueCall('identify', Array.prototype.slice.call(arguments)); },
+            track: function () { return queueCall('track', Array.prototype.slice.call(arguments)); },
+            trackViewedItem: function () { return queueCall('trackViewedItem', Array.prototype.slice.call(arguments)); }
         };
     }
 })(window);
