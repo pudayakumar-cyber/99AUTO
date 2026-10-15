@@ -1670,7 +1670,6 @@ window.klaviyo.identify(@json($klaviyoBrowserIdentity));
             };
         });
         var properties = {
-            '$event_id': options.eventId || payload.event_id || null,
             '$value': isNaN(value) ? 0 : value,
             Currency: payload.currency || 'CAD',
             ItemNames: items.map(function (item) { return item.ProductName; }).filter(Boolean),
@@ -1695,6 +1694,17 @@ window.klaviyo.identify(@json($klaviyoBrowserIdentity));
             Object.keys(options.klaviyo).forEach(function (key) {
                 properties[key] = options.klaviyo[key];
             });
+        }
+
+        // An absent ID must be omitted so Klaviyo can assign its timestamp ID.
+        // Sending null is not a unique event identifier (direct checkout visits
+        // may not have passed through the cart view that creates eventId).
+        var eventId = options.eventId || payload.event_id;
+        if ((typeof eventId === 'string' && eventId.trim() !== '') ||
+            (typeof eventId === 'number' && isFinite(eventId))) {
+            properties.$event_id = eventId;
+        } else {
+            delete properties.$event_id;
         }
 
         window.klaviyo.track(metricName, properties);
