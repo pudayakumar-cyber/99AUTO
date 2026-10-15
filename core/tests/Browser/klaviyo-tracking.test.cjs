@@ -50,3 +50,52 @@ test('checkout recovery details and item data are unchanged', () => {
 test('unrelated events are not sent to Klaviyo', () => {
     assert.equal(track('AddShippingInfo').length, 0);
 });
+
+test('all storefront metrics wait for the current customer identity callback', async () => {
+    const identityStart = blade.indexOf('window.paKlaviyoIdentityReady = new Promise');
+    const identityEnd = blade.indexOf('</script>', identityStart);
+    const identitySource = blade.slice(identityStart, identityEnd)
+        .replace('@json($klaviyoBrowserIdentity)', JSON.stringify({ email: 'test@example.com', $id: '21' }));
+    let identified;
+    const calls = [];
+    const window = { klaviyo: {
+        identify: (identity, callback) => {
+            assert.equal(identity.$id, '21');
+            identified = callback;
+        },
+        track: (metric) => calls.push(metric),
+        trackViewedItem: () => calls.push('recently-viewed')
+    } };
+    vm.runInNewContext(identitySource + source, { window });
+    for (const event of ['ViewContent', 'AddToCart', 'InitiateCheckout']) {
+        window.paKlaviyoTrack(event, {}, null, {});
+    }
+    assert.deepEqual(calls, [], 'No event should use the old cookie before identification completes');
+    identified();
+    await window.paKlaviyoIdentityReady;
+    await Promise.resolve();
+    assert.deepEqual(calls, ['Viewed Product', 'recently-viewed', 'Added to Cart', 'Started Checkout']);
+});
+
+test('failed identification never falls back to tracking the previous customer', async () => {
+    const calls = [];
+    const warnings = [];
+    const window = {
+        paKlaviyoIdentityReady: Promise.reject(new Error('identify failed')),
+        klaviyo: { track: (...args) => calls.push(args) }
+    };
+    vm.runInNewContext(source, { window, console: { warn: (...args) => warnings.push(args) } });
+    window.paKlaviyoTrack('AddToCart', {}, null, {});
+    await Promise.resolve();
+    await Promise.resolve();
+    assert.equal(calls.length, 0);
+    assert.equal(warnings.length, 1);
+});
+
+test('authenticated browser identity uses the onsite identifier, not a custom property', () => {
+    const identity = blade.slice(blade.indexOf('$klaviyoBrowserIdentity = []'), blade.indexOf('<!-- Klaviyo onsite tracking -->'));
+    assert.match(identity, /'\$id' => isset\(\$klaviyoUser->id\) \? \(string\) \$klaviyoUser->id : null/);
+    assert.doesNotMatch(identity, /'external_id'\s*=>/);
+    const guest = identity.slice(identity.indexOf('$klaviyoGuest ='));
+    assert.doesNotMatch(guest, /'\$id'\s*=>/, 'Guests must not inherit a registered customer ID');
+});

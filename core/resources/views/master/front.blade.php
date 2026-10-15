@@ -1578,7 +1578,9 @@ src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&e
             'phone_number' => $klaviyoNormalizePhone($klaviyoUser->phone ?? null),
             'first_name' => $klaviyoUser->first_name ?? null,
             'last_name' => $klaviyoUser->last_name ?? null,
-            'external_id' => isset($klaviyoUser->id) ? (string) $klaviyoUser->id : null,
+            // Onsite identify uses $id; external_id is the server API field.
+            // Keep the value identical to order, lifecycle and consent jobs.
+            '$id' => isset($klaviyoUser->id) ? (string) $klaviyoUser->id : null,
         ]);
     } else {
         $klaviyoGuest = Session::get('guest_meta_details');
@@ -1634,7 +1636,20 @@ src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&e
 <script async src="https://static.klaviyo.com/onsite/js/{{ rawurlencode(config('services.klaviyo.public_key')) }}/klaviyo.js"></script>
 @if (!empty($klaviyoBrowserIdentity))
 <script>
-window.klaviyo.identify(@json($klaviyoBrowserIdentity));
+// Events must wait until identify has replaced any previously cookied profile.
+window.paKlaviyoIdentityReady = new Promise(function (resolve, reject) {
+    try {
+        var identification = window.klaviyo.identify(@json($klaviyoBrowserIdentity), resolve);
+        if (identification && typeof identification.catch === 'function') {
+            identification.catch(reject);
+        }
+    } catch (error) {
+        reject(error);
+    }
+});
+// Handle failure even on pages without an ecommerce event. Do not fall back
+// to sending an identified customer's events under an older browser profile.
+window.paKlaviyoIdentityReady.catch(function () {});
 </script>
 @endif
 <!-- End Klaviyo onsite tracking -->
@@ -1720,21 +1735,31 @@ window.klaviyo.identify(@json($klaviyoBrowserIdentity));
             delete properties.$event_id;
         }
 
-        window.klaviyo.track(metricName, properties);
+        function sendEvent() {
+            window.klaviyo.track(metricName, properties);
 
-        if (metricName === 'Viewed Product' && typeof window.klaviyo.trackViewedItem === 'function') {
-            window.klaviyo.trackViewedItem({
-                Title: properties.ProductName,
-                ItemId: properties.ProductID,
-                Categories: categories,
-                ImageUrl: properties.ImageURL,
-                Url: properties.URL,
-                Metadata: {
-                    Brand: properties.Brand,
-                    Price: properties.Price,
-                    SKU: properties.SKU
-                }
+            if (metricName === 'Viewed Product' && typeof window.klaviyo.trackViewedItem === 'function') {
+                window.klaviyo.trackViewedItem({
+                    Title: properties.ProductName,
+                    ItemId: properties.ProductID,
+                    Categories: categories,
+                    ImageUrl: properties.ImageURL,
+                    Url: properties.URL,
+                    Metadata: {
+                        Brand: properties.Brand,
+                        Price: properties.Price,
+                        SKU: properties.SKU
+                    }
+                });
+            }
+        }
+
+        if (window.paKlaviyoIdentityReady) {
+            window.paKlaviyoIdentityReady.then(sendEvent).catch(function () {
+                console.warn('Klaviyo identification or event dispatch failed.');
             });
+        } else {
+            sendEvent();
         }
     };
     @endif
