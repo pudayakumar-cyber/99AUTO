@@ -1635,7 +1635,12 @@ src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&e
 </script>
 <script async src="https://static.klaviyo.com/onsite/js/{{ rawurlencode(config('services.klaviyo.public_key')) }}/klaviyo.js"></script>
 @if (!empty($klaviyoBrowserIdentity))
+<script src="{{ asset('assets/front/js/klaviyo-events.js') }}?v=1"></script>
 <script>
+window.paKlaviyoSendIdentifiedEvent = window.paCreateKlaviyoEventSender({
+    publicKey: @json(config('services.klaviyo.public_key')),
+    identity: @json($klaviyoBrowserIdentity)
+}, function (url, options) { return window.fetch(url, options); });
 // Events must wait until identify has replaced any previously cookied profile.
 window.paKlaviyoIdentify = function () {
     return new Promise(function (resolve, reject) {
@@ -1670,7 +1675,8 @@ window.paKlaviyoIdentityReady.catch(function () {});
         };
         var metricName = metricNames[metaEvent];
 
-        if (!metricName || !window.klaviyo || typeof window.klaviyo.track !== 'function') {
+        if (!metricName || (!window.paKlaviyoSendIdentifiedEvent &&
+            (!window.klaviyo || typeof window.klaviyo.track !== 'function'))) {
             return;
         }
 
@@ -1740,8 +1746,11 @@ window.paKlaviyoIdentityReady.catch(function () {});
 
         function sendEvent() {
             window.klaviyo.track(metricName, properties);
+            recordViewedItem();
+        }
 
-            if (metricName === 'Viewed Product' && typeof window.klaviyo.trackViewedItem === 'function') {
+        function recordViewedItem() {
+            if (metricName === 'Viewed Product' && window.klaviyo && typeof window.klaviyo.trackViewedItem === 'function') {
                 window.klaviyo.trackViewedItem({
                     Title: properties.ProductName,
                     ItemId: properties.ProductID,
@@ -1757,7 +1766,11 @@ window.paKlaviyoIdentityReady.catch(function () {});
             }
         }
 
-        if (window.paKlaviyoIdentityReady) {
+        if (window.paKlaviyoSendIdentifiedEvent) {
+            window.paKlaviyoSendIdentifiedEvent(metricName, properties).then(recordViewedItem).catch(function () {
+                console.warn('Klaviyo identified event delivery failed.');
+            });
+        } else if (window.paKlaviyoIdentityReady) {
             window.paKlaviyoIdentityReady.then(function () {
                 // SDK identity can change after page load; reconfirm it for each event.
                 return window.paKlaviyoIdentify();

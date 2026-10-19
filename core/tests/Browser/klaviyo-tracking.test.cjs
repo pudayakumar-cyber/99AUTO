@@ -140,3 +140,45 @@ test('failed event-time reidentification suppresses the event', async () => {
     assert.equal(calls.length, 0);
     assert.equal(warnings.length, 1);
 });
+
+test('identified storefront sends through explicit API once even while SDK identity is pending', async () => {
+    const { paCreateKlaviyoEventSender: create } = require('../../../assets/front/js/klaviyo-events.js');
+    for (const sdkAvailable of [true, false]) {
+        const requests = [], sdkCalls = [], viewed = [];
+        const window = {
+            paKlaviyoIdentityReady: new Promise(() => {}),
+            paKlaviyoSendIdentifiedEvent: create({ publicKey: 'public', identity: { $id: '21', email: 'test@example.com' } }, async (_, options) => {
+                requests.push(JSON.parse(options.body)); return { status: 202 };
+            })
+        };
+        if (sdkAvailable) window.klaviyo = { track: (...args) => sdkCalls.push(args), trackViewedItem: item => viewed.push(item) };
+        vm.runInNewContext(source, { window });
+        for (const event of ['ViewContent', 'AddToCart', 'InitiateCheckout']) {
+            window.paKlaviyoTrack(event, { value: 28.91, currency: 'CAD' }, null, { eventId: event, klaviyo: { CartRecoveryAvailable: true, Items: [{ ProductID: '107955' }] } });
+        }
+        await new Promise(resolve => setImmediate(resolve));
+        assert.equal(requests.length, 3);
+        assert.equal(sdkCalls.length, 0);
+        assert.equal(viewed.length, sdkAvailable ? 1 : 0);
+        for (const request of requests) {
+            assert.equal(request.data.attributes.profile.data.attributes.external_id, '21');
+            if (request.data.attributes.metric.data.attributes.name !== 'Viewed Product') {
+                assert.equal(request.data.attributes.properties.CartRecoveryAvailable, true);
+                assert.equal(request.data.attributes.properties.Items[0].ProductID, '107955');
+            }
+        }
+    }
+});
+
+test('explicit API failure is contained and never falls back to SDK identity', async () => {
+    const warnings = [], calls = [];
+    const window = {
+        paKlaviyoSendIdentifiedEvent: () => Promise.reject(new Error('unavailable')),
+        klaviyo: { track: (...args) => calls.push(args) }
+    };
+    vm.runInNewContext(source, { window, console: { warn: message => warnings.push(message) } });
+    assert.doesNotThrow(() => window.paKlaviyoTrack('AddToCart', {}, null, {}));
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(calls.length, 0);
+    assert.equal(warnings.length, 1);
+});
