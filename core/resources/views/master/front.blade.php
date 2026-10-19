@@ -1637,16 +1637,19 @@ src="https://www.facebook.com/tr?id={{ config('services.facebook.pixel_id') }}&e
 @if (!empty($klaviyoBrowserIdentity))
 <script>
 // Events must wait until identify has replaced any previously cookied profile.
-window.paKlaviyoIdentityReady = new Promise(function (resolve, reject) {
-    try {
-        var identification = window.klaviyo.identify(@json($klaviyoBrowserIdentity), resolve);
-        if (identification && typeof identification.catch === 'function') {
-            identification.catch(reject);
+window.paKlaviyoIdentify = function () {
+    return new Promise(function (resolve, reject) {
+        try {
+            var identification = window.klaviyo.identify(@json($klaviyoBrowserIdentity), resolve);
+            if (identification && typeof identification.catch === 'function') {
+                identification.catch(reject);
+            }
+        } catch (error) {
+            reject(error);
         }
-    } catch (error) {
-        reject(error);
-    }
-});
+    });
+};
+window.paKlaviyoIdentityReady = window.paKlaviyoIdentify();
 // Handle failure even on pages without an ecommerce event. Do not fall back
 // to sending an identified customer's events under an older browser profile.
 window.paKlaviyoIdentityReady.catch(function () {});
@@ -1755,7 +1758,10 @@ window.paKlaviyoIdentityReady.catch(function () {});
         }
 
         if (window.paKlaviyoIdentityReady) {
-            window.paKlaviyoIdentityReady.then(sendEvent).catch(function () {
+            window.paKlaviyoIdentityReady.then(function () {
+                // SDK identity can change after page load; reconfirm it for each event.
+                return window.paKlaviyoIdentify();
+            }).then(sendEvent).catch(function () {
                 console.warn('Klaviyo identification or event dispatch failed.');
             });
         } else {

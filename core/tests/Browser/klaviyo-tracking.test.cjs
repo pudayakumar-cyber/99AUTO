@@ -52,16 +52,16 @@ test('unrelated events are not sent to Klaviyo', () => {
 });
 
 test('all storefront metrics wait for the current customer identity callback', async () => {
-    const identityStart = blade.indexOf('window.paKlaviyoIdentityReady = new Promise');
+    const identityStart = blade.indexOf('window.paKlaviyoIdentify = function');
     const identityEnd = blade.indexOf('</script>', identityStart);
     const identitySource = blade.slice(identityStart, identityEnd)
         .replace('@json($klaviyoBrowserIdentity)', JSON.stringify({ email: 'test@example.com', $id: '21' }));
-    let identified;
+    const identityCallbacks = [];
     const calls = [];
     const window = { klaviyo: {
         identify: (identity, callback) => {
             assert.equal(identity.$id, '21');
-            identified = callback;
+            identityCallbacks.push(callback);
         },
         track: (metric) => calls.push(metric),
         trackViewedItem: () => calls.push('recently-viewed')
@@ -71,9 +71,13 @@ test('all storefront metrics wait for the current customer identity callback', a
         window.paKlaviyoTrack(event, {}, null, {});
     }
     assert.deepEqual(calls, [], 'No event should use the old cookie before identification completes');
-    identified();
+    identityCallbacks.shift()();
     await window.paKlaviyoIdentityReady;
     await Promise.resolve();
+    assert.equal(calls.length, 0);
+    assert.equal(identityCallbacks.length, 3);
+    identityCallbacks.splice(0).forEach(callback => callback());
+    await new Promise(resolve => setImmediate(resolve));
     assert.deepEqual(calls, ['Viewed Product', 'recently-viewed', 'Added to Cart', 'Started Checkout']);
 });
 
@@ -86,8 +90,7 @@ test('failed identification never falls back to tracking the previous customer',
     };
     vm.runInNewContext(source, { window, console: { warn: (...args) => warnings.push(args) } });
     window.paKlaviyoTrack('AddToCart', {}, null, {});
-    await Promise.resolve();
-    await Promise.resolve();
+    await new Promise(resolve => setImmediate(resolve));
     assert.equal(calls.length, 0);
     assert.equal(warnings.length, 1);
 });
@@ -98,4 +101,42 @@ test('authenticated browser identity uses the onsite identifier, not a custom pr
     assert.doesNotMatch(identity, /'external_id'\s*=>/);
     const guest = identity.slice(identity.indexOf('$klaviyoGuest ='));
     assert.doesNotMatch(guest, /'\$id'\s*=>/, 'Guests must not inherit a registered customer ID');
+});
+
+// Model an SDK identity refresh between separate customer actions.
+test('later events reidentify after browser identity drifts', async () => {
+    const start = blade.indexOf('window.paKlaviyoIdentify = function');
+    const identitySource = blade.slice(start, blade.indexOf('</script>', start))
+        .replace('@json($klaviyoBrowserIdentity)', JSON.stringify({ email: 'test@example.com', $id: '21' }));
+    let currentIdentity = 'user_21';
+    const calls = [];
+    const window = { klaviyo: {
+        identify: (identity, callback) => { currentIdentity = identity.$id; callback(); },
+        track: metric => calls.push([metric, currentIdentity]),
+        trackViewedItem: () => { currentIdentity = 'user_21'; }
+    } };
+    vm.runInNewContext(identitySource + source, { window });
+    for (const event of ['ViewContent', 'AddToCart', 'InitiateCheckout']) {
+        window.paKlaviyoTrack(event, {}, null, {});
+        await new Promise(resolve => setImmediate(resolve));
+        currentIdentity = 'user_21';
+    }
+    assert.deepEqual(calls, [
+        ['Viewed Product', '21'], ['Added to Cart', '21'], ['Started Checkout', '21']
+    ]);
+});
+
+test('failed event-time reidentification suppresses the event', async () => {
+    const calls = [];
+    const warnings = [];
+    const window = {
+        paKlaviyoIdentityReady: Promise.resolve(),
+        paKlaviyoIdentify: () => Promise.reject(new Error('refresh failed')),
+        klaviyo: { track: (...args) => calls.push(args) }
+    };
+    vm.runInNewContext(source, { window, console: { warn: (...args) => warnings.push(args) } });
+    window.paKlaviyoTrack('AddToCart', {}, null, {});
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(calls.length, 0);
+    assert.equal(warnings.length, 1);
 });
