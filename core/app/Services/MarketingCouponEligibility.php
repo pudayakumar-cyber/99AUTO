@@ -16,7 +16,7 @@ class MarketingCouponEligibility
         }
 
         $recipient = strtolower(trim((string) $coupon->recipient_email));
-        if ($recipient !== '' || $coupon->first_order_only) {
+        if ($recipient !== '' || $coupon->first_order_only || $coupon->marketing_offer_key) {
             // A checkout email field alone must not unlock another person's offer.
             if (! $user || ! $user->getKey()) {
                 return false;
