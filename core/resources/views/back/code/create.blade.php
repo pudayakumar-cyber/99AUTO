@@ -50,6 +50,7 @@
 									</div>
 
                                     <div class="form-group">
+                                        @include('back.code.marketing-rules')
                                         <label for="discount">{{ __('Discount') }}
                                             *</label>
                                         <div class="input-group mb-3">
