@@ -15,8 +15,8 @@ use PHPUnit\Framework\TestCase;
 
 class MarketingOfferIssuerTest extends TestCase
 {
-    private Capsule $db;
-    private MarketingOfferIssuer $issuer;
+    protected Capsule $db;
+    protected MarketingOfferIssuer $issuer;
 
     protected function setUp(): void
     {
