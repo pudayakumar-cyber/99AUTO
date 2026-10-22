@@ -87,16 +87,20 @@ class OrderController extends Controller
 
     public function updateTrackingNumber(Request $request, $id)
     {
-        $request->validate([
-            'tracking_number' => ['required', 'string', 'max:255'],
-        ]);
+        $validated = $request->validate(\App\Support\ShippingNotificationDetails::rules());
 
         $order = Order::findOrFail($id);
         $previousTrackingNumber = (string) $order->tracking_number;
 
-        $order->update([
-            'tracking_number' => trim((string) $request->tracking_number),
-        ]);
+        $trackingNumber = trim($validated['tracking_number']);
+        $details = \App\Support\ShippingNotificationDetails::fromInput(
+            $validated, $order->tracking_details ?? [], $trackingNumber !== $previousTrackingNumber
+        );
+        // These details are deliberately not mass assignable on the general order form.
+        $order->forceFill([
+            'tracking_number' => $trackingNumber,
+            'tracking_details' => $details,
+        ])->save();
 
         $this->sendCustomerTrackingEmail($order->fresh(), $previousTrackingNumber);
 

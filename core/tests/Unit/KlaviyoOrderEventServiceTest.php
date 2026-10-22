@@ -61,6 +61,54 @@ class KlaviyoOrderEventServiceTest extends TestCase
         $this->assertSame('Delivered', $event['properties']['FulfillmentStatus']);
     }
 
+    public function test_shipping_events_include_only_supplied_details(): void
+    {
+        $order = $this->order();
+        $service = new KlaviyoOrderEventService;
+        $withoutDetails = $service->orderEvent($order, 'Shipped Order')['properties'];
+        $this->assertArrayNotHasKey('TrackingURL', $withoutDetails);
+        $this->assertArrayNotHasKey('EstimatedDeliveryDate', $withoutDetails);
+        $order->tracking_details = [
+            'tracking_carrier' => 'Test Carrier',
+            'tracking_url' => 'https://carrier.example/track/123',
+            'estimated_delivery_date' => '2026-10-25',
+        ];
+        $properties = $service->orderEvent($order, 'Shipped Order')['properties'];
+        $this->assertSame('Test Carrier', $properties['Carrier']);
+        $this->assertSame('https://carrier.example/track/123', $properties['TrackingURL']);
+        $this->assertSame('2026-10-25', $properties['EstimatedDeliveryDate']);
+    }
+
+    public function test_out_for_delivery_requires_confirmation_and_uses_stable_shipment_identity(): void
+    {
+        config(['services.klaviyo.enabled' => true]);
+        $jobs = [];
+        $bus = \Mockery::mock(\Illuminate\Contracts\Bus\Dispatcher::class);
+        $bus->shouldReceive('dispatch')->twice()->andReturnUsing(function ($job) use (&$jobs) {
+            $jobs[] = $job;
+        });
+        Container::getInstance()->instance(\Illuminate\Contracts\Bus\Dispatcher::class, $bus);
+        $order = $this->order();
+        $service = new KlaviyoOrderEventService;
+        $service->trackOutForDelivery($order);
+        $order->tracking_number = 'TRACK-42';
+        $service->trackOutForDelivery($order);
+        $order->tracking_details = ['out_for_delivery_at' => '2026-10-22T12:00:00Z'];
+        $service->trackOutForDelivery($order);
+        $service->trackOutForDelivery($order);
+        foreach (['Canceled', 'Delivered'] as $status) {
+            $order->order_status = $status;
+            $service->trackOutForDelivery($order);
+        }
+        $order->order_status = 'Pending';
+        $order->transaction_number = 'temporary';
+        $service->trackOutForDelivery($order);
+        $this->assertCount(2, $jobs);
+        $this->assertSame($jobs[0]->uniqueId, $jobs[1]->uniqueId);
+        $this->assertSame('Out for Delivery', $jobs[0]->metricName);
+        \Mockery::close();
+    }
+
     private function order(): Order
     {
         $order = new Order;
