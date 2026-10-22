@@ -183,8 +183,8 @@ trait StripeElementsCheckout
                 ]);
             }
 
-            // Create order
-            $cart = Session::get('cart');
+            // Use the checkout captured before the provider request.
+            $cart = json_decode(Session::get('order_data')['cart'], true);
             $user = Auth::user();
             $orderData = Session::get('order_data');
             $orderData['txnid'] = $paymentIntent->id;
@@ -196,40 +196,14 @@ trait StripeElementsCheckout
             $order->transaction_number = $new_txn;
             $order->save();
 
-            // Calculate total for transaction
-            $total_tax = 0;
-            $cart_total = 0;
-            $total = 0;
-            $option_price = 0;
-            foreach ($cart as $key => $item) {
-                $total += $item['main_price'] * $item['qty'];
-                $option_price += $item['attribute_price'];
-                $cart_total = $total + $option_price;
-                $item = Item::findOrFail($key);
-                if ($item->tax) {
-                    $total_tax += $item::taxCalculate($item);
-                }
-            }
-
-            $order_input_data = Session::get('order_input_data');
-            if (!PriceHelper::Digital()) {
-                $shipping = null;
-            } else {
-                $shipping = ShippingService::findOrFail($order_input_data['shipping_id']);
-            }
-
-            $discount = [];
-            if (Session::has('coupon')) {
-                $discount = Session::get('coupon');
-            }
-
-            $grand_total = ($cart_total + ($shipping ? $shipping->price : 0)) + $total_tax;
-            $grand_total = $grand_total - ($discount ? $discount['discount'] : 0);
-            $grand_total += PriceHelper::StatePrce($order_input_data['state_id'], $cart_total);
-            $total_amount = PriceHelper::setConvertPrice($grand_total);
-
-            PriceHelper::Transaction($order->id, $order->transaction_number, EmailHelper::getEmail(), PriceHelper::OrderTotal($order, 'trns'));
-            PriceHelper::stockDecrese();
+            // This integration creates Stripe amounts in cents. Use that accepted
+            // amount, rather than recalculating from a cart edited during payment.
+            $total_amount = $paymentIntent->amount / 100;
+            PriceHelper::Transaction($order->id, $order->transaction_number, EmailHelper::getEmail(), $total_amount, [
+                'sign' => $order->currency_sign,
+                'value' => $order->currency_value,
+            ]);
+            PriceHelper::stockDecrese($cart);
             PriceHelper::LicenseQtyDecrese($cart);
 
             app(\App\Services\CouponUsageService::class)->record($order);

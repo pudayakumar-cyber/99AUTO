@@ -327,10 +327,10 @@ class PriceHelper
         return $check_digital;
     }
 
-    public static function Transaction($order_id, $txn_id, $user_email, $amount)
+    public static function Transaction($order_id, $txn_id, $user_email, $amount, ?array $currencySnapshot = null)
     {
 
-        $curr = self::getActiveCurrency();
+        $curr = $currencySnapshot === null ? self::getActiveCurrency() : (object) $currencySnapshot;
 
         $transaction = new Transaction();
         $transaction->order_id = $order_id;
@@ -392,9 +392,11 @@ class PriceHelper
         }
     }
 
-    public static function stockDecrese()
+    public static function stockDecrese(?array $cart = null)
     {
-        $cart = Session::get('cart');
+        // Payment callbacks may supply their original checkout snapshot.
+        // Other gateways retain the existing session-cart behavior.
+        $cart = $cart ?? Session::get('cart');
         foreach ($cart as $key => $item) {
             $main_item = Item::findOrFail($key);
             if ($main_item->item_type == 'normal') {
