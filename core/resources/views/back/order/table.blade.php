@@ -53,7 +53,7 @@
             </div>
         </td>
         <td>
-            <form action="{{ route('back.order.tracking.update', $data->id) }}" method="POST" class="d-flex align-items-center">
+            <form action="{{ route('back.order.tracking.update', $data->id) }}" method="POST">
                 @csrf
                 <input
                     type="text"
@@ -63,6 +63,30 @@
                     placeholder="{{ __('Tracking Number') }}"
                     required
                 >
+                <details class="my-2">
+                    <summary>{{ __('Shipping notification details') }}</summary>
+                    <label class="d-block mt-2">{{ __('Carrier (optional)') }}
+                        <input type="text" name="tracking_carrier" maxlength="150" class="form-control form-control-sm"
+                            value="{{ data_get($data->tracking_details, 'tracking_carrier') }}">
+                    </label>
+                    <label class="d-block">{{ __('Carrier tracking link (HTTPS, optional)') }}
+                        <input type="url" name="tracking_url" maxlength="2048" class="form-control form-control-sm"
+                            value="{{ data_get($data->tracking_details, 'tracking_url') }}">
+                    </label>
+                    <label class="d-block">{{ __('Estimated delivery date (optional)') }}
+                        <input type="date" name="estimated_delivery_date" class="form-control form-control-sm"
+                            value="{{ data_get($data->tracking_details, 'estimated_delivery_date') }}">
+                    </label>
+                    <input type="hidden" name="out_for_delivery" value="0">
+                    <label class="d-block">
+                        <input type="checkbox" name="out_for_delivery" value="1">
+                        {{ __('Carrier confirmed this shipment is out for delivery') }}
+                    </label>
+                    @if(data_get($data->tracking_details, 'out_for_delivery_at'))
+                        <small class="d-block">{{ __('Previously confirmed:') }} {{ data_get($data->tracking_details, 'out_for_delivery_at') }}</small>
+                    @endif
+                    <small>{{ __('Enter only verified shipment details. Update these fields when replacing the tracking number.') }}</small>
+                </details>
                 <button type="submit" class="btn btn-primary btn-sm">{{ __('Save') }}</button>
             </form>
         </td>

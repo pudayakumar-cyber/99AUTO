@@ -6,6 +6,7 @@ use App\Jobs\SendKlaviyoEvent;
 use App\Models\Order;
 use App\Support\MarketingIdentity;
 use App\Support\KlaviyoUrl;
+use App\Support\ShippingNotificationDetails;
 use DateTimeInterface;
 use Throwable;
 
@@ -70,6 +71,20 @@ class KlaviyoOrderEventService
         }
 
         return $events;
+    }
+
+    public function trackOutForDelivery(Order $order): void
+    {
+        if (! str_starts_with((string) $order->transaction_number, 'ORD-')
+            || in_array($order->order_status, ['Canceled', 'Delivered'], true)
+            || trim((string) $order->tracking_number) === ''
+            || empty(($order->tracking_details ?? [])['out_for_delivery_at'])) {
+            return;
+        }
+
+        $event = $this->orderEvent($order, 'Out for Delivery');
+        $event['unique_id'] .= '-'.sha1(trim((string) $order->tracking_number));
+        $this->dispatch($event);
     }
 
     public function orderEvent(Order $order, string $metric, ?string $occurredAt = null): array
@@ -153,7 +168,7 @@ class KlaviyoOrderEventService
         $shipping = $this->decode($order->shipping);
         $discount = $this->decode($order->discount);
 
-        return array_filter([
+        return array_filter(array_merge([
             'OrderID' => (string) $order->id,
             'OrderNumber' => $order->transaction_number,
             'PaymentStatus' => $order->payment_status,
@@ -164,7 +179,8 @@ class KlaviyoOrderEventService
             'ShippingMethod' => $shipping['title'] ?? $shipping['name'] ?? null,
             'DiscountValue' => isset($discount['discount']) ? (float) $discount['discount'] : null,
             'TrackingNumber' => trim((string) $order->tracking_number) ?: null,
-        ], fn ($value) => $value !== null && $value !== '');
+        ], ShippingNotificationDetails::eventProperties($order->tracking_details ?? [])),
+            fn ($value) => $value !== null && $value !== '');
     }
 
     private function items(Order $order): array

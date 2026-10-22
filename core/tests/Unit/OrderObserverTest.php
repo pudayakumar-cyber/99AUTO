@@ -48,11 +48,13 @@ class OrderObserverTest extends TestCase
         $order->shouldReceive('wasChanged')->with('order_status')->andReturnTrue();
         $order->shouldReceive('wasChanged')->with('payment_status')->andReturnFalse();
         $order->shouldReceive('wasChanged')->with('tracking_number')->andReturnTrue();
+        $order->shouldReceive('wasChanged')->with('tracking_details')->andReturnTrue();
 
         $service->shouldReceive('trackPlacedOrder')->once()->with($order);
         $service->shouldReceive('trackOrderStatus')->once()->with($order);
         $service->shouldNotReceive('trackRefund');
         $service->shouldReceive('trackShipment')->once()->with($order);
+        $service->shouldReceive('trackOutForDelivery')->once()->with($order);
         $lifecycle->shouldReceive('recordOrder')->once()->with($order);
 
         $observer->updated($order);

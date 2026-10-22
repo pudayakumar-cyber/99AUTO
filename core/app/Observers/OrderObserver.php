@@ -46,6 +46,9 @@ class OrderObserver
         if ($order->wasChanged('tracking_number')) {
             $this->klaviyo->trackShipment($order);
         }
+        if ($order->wasChanged('tracking_details')) {
+            $this->klaviyo->trackOutForDelivery($order);
+        }
     }
 
     private function hasFinalOrderNumber(Order $order): bool

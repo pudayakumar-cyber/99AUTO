@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
 {
+    protected $casts = ['tracking_details' => 'array'];
+
     protected $fillable = [
         'user_id',
         'user_info',
