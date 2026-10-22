@@ -53,17 +53,22 @@ class CustomerLifecycleService
                 $schedule = $this->maintenanceSchedule($order);
                 $purchasedAt = Carbon::parse($order->created_at ?: now());
 
-                CustomerLifecycleOrder::updateOrCreate(
-                    ['order_id' => $order->id],
-                    [
-                        'customer_lifecycle_profile_id' => $profile->id,
-                        'purchase_category' => $schedule['category'],
-                        'maintenance_interval_days' => $schedule['days'],
-                        'maintenance_due_date' => $purchasedAt->copy()->addDays($schedule['days'])->toDateString(),
-                        'purchased_at' => $purchasedAt,
-                        'delivered_at' => $order->order_status === 'Delivered' ? now() : null,
-                    ]
-                );
+                $lifecycleOrder = CustomerLifecycleOrder::where('order_id', $order->id)
+                    ->lockForUpdate()->firstOrNew();
+                $lifecycleOrder->fill([
+                    'order_id' => $order->id,
+                    'customer_lifecycle_profile_id' => $profile->id,
+                    'purchase_category' => $schedule['category'],
+                    'maintenance_interval_days' => $schedule['days'],
+                    'maintenance_due_date' => $purchasedAt->copy()->addDays($schedule['days'])->toDateString(),
+                    'purchased_at' => $purchasedAt,
+                ]);
+                // Delivery is a historical fact, not the time of the latest admin
+                // edit or lifecycle rebuild. Cancellation removes the record above.
+                if ($order->order_status === 'Delivered' && $lifecycleOrder->delivered_at === null) {
+                    $lifecycleOrder->delivered_at = now();
+                }
+                $lifecycleOrder->save();
             }
 
             $this->recalculate($profile, $this->businessName($order));
@@ -163,9 +168,8 @@ class CustomerLifecycleService
             }
         }
 
-        if ($profile->orders()->whereNotNull('delivered_at')->exists()) {
-            $profile->referral_status = 'eligible';
-        }
+        $profile->referral_status = $profile->orders()->whereNotNull('delivered_at')->exists()
+            ? 'eligible' : 'inactive';
 
         $profile->save();
         $this->ensureReferralCode($profile);
