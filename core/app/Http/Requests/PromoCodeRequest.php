@@ -32,6 +32,9 @@ class PromoCodeRequest extends FormRequest
             'title' => 'required|max:255',
             'no_of_times' => 'required|integer|min:0|max:9999999999',
             'type' => 'required|in:amount,percentage',
+            'expires_at' => 'nullable|date_format:Y-m-d\TH:i',
+            'recipient_email' => 'nullable|email|max:255',
+            'first_order_only' => 'sometimes|boolean',
             'discount' => 'required|numeric|min:0|max:' . ($this->input('type') === 'percentage' ? '100' : '9999999999'),
         ];
     }

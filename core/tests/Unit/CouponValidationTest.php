@@ -11,6 +11,22 @@ use PHPUnit\Framework\TestCase;
 
 class CouponValidationTest extends TestCase
 {
+    public function test_marketing_offer_rules_validate_optional_fields(): void
+    {
+        $factory = new Factory(new Translator(new ArrayLoader(), 'en'));
+        foreach ([
+            [[], true],
+            [['expires_at' => '2026-11-01T12:00', 'recipient_email' => 'customer@example.com', 'first_order_only' => '1'], true],
+            [['expires_at' => '2026-02-30T12:00'], false],
+            [['recipient_email' => 'not-an-email'], false],
+            [['first_order_only' => 'yes'], false],
+        ] as [$input, $expected]) {
+            $request = PromoCodeRequest::create('/', 'POST', $input);
+            $rules = array_intersect_key($request->rules(), array_flip(['expires_at', 'recipient_email', 'first_order_only']));
+            $this->assertSame($expected, $factory->make($input, $rules)->passes());
+        }
+    }
+
     public function test_discount_never_exceeds_subtotal_or_increases_it(): void
     {
         $repository = new CartRepository();

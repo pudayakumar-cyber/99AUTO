@@ -347,7 +347,7 @@ class CartRepository
         $input = $request->all();
         $promo_code = PromoCode::where('status', 1)->whereCodeName($input['code'])->where('no_of_times', '>', 0)->first();
 
-        if ($promo_code) {
+        if ($promo_code && app(\App\Services\MarketingCouponEligibility::class)->allows($promo_code, $request->user())) {
             $cart = Session::get('cart');
             $cartTotal = PriceHelper::cartTotal($cart, 2);
             $discount = $this->getDiscount($promo_code->discount, $promo_code->type, $cartTotal);
@@ -365,7 +365,7 @@ class CartRepository
         } else {
             return [
                 'status'  => false,
-                'message' => __('No coupon code found')
+                'message' => __('This coupon is unavailable for your account. Sign in to use a personal or first-order offer.')
             ];
         }
     }
