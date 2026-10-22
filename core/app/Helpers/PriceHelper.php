@@ -392,9 +392,11 @@ class PriceHelper
         }
     }
 
-    public static function stockDecrese()
+    public static function stockDecrese(?array $cart = null)
     {
-        $cart = Session::get('cart');
+        // Payment callbacks may supply their original checkout snapshot.
+        // Other gateways retain the existing session-cart behavior.
+        $cart = $cart ?? Session::get('cart');
         foreach ($cart as $key => $item) {
             $main_item = Item::findOrFail($key);
             if ($main_item->item_type == 'normal') {
