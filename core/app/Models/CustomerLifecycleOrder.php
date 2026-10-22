@@ -11,6 +11,7 @@ class CustomerLifecycleOrder extends Model
     protected $casts = [
         'maintenance_due_date' => 'date',
         'purchased_at' => 'datetime',
+        'delivered_at' => 'datetime',
     ];
 
     public function profile()
