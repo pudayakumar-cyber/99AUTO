@@ -22,6 +22,16 @@ class CheckoutStockSnapshotTest extends MarketingOfferIssuerTest
             $table->id();
             $table->string('stock');
         });
+        $this->db->schema()->create('transactions', function (Blueprint $table) {
+            $table->id();
+            $table->integer('order_id');
+            $table->string('txn_id');
+            $table->string('user_email');
+            $table->decimal('amount', 12, 4);
+            $table->string('currency_sign');
+            $table->decimal('currency_value', 12, 4);
+            $table->timestamps();
+        });
         $this->db->table('items')->insert([
             ['id' => 1, 'item_type' => 'normal', 'stock' => 10],
             ['id' => 2, 'item_type' => 'normal', 'stock' => 20],
@@ -51,5 +61,16 @@ class CheckoutStockSnapshotTest extends MarketingOfferIssuerTest
     {
         PriceHelper::stockDecrese([]);
         $this->assertEquals(20, $this->db->table('items')->where('id', 2)->value('stock'));
+    }
+
+    public function test_transaction_uses_saved_currency_without_current_currency_lookup(): void
+    {
+        // No currency table exists: reading today's catalog/session currency would fail.
+        PriceHelper::Transaction(42, 'ORD-snapshot', 'test@example.test', 125, ['sign' => 'CAD', 'value' => 1.25]);
+        $row = $this->db->table('transactions')->first();
+        $this->assertEquals(100, $row->amount);
+        $this->assertEquals(1.25, $row->currency_value);
+        $this->assertSame('CAD', $row->currency_sign);
+        $this->assertSame('ORD-snapshot', $row->txn_id);
     }
 }

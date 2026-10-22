@@ -199,7 +199,10 @@ trait StripeElementsCheckout
             // This integration creates Stripe amounts in cents. Use that accepted
             // amount, rather than recalculating from a cart edited during payment.
             $total_amount = $paymentIntent->amount / 100;
-            PriceHelper::Transaction($order->id, $order->transaction_number, EmailHelper::getEmail(), $total_amount);
+            PriceHelper::Transaction($order->id, $order->transaction_number, EmailHelper::getEmail(), $total_amount, [
+                'sign' => $order->currency_sign,
+                'value' => $order->currency_value,
+            ]);
             PriceHelper::stockDecrese($cart);
             PriceHelper::LicenseQtyDecrese($cart);
 
