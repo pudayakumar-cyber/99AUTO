@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Models\Order;
 
-/** Records usage after order acceptance; this is not a pre-payment reservation. */
+/** Finalizes reserved personal offers; legacy coupons retain post-order accounting. */
 class CouponUsageService
 {
     public function record(Order $order): bool
@@ -26,6 +26,22 @@ class CouponUsageService
             $couponId = filter_var(data_get($discount, 'code.id'), FILTER_VALIDATE_INT);
             if ($couponId === false || $couponId < 1) {
                 return false;
+            }
+
+            $token = data_get($discount, 'reservation_token');
+            if (is_string($token) && $token !== '') {
+                $reservation = $connection->table('marketing_coupon_reservations')
+                    ->where('promo_code_id', $couponId)
+                    ->where('token_hash', hash('sha256', $token))->lockForUpdate()->first();
+                if (! $reservation || (int) $reservation->user_id !== (int) $stored->user_id
+                    || ($reservation->order_id !== null && (int) $reservation->order_id !== (int) $stored->id)) {
+                    // Never fail an accepted payment or debit another use on replay.
+                    return false;
+                }
+                $connection->table('marketing_coupon_reservations')->where('id', $reservation->id)
+                    ->update(['order_id' => $stored->id, 'redeemed_at' => $reservation->redeemed_at ?? now()]);
+                $connection->table('orders')->where('id', $stored->id)->update(['coupon_usage_recorded_at' => now()]);
+                return true;
             }
 
             // SQL decrement avoids lost updates between different orders. Never
