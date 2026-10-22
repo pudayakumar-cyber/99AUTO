@@ -866,8 +866,8 @@ class CheckoutController extends Controller
             return redirect()->route('front.checkout.cancle');
         }
 
-        // Put the payment intent ID into session so stripeElementsConfirm can retrieve it
-        Session::put('stripe_payment_intent_id', $paymentIntentId);
+        // Keep the server-created intent ID. The redirect query is untrusted;
+        // confirmation must compare it with the original session value.
 
         // Run the confirm logic
         $result = $this->stripeElementsConfirm($request);

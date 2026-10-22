@@ -131,8 +131,6 @@ trait StripeElementsCheckout
      */
     public function stripeElementsConfirm(Request $request)
     {
-        \Stripe\Stripe::setApiKey(Config::get('services.stripe.secret'));
-
         try {
             // Prefer payment_intent_id from request (JS POST or 3DS redirect query param)
             // Fall back to session in case it was stored earlier
@@ -140,14 +138,20 @@ trait StripeElementsCheckout
                 ?? $request->get('payment_intent')
                 ?? Session::get('stripe_payment_intent_id');
 
-            if (!$paymentIntentId) {
+            if (! \App\Support\StripeCheckoutSession::matches(
+                $paymentIntentId,
+                Session::get('stripe_payment_intent_id'),
+                Session::get('order_data'),
+                Auth::id()
+            )) {
                 return response()->json([
                     'status' => false,
-                    'message' => 'Payment intent not found'
-                ], 400);
+                    'message' => 'This payment could not be matched to your checkout session. If you completed payment, contact support before trying again.'
+                ], 409);
             }
 
             // Retrieve the payment intent
+            \Stripe\Stripe::setApiKey(Config::get('services.stripe.secret'));
             $paymentIntent = \Stripe\PaymentIntent::retrieve($paymentIntentId);
 
             if (!in_array($paymentIntent->status, ['succeeded', 'processing', 'requires_capture'])) {
