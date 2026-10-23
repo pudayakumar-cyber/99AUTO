@@ -41,7 +41,7 @@ class MarketingIdentity
             $digits = '1'.$digits;
         }
 
-        if (strlen($digits) < 8 || strlen($digits) > 15) {
+        if (! preg_match('/^[1-9][0-9]{7,14}$/', $digits)) {
             throw new InvalidArgumentException('Use a valid phone number including its country code.');
         }
 
