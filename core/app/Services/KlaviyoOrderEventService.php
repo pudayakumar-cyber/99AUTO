@@ -4,6 +4,9 @@ namespace App\Services;
 
 use App\Jobs\SendKlaviyoEvent;
 use App\Models\Order;
+use App\Models\CustomerLifecycleOrder;
+use App\Support\MaintenanceSchedule;
+use Carbon\CarbonImmutable;
 use App\Support\MarketingIdentity;
 use App\Support\KlaviyoUrl;
 use App\Support\ShippingNotificationDetails;
@@ -30,6 +33,47 @@ class KlaviyoOrderEventService
         if ($metric !== null) {
             $this->dispatch($this->orderEvent($order, $metric));
         }
+
+        if (config('services.klaviyo.enabled') && $order->order_status === 'Delivered'
+            && str_starts_with((string) $order->transaction_number, 'ORD-')) {
+            $deliveredAt = CustomerLifecycleOrder::where('order_id', $order->id)->value('delivered_at');
+            if ($deliveredAt !== null) {
+                foreach ($this->deliveredProductEvents($order, (string) $deliveredAt) as $event) {
+                    $this->dispatch($event);
+                }
+            }
+        }
+    }
+
+    public function deliveredProductEvents(Order $order, string $deliveredAt): array
+    {
+        if ($order->order_status !== 'Delivered'
+            || ! str_starts_with((string) $order->transaction_number, 'ORD-')
+            || $order->payment_status === 'Refunded') {
+            return [];
+        }
+
+        $delivered = CarbonImmutable::parse($deliveredAt);
+        $profile = $this->profile($order);
+        $events = [];
+        foreach ($this->items($order) as $item) {
+            $schedule = MaintenanceSchedule::forDescriptions([$item['ProductName']]);
+            $events[] = [
+                'metric_name' => 'Delivered Product',
+                'profile' => $profile,
+                'properties' => array_merge($this->orderSummary($order), $item, [
+                    'DeliveredAt' => $delivered->toAtomString(),
+                    'MaintenanceCategory' => $schedule['category'],
+                    'MaintenanceIntervalDays' => $schedule['days'],
+                    'MaintenanceDueDate' => $delivered->addDays($schedule['days'])->toDateString(),
+                ]),
+                'unique_id' => 'klaviyo-delivered-product-'.$order->id.'-'.$item['LineID'],
+                'occurred_at' => $delivered->toAtomString(),
+                'value' => $item['RowTotal'],
+            ];
+        }
+
+        return $events;
     }
 
     public function trackRefund(Order $order): void

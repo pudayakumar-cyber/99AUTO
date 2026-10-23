@@ -159,6 +159,40 @@ class KlaviyoOrderEventServiceTest extends TestCase
         return $order;
     }
 
+    public function test_delivered_products_keep_independent_intervals_and_stable_ids(): void
+    {
+        $order = $this->order();
+        $order->order_status = 'Delivered';
+        $cart = json_decode($order->cart, true);
+        $cart['11-']['name'] = 'Engine Oil';
+        $cart['12-'] = ['id' => 12, 'name' => 'Oil Filter', 'slug' => 'oil-filter', 'qty' => 1];
+        $order->cart = json_encode($cart);
+        $service = new KlaviyoOrderEventService;
+        $events = $service->deliveredProductEvents($order, '2026-10-23T12:00:00Z');
+        $this->assertCount(3, $events);
+        $this->assertSame([365, 90, 180], array_column(array_column($events, 'properties'), 'MaintenanceIntervalDays'));
+        $this->assertSame('2027-01-21', $events[1]['properties']['MaintenanceDueDate']);
+        $this->assertSame('12', $events[2]['properties']['ProductID']);
+        $this->assertSame('https://99autoparts.ca/product/oil-filter?item_id=12', $events[2]['properties']['ProductURL']);
+        $this->assertCount(3, array_unique(array_column($events, 'unique_id')));
+        $this->assertSame($events, $service->deliveredProductEvents($order, '2026-10-23T12:00:00Z'));
+        $order->id = 43;
+        $this->assertNotSame($events[0]['unique_id'], $service->deliveredProductEvents($order, '2026-10-24T12:00:00Z')[0]['unique_id']);
+    }
+
+    public function test_undelivered_temporary_and_refunded_orders_do_not_start_reminders(): void
+    {
+        $order = $this->order();
+        $service = new KlaviyoOrderEventService;
+        $this->assertSame([], $service->deliveredProductEvents($order, '2026-10-23'));
+        $order->order_status = 'Delivered';
+        $order->transaction_number = 'temporary';
+        $this->assertSame([], $service->deliveredProductEvents($order, '2026-10-23'));
+        $order->transaction_number = 'ORD-42';
+        $order->payment_status = 'Refunded';
+        $this->assertSame([], $service->deliveredProductEvents($order, '2026-10-23'));
+    }
+
     public function test_worker_product_and_image_urls_do_not_inherit_core_prefix(): void
     {
         config(['app.url' => 'https://99autoparts.ca/core/']);
