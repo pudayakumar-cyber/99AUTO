@@ -14,6 +14,8 @@ From that site's `core` directory, inspect the interface with `php artisan marke
 
 Each issued code is random, bound to the account email, and has one remaining use. The shopper must sign in. A retry returns the original code and does not extend its expiry, replenish uses or reactivate it. The unique issuance key is not editable through the normal coupon form. Welcome codes are personalized, not the shared literal WELCOME10; future template integration must render the actual issued code.
 
+New win-back codes must expire within seven days of issuance. Longer validity is rejected rather than silently shortened; shorter campaign deadlines are permitted. Retries still return the original code unchanged, including expired or redeemed codes. Existing codes are not retroactively edited. Format-only command checks do not verify this business rule; issuance does. Email delivery delays do not extend the deadline, so templates must show the actual expiry rather than promising seven days from receipt.
+
 Do not enable discount campaigns yet. One remaining use is not an atomic reservation: simultaneous payment attempts can still pass eligibility before an order consumes the code. Reservation handling and Klaviyo issuance/delivery integration remain separate work. Do not reuse a reference after a recipient email change; investigate the existing offer rather than granting another automatically.
 
 Deployment creates no offers. Test with controlled accounts on staging. Retain the issuance-key column on rollback if any offers exist, otherwise retries may mint replacements.
