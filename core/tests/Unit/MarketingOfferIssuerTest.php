@@ -113,6 +113,39 @@ class MarketingOfferIssuerTest extends TestCase
         $this->issuer->issue(22, 'welcome', 'signup-2', $expiry);
     }
 
+    public function test_winback_cannot_exceed_seven_days(): void
+    {
+        try {
+            $this->issuer->issue(21, 'winback', 'too-long', CarbonImmutable::now()->addDays(7)->addSecond());
+            $this->fail('An overlong win-back offer was accepted.');
+        } catch (\InvalidArgumentException $exception) {
+            $this->assertSame(0, PromoCode::count());
+        }
+        $coupon = $this->issuer->issue(21, 'winback', 'valid', CarbonImmutable::now()->addDays(7));
+        $this->assertSame('2026-10-30 12:00:00', $coupon->expires_at->format('Y-m-d H:i:s'));
+    }
+
+    public function test_winback_retry_keeps_original_expiry_and_expired_offer_is_unusable(): void
+    {
+        $coupon = $this->issuer->issue(21, 'winback', 'once', CarbonImmutable::now()->addDays(7));
+        Carbon::setTestNow('2026-10-30 12:00:00');
+        CarbonImmutable::setTestNow('2026-10-30 12:00:00');
+        $retry = $this->issuer->issue(21, 'winback', 'once', CarbonImmutable::now()->addDays(30));
+        $this->assertSame($coupon->id, $retry->id);
+        $this->assertSame('2026-10-30 12:00:00', $retry->expires_at->format('Y-m-d H:i:s'));
+        $this->assertFalse((new \App\Services\MarketingCouponEligibility)->allows($retry, \App\Models\User::find(21)));
+        $this->assertSame(1, PromoCode::count());
+    }
+
+    public function test_winback_accepts_equivalent_timezone_and_shorter_validity(): void
+    {
+        $expiry = CarbonImmutable::now()->addDays(7)->setTimezone('Asia/Karachi');
+        $coupon = $this->issuer->issue(21, 'winback', 'timezone', $expiry);
+        $this->assertSame($expiry->getTimestamp(), $coupon->expires_at->getTimestamp());
+        $short = $this->issuer->issue(21, 'winback', 'short', CarbonImmutable::now()->addDay());
+        $this->assertSame('2026-10-24', $short->expires_at->toDateString());
+    }
+
     public function test_past_expiry_cannot_create_an_offer(): void
     {
         $this->expectException(\InvalidArgumentException::class);

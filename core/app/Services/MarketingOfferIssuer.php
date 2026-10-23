@@ -35,6 +35,9 @@ class MarketingOfferIssuer
             if (! filter_var($email, FILTER_VALIDATE_EMAIL) || ! $expiresAt->isFuture()) {
                 throw new InvalidArgumentException('A valid customer email and future expiry are required.');
             }
+            if ($offer === 'winback' && $expiresAt->greaterThan(CarbonImmutable::now()->addDays(7))) {
+                throw new InvalidArgumentException('Win-back offers must expire within seven days of issuance.');
+            }
             $coupon = new PromoCode(array_merge(self::OFFERS[$offer], [
                 'title' => 'Lifecycle '.ucfirst($offer).' offer',
                 'code_name' => '99A-'.strtoupper(bin2hex(random_bytes(12))),
