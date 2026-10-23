@@ -4,6 +4,8 @@ The confirmation endpoint must not create a Paid order for processing or require
 
 This change is intentionally a draft. Session retention is not durable payment recovery. Before deployment:
 
+The draft now includes `StripeCheckoutAttemptStore` and migration `2026_10_23_040000_create_stripe_checkout_attempts.php`. This storage component is not wired into checkout yet. It encrypts snapshots with Laravel's application key, stores expected amount/currency and owner, preserves retries, and binds one provider intent. Recovery returns data only for a matching registered user. Guest recovery is deliberately unavailable. Keep the application key backed up; key changes can make saved snapshots unreadable. Do not drop the table after real attempts have been written.
+
 - Persist immutable checkout, expected amount/currency, owner and provider intent with idempotency before the provider request. Preserve encrypted personal details and do not store payment credentials.
 - Reconcile provider success/cancellation after session expiry and handle duplicate callbacks atomically. Capture-required payments need an explicit operational capture workflow.
 - Make order creation and local effects recoverable without double stock/coupon consumption or duplicate customer notifications.
