@@ -41,6 +41,13 @@ trait StripeElementsCheckout
      */
     public function stripeElementsCreateIntent(Request $request)
     {
+        if (Session::has('stripe_pending_payment_intent_id')) {
+            return response()->json([
+                'status' => false,
+                'pending' => true,
+                'message' => 'Your previous payment is awaiting confirmation. Please contact support before starting another payment.',
+            ], 409);
+        }
         $user = Auth::user();
         $setting = Setting::first();
         $cart = Session::get('cart');
@@ -154,7 +161,16 @@ trait StripeElementsCheckout
             \Stripe\Stripe::setApiKey(Config::get('services.stripe.secret'));
             $paymentIntent = \Stripe\PaymentIntent::retrieve($paymentIntentId);
 
-            if (!in_array($paymentIntent->status, ['succeeded', 'processing', 'requires_capture'])) {
+            if (in_array($paymentIntent->status, ['processing', 'requires_capture'], true)) {
+                Session::put('stripe_pending_payment_intent_id', $paymentIntent->id);
+                return response()->json([
+                    'status' => false,
+                    'pending' => true,
+                    'message' => 'Your payment is awaiting confirmation. Do not pay again. Please contact support with reference '.$paymentIntent->id.'.',
+                ], 202);
+            }
+
+            if ($paymentIntent->status !== 'succeeded') {
                 return response()->json([
                     'status' => false,
                     'message' => 'Payment not completed'
@@ -176,6 +192,7 @@ trait StripeElementsCheckout
                 Session::forget('order_payment_id');
                 Session::forget('coupon');
                 Session::forget('stripe_payment_intent_id');
+                Session::forget('stripe_pending_payment_intent_id');
 
                 return response()->json([
                     'status' => true,
@@ -259,6 +276,7 @@ trait StripeElementsCheckout
             Session::forget('order_payment_id');
             Session::forget('coupon');
             Session::forget('stripe_payment_intent_id');
+            Session::forget('stripe_pending_payment_intent_id');
 
             return response()->json([
                 'status' => true,

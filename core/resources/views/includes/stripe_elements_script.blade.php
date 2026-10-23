@@ -186,6 +186,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (result.status) {
                     // Success - redirect to success page
                     window.location.href = result.redirect;
+                } else if (result.pending) {
+                    showError(result.message);
+                    spinner.classList.add('d-none');
+                    buttonText.classList.remove('d-none');
+                    // Keep submission disabled while the provider result is unresolved.
+                    return;
                 } else {
                     showError(result.message || 'Payment confirmation failed');
                     submitButton.disabled = false;
@@ -223,6 +229,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         const result = await response.json();
                         if (result.status) {
                             window.location.href = result.redirect;
+                            return;
+                        }
+                        if (result.pending) {
+                            showError(result.message);
+                            spinner.classList.add('d-none');
+                            buttonText.classList.remove('d-none');
                             return;
                         }
                     }
