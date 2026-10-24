@@ -64,6 +64,11 @@ class MarketingConsentService
                 ->first();
 
             $changed = ! $consent || $consent->status !== $status;
+            if (! $changed) {
+                // A repeated profile save is not fresh consent. Preserve the
+                // timestamp, wording and source of the actual transition.
+                return $consent;
+            }
             $consent ??= new MarketingConsent();
             $consent->fill([
                 'user_id' => $user?->id ?? $consent->user_id,
