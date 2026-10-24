@@ -168,4 +168,17 @@ class KlaviyoClientTest extends TestCase
                 && $data['relationships']['list']['data']['id'] === 'sms-list-id';
         });
     }
+
+    public function test_withdrawal_without_list_omits_relationships_and_other_channel_identity(): void
+    {
+        Http::fake(['*' => Http::response('', 202)]);
+        $client = new KlaviyoClient;
+        $client->unsubscribeProfile('email', ['email' => 'test@example.test', 'phone_number' => '+14165551234']);
+        $client->unsubscribeProfile('sms', ['email' => 'test@example.test', 'phone_number' => '+14165551234']);
+        Http::assertSentCount(2);
+        Http::assertSent(fn ($request) => !isset($request['data']['relationships'])
+            && $request['data']['attributes']['profiles']['data'][0]['attributes'] === ['email' => 'test@example.test']);
+        Http::assertSent(fn ($request) => !isset($request['data']['relationships'])
+            && $request['data']['attributes']['profiles']['data'][0]['attributes'] === ['phone_number' => '+14165551234']);
+    }
 }
