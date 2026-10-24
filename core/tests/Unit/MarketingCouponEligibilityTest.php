@@ -45,6 +45,7 @@ class MarketingCouponEligibilityTest extends TestCase
         $app->instance('validator', new Factory(new Translator(new ArrayLoader, 'en')));
         Facade::clearResolvedInstances();
         Facade::setFacadeApplication($app);
+        (require __DIR__.'/../../database/migrations/2026_10_23_040000_create_stripe_checkout_attempts.php')->up();
         $this->db->schema()->create('promo_codes', function (Blueprint $table) {
             $table->id();
             $table->integer('status');
@@ -170,5 +171,26 @@ class MarketingCouponEligibilityTest extends TestCase
         (require __DIR__.'/../../database/migrations/2026_10_23_010000_add_marketing_rules_to_promo_codes.php')->down();
         $this->assertFalse($this->db->schema()->hasColumn('promo_codes', 'expires_at'));
         $this->assertEquals(10, $this->db->table('promo_codes')->value('discount'));
+    }
+
+    public function test_unresolved_stripe_attempt_blocks_other_gateways_but_preserves_reserved_retry(): void
+    {
+        $this->db->table('stripe_checkout_attempts')->insert([
+            'id' => (string) \Illuminate\Support\Str::uuid(), 'user_id' => 21, 'active_user_id' => 21,
+            'amount' => 9000, 'currency' => 'cad', 'snapshot_hash' => str_repeat('a', 64), 'snapshot' => 'unused',
+        ]);
+        $this->coupon->update(['no_of_times' => 0]);
+        $middleware = new RevalidateMarketingCoupon($this->eligibility);
+        $retry = $this->request('front.stripe.create.intent');
+        $this->assertSame('saved-attempt', $middleware->handle($retry, fn () => 'saved-attempt'));
+        $this->assertTrue($retry->session()->has('coupon'));
+        $callback = $this->request('front.stripe.confirm.payment');
+        $this->assertSame('confirm', $middleware->handle($callback, fn () => 'confirm'));
+        try {
+            $middleware->handle($this->request('front.checkout.submit'), fn () => $this->fail('Another payment started'));
+            $this->fail('Unresolved payment ignored');
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey('payment', $e->errors());
+        }
     }
 }

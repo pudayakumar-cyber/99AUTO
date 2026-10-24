@@ -46,6 +46,24 @@ class MarketingCouponReservationTest extends MarketingOfferIssuerTest
         $reservations->reserve($coupon, User::findOrFail(21));
     }
 
+    public function test_stripe_attempt_reserves_once_and_reuses_encrypted_token_on_retry(): void
+    {
+        $this->db->getContainer()->instance('encrypter', new \Illuminate\Encryption\Encrypter(random_bytes(32), 'AES-256-CBC'));
+        (require __DIR__.'/../../database/migrations/2026_10_23_040000_create_stripe_checkout_attempts.php')->up();
+        $coupon = $this->issuer->issue(21, 'cart', 'cart-attempt', CarbonImmutable::now()->addDay());
+        $snapshot = ['user_id' => 21, 'cart' => '{"10":{"qty":1}}', 'transaction_number' => 'temporary',
+            'discount' => json_encode(['code' => $coupon->toArray(), 'discount' => 10])];
+        $store = new \App\Services\StripeCheckoutAttemptStore;
+        $id = (string) \Illuminate\Support\Str::uuid();
+        $saved = $store->prepare($id, $snapshot, 9000, 'cad');
+        $token = json_decode($saved['discount'], true)['reservation_token'];
+        $this->assertSame(64, strlen($token));
+        $this->assertSame($saved, $store->prepare($id, $snapshot, 9000, 'cad'));
+        $this->assertSame(1, $this->db->table('marketing_coupon_reservations')->count());
+        $this->assertSame(0, $coupon->fresh()->no_of_times);
+        $this->assertStringNotContainsString($token, $this->db->table('stripe_checkout_attempts')->value('snapshot'));
+    }
+
     public function test_acceptance_finalizes_once_without_decrementing_again(): void
     {
         $coupon = $this->issuer->issue(21, 'cart', 'cart-1', CarbonImmutable::now()->addDay());

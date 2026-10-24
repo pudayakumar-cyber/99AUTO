@@ -5,7 +5,7 @@ use Twilio\Rest\Client;
 
 class SmsHelper {
 
-    public function SendSms($to_number ,$type,$order_number = null)
+    public function SendSms($to_number ,$type,$order_number = null, bool $throwOnFailure = false)
     {
         $setting = Setting::first();
         $code = str_split($setting->twilio_country_code);
@@ -33,7 +33,9 @@ class SmsHelper {
             );
     
         } catch (\Throwable $th) {
-            // throw $th;
+            if ($throwOnFailure) {
+                throw $th;
+            }
         }
       
 

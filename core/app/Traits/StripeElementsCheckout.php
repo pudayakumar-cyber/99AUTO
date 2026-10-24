@@ -41,6 +41,11 @@ trait StripeElementsCheckout
      */
     public function stripeElementsCreateIntent(Request $request)
     {
+        if (Session::has('stripe_pending_payment_intent_id') && Session::has('stripe_checkout_attempt_id')
+            && app(\App\Services\StripeCheckoutAttemptStore::class)->canceledIntent(
+                Session::get('stripe_pending_payment_intent_id'), (int) (Auth::id() ?? 0))) {
+            Session::forget(['stripe_pending_payment_intent_id', 'stripe_payment_intent_id', 'stripe_checkout_attempt_id']);
+        }
         if (Session::has('stripe_pending_payment_intent_id')) {
             return response()->json([
                 'status' => false,
@@ -101,12 +106,17 @@ trait StripeElementsCheckout
         \Stripe\Stripe::setApiKey(Config::get('services.stripe.secret'));
 
         try {
-            $attemptId = Session::get('stripe_checkout_attempt_id');
-            if (! is_string($attemptId) || ! Str::isUuid($attemptId)) {
-                $attemptId = (string) Str::uuid();
-                Session::put('stripe_checkout_attempt_id', $attemptId);
-            }
             $attempts = app(\App\Services\StripeCheckoutAttemptStore::class);
+            $previousAttempt = Session::get('stripe_checkout_attempt_id');
+            if (is_string($previousAttempt) && $attempts->completed($previousAttempt)) {
+                return response()->json(['status' => false,
+                    'message' => 'This checkout has already been paid. Check your order confirmation or contact support; do not pay again.'], 409);
+            }
+            $attemptId = $attempts->activeAttempt((int) ($user->id ?? 0)) ?? Session::get('stripe_checkout_attempt_id');
+            if (! is_string($attemptId) || ! Str::isUuid($attemptId) || $attempts->closed($attemptId)) {
+                $attemptId = (string) Str::uuid();
+            }
+            Session::put('stripe_checkout_attempt_id', $attemptId);
             $orderData = $attempts->prepare($attemptId, $orderData,
                 (int) round($total_amount * 100), strtolower(PriceHelper::setCurrencyName()));
             $paymentIntent = $attempts->provision($attemptId,
@@ -144,6 +154,15 @@ trait StripeElementsCheckout
                 ?? $request->get('payment_intent')
                 ?? Session::get('stripe_payment_intent_id');
 
+            if (!Session::has('stripe_payment_intent_id') && is_string($paymentIntentId) && Auth::id()) {
+                $recovered = app(\App\Services\StripeCheckoutAttemptStore::class)
+                    ->recover($paymentIntentId, (int) Auth::id());
+                if ($recovered !== null) {
+                    Session::put('stripe_payment_intent_id', $paymentIntentId);
+                    Session::put('order_data', $recovered);
+                }
+            }
+
             if (! \App\Support\StripeCheckoutSession::matches(
                 $paymentIntentId,
                 Session::get('stripe_payment_intent_id'),
@@ -174,6 +193,22 @@ trait StripeElementsCheckout
                     'status' => false,
                     'message' => 'Payment not completed'
                 ], 400);
+            }
+
+            // New checkouts are finalized from encrypted server storage, atomically.
+            // Keep the legacy path below for payments started before this deployment.
+            if (!empty($paymentIntent->metadata['checkout_attempt_id'])) {
+                $order = app(\App\Services\StripeOrderCompletion::class)->complete($paymentIntent);
+                Session::put('order_id', $order->id);
+                Session::forget(['cart', 'discount', 'order_data', 'order_payment_id', 'coupon',
+                    'stripe_payment_intent_id', 'stripe_pending_payment_intent_id', 'stripe_checkout_attempt_id']);
+                // Delivery failures must never turn a committed payment into a checkout failure.
+                try {
+                    app(\App\Services\StripeCheckoutEffects::class)->process($order->id);
+                } catch (\Throwable $e) {
+                    \Log::warning('Stripe effects deferred to reconciliation.', ['order_id' => $order->id]);
+                }
+                return response()->json(['status' => true, 'redirect' => route('front.checkout.success')]);
             }
 
             $existingOrder = Order::where('txnid', $paymentIntent->id)->first();
