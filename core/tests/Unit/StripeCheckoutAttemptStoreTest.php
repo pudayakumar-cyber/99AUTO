@@ -80,4 +80,63 @@ class StripeCheckoutAttemptStoreTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $this->store->bind($id, 'pi_other');
     }
+
+    public function test_provider_retry_reuses_saved_request_after_a_lost_response(): void
+    {
+        $id = (string) Str::uuid();
+        $this->store->prepare($id, $this->snapshot(), 2891, 'cad');
+        $requests = [];
+        $create = function ($parameters, $options) use (&$requests) {
+            $requests[] = [$parameters, $options];
+            if (count($requests) === 1) {
+                throw new \RuntimeException('Simulated response loss');
+            }
+            return (object) array_merge($parameters, ['id' => 'pi_retry']);
+        };
+        $retrieve = fn () => throw new \RuntimeException('Unexpected retrieve');
+        try {
+            $this->store->provision($id, $create, $retrieve);
+            $this->fail('Expected lost response.');
+        } catch (\RuntimeException $e) {
+            $this->assertSame('Simulated response loss', $e->getMessage());
+        }
+        $intent = $this->store->provision($id, $create, $retrieve);
+        $this->assertSame($requests[0], $requests[1]);
+        $this->assertSame('checkout-'.$id, $requests[0][1]['idempotency_key']);
+        $this->assertSame('pi_retry', $intent->id);
+        $again = $this->store->provision($id,
+            fn () => throw new \RuntimeException('Must not create again'),
+            fn ($providerId) => $intent);
+        $this->assertSame($intent, $again);
+    }
+
+    public function test_unknown_old_attempt_never_creates_a_fresh_payment(): void
+    {
+        $id = (string) Str::uuid();
+        $this->store->prepare($id, $this->snapshot(), 2891, 'cad');
+        $this->db->table('stripe_checkout_attempts')->where('id', $id)
+            ->update(['created_at' => now()->subDays(2)]);
+        $calls = 0;
+        try {
+            $this->store->provision($id, function () use (&$calls) { $calls++; }, fn () => null);
+            $this->fail('Old unknown attempt accepted.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('reconciliation', $e->getMessage());
+            $this->assertSame(0, $calls);
+        }
+    }
+
+    public function test_provider_amount_mismatch_does_not_bind_the_intent(): void
+    {
+        $id = (string) Str::uuid();
+        $this->store->prepare($id, $this->snapshot(), 2891, 'cad');
+        try {
+            $this->store->provision($id,
+                fn ($parameters) => (object) array_merge($parameters, ['id' => 'pi_wrong', 'amount' => 100]),
+                fn () => null);
+            $this->fail('Wrong amount accepted.');
+        } catch (\RuntimeException $e) {
+            $this->assertNull($this->db->table('stripe_checkout_attempts')->value('provider_intent_id'));
+        }
+    }
 }

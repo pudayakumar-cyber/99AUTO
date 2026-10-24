@@ -101,18 +101,17 @@ trait StripeElementsCheckout
         \Stripe\Stripe::setApiKey(Config::get('services.stripe.secret'));
 
         try {
-            // Create Payment Intent
-            $paymentIntent = \Stripe\PaymentIntent::create([
-                'amount' => (int)($total_amount * 100), // Amount in cents
-                'currency' => strtolower(PriceHelper::setCurrencyName()),
-                'description' => $setting->title . ' Order',
-                'metadata' => [
-                    'order_number' => $orderData['transaction_number'],
-                ],
-                'automatic_payment_methods' => [
-                    'enabled' => true,
-                ],
-            ]);
+            $attemptId = Session::get('stripe_checkout_attempt_id');
+            if (! is_string($attemptId) || ! Str::isUuid($attemptId)) {
+                $attemptId = (string) Str::uuid();
+                Session::put('stripe_checkout_attempt_id', $attemptId);
+            }
+            $attempts = app(\App\Services\StripeCheckoutAttemptStore::class);
+            $orderData = $attempts->prepare($attemptId, $orderData,
+                (int) round($total_amount * 100), strtolower(PriceHelper::setCurrencyName()));
+            $paymentIntent = $attempts->provision($attemptId,
+                fn (array $parameters, array $options) => \Stripe\PaymentIntent::create($parameters, $options),
+                fn (string $id) => \Stripe\PaymentIntent::retrieve($id));
 
             // Store order data in session for later
             Session::put('order_data', $orderData);
@@ -193,6 +192,7 @@ trait StripeElementsCheckout
                 Session::forget('coupon');
                 Session::forget('stripe_payment_intent_id');
                 Session::forget('stripe_pending_payment_intent_id');
+                Session::forget('stripe_checkout_attempt_id');
 
                 return response()->json([
                     'status' => true,
@@ -277,6 +277,7 @@ trait StripeElementsCheckout
             Session::forget('coupon');
             Session::forget('stripe_payment_intent_id');
             Session::forget('stripe_pending_payment_intent_id');
+            Session::forget('stripe_checkout_attempt_id');
 
             return response()->json([
                 'status' => true,
