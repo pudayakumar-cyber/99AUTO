@@ -23,6 +23,15 @@ class RevalidateMarketingCoupon
 
     public function handle(Request $request, Closure $next)
     {
+        if ($request->routeIs(...self::ROUTES) && $request->user()
+            && app(\App\Services\StripeCheckoutAttemptStore::class)->activeAttempt((int) $request->user()->getKey())) {
+            if (!$request->routeIs('front.stripe.create.intent')) {
+                throw ValidationException::withMessages(['payment' => 'A Stripe payment is unresolved. Confirm or cancel it before starting another payment.']);
+            }
+            // Its personal offer is already reserved; the immutable checkout store
+            // validates the retry instead of consuming/recalculating that offer again.
+            return $next($request);
+        }
         if (! $request->routeIs(...self::ROUTES) || ! $request->session()->has('coupon')) {
             return $next($request);
         }

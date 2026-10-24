@@ -49,7 +49,7 @@ class EmailHelper
         }
     }
 
-    public function sendTemplateMail(array $emailData)
+    public function sendTemplateMail(array $emailData, $mode = null, bool $throwOnFailure = false)
     {
         $templateType = $emailData['template_type'] ?? $emailData['type'];
         $template = EmailTemplate::whereType($templateType)->first();
@@ -79,6 +79,9 @@ class EmailHelper
                 $this->adminMail($emailData);
             }
         } catch (Exception $e) {
+            if ($throwOnFailure) {
+                throw $e;
+            }
             Log::error('Template email send failed.', $this->buildEmailLogContext($emailData, [
                 'template_type' => $templateType,
                 'recipient' => $emailData['to'] ?? null,

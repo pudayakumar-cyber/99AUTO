@@ -106,6 +106,31 @@ class StripeCheckoutSessionTest extends TestCase
         $this->assertSame('pi_expected', $this->session->get('stripe_payment_intent_id'));
     }
 
+    public function test_expired_session_recovers_only_the_signed_in_owner_snapshot(): void
+    {
+        $this->session->flush();
+        $store = new class extends \App\Services\StripeCheckoutAttemptStore {
+            public function recover(string $id, int $owner): ?array {
+                return $id === 'pi_expected' && $owner === 21 ? ['user_id' => 21, 'cart' => '{"10":{"qty":1}}'] : null;
+            }
+        };
+        Container::getInstance()->instance(\App\Services\StripeCheckoutAttemptStore::class, $store);
+        Container::getInstance()->instance('config', new \Illuminate\Config\Repository([
+            'services' => ['stripe' => ['secret' => 'sk_test_fake_unit_test_only']],
+        ]));
+        \Stripe\ApiRequestor::setHttpClient(new class implements \Stripe\HttpClient\ClientInterface {
+            public function request($method, $url, $headers, $params, $hasFile) {
+                return ['{"id":"pi_expected","object":"payment_intent","status":"processing"}', 200, []];
+            }
+        });
+        $bad = $this->controller->stripeElementsConfirm(Request::create('/', 'POST', ['payment_intent_id' => 'pi_foreign']));
+        $this->assertSame(409, $bad->getStatusCode());
+        $this->assertFalse($this->session->has('order_data'));
+        $good = $this->controller->stripeElementsConfirm(Request::create('/', 'POST', ['payment_intent_id' => 'pi_expected']));
+        $this->assertSame(202, $good->getStatusCode());
+        $this->assertSame(21, $this->session->get('order_data.user_id'));
+    }
+
     public function test_matching_session_reaches_provider_for_post_redirect_and_session_fallback(): void
     {
         Container::getInstance()->instance('config', new \Illuminate\Config\Repository([
@@ -129,5 +154,40 @@ class StripeCheckoutSessionTest extends TestCase
         foreach ($client->urls as $url) {
             $this->assertStringEndsWith('/payment_intents/pi_expected', $url);
         }
+    }
+
+    public function test_pending_payments_preserve_checkout_without_creating_paid_orders(): void
+    {
+        Container::getInstance()->instance('config', new \Illuminate\Config\Repository([
+            'services' => ['stripe' => ['secret' => 'sk_test_fake_unit_test_only']],
+        ]));
+        $client = new class implements \Stripe\HttpClient\ClientInterface {
+            public string $status = 'processing';
+            public function request($method, $url, $headers, $params, $hasFile)
+            {
+                return [json_encode(['id' => 'pi_expected', 'object' => 'payment_intent', 'status' => $this->status]), 200, []];
+            }
+        };
+        \Stripe\ApiRequestor::setHttpClient($client);
+        $snapshot = $this->session->get('order_data');
+        foreach (['processing', 'requires_capture'] as $status) {
+            $client->status = $status;
+            // There is no database in this test: reaching order creation would fail.
+            $response = $this->controller->stripeConfirmPayment(Request::create('/stripe/confirm-payment', 'POST'));
+            $this->assertSame(202, $response->getStatusCode());
+            $this->assertTrue($response->getData(true)['pending']);
+            $this->assertFalse($response->getData(true)['status']);
+            $this->assertSame($snapshot, $this->session->get('order_data'));
+            $this->assertSame('pi_expected', $this->session->get('stripe_pending_payment_intent_id'));
+            $blocked = $this->controller->stripeCreateIntent(Request::create('/stripe/create-intent', 'POST'));
+            $this->assertSame(409, $blocked->getStatusCode());
+            $this->assertTrue($blocked->getData(true)['pending']);
+        }
+        $client->status = 'processing';
+        $redirect = $this->controller->stripeReturn(Request::create('/stripe/return', 'GET', [
+            'payment_intent' => 'pi_expected', 'redirect_status' => 'processing',
+        ]));
+        $this->assertStringContainsString('Do not pay again', $this->session->get('message'));
+        $this->assertSame($snapshot, $this->session->get('order_data'));
     }
 }

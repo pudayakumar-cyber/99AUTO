@@ -861,7 +861,7 @@ class CheckoutController extends Controller
             return redirect()->route('front.checkout.cancle');
         }
 
-        if ($redirectStatus !== 'succeeded') {
+        if (!in_array($redirectStatus, ['succeeded', 'processing'], true)) {
             Session::put('message', 'Payment was not completed. Please try again.');
             return redirect()->route('front.checkout.cancle');
         }

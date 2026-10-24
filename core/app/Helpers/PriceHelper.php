@@ -398,7 +398,7 @@ class PriceHelper
         // Other gateways retain the existing session-cart behavior.
         $cart = $cart ?? Session::get('cart');
         foreach ($cart as $key => $item) {
-            $main_item = Item::findOrFail($key);
+            $main_item = Item::findOrFail(self::GetItemId($key));
             if ($main_item->item_type == 'normal') {
                 $current = $main_item->stock - $item['qty'];
                 if ($current <= 0) {
