@@ -131,7 +131,7 @@ class KlaviyoClient
         ])->throw();
     }
 
-    public function unsubscribeProfile(string $channel, array $profile, string $listId): void
+    public function unsubscribeProfile(string $channel, array $profile, string $listId = ''): void
     {
         $this->ensureEnabled();
         $this->validateChannel($channel);
@@ -152,7 +152,7 @@ class KlaviyoClient
                         ]],
                     ],
                 ],
-                'relationships' => $this->listRelationship($listId),
+                ...($listId !== '' ? ['relationships' => $this->listRelationship($listId)] : []),
             ],
         ])->throw();
     }

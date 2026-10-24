@@ -44,7 +44,7 @@ class SyncKlaviyoProfileConsent implements ShouldQueue
         }
 
         $listId = trim((string) config('services.klaviyo.'.$consent->channel.'_list_id'));
-        if ($listId === '') {
+        if ($listId === '' && $consent->status === 'subscribed') {
             throw new RuntimeException('A Klaviyo list ID is required for '.$consent->channel.' consent synchronization.');
         }
 
@@ -58,6 +58,12 @@ class SyncKlaviyoProfileConsent implements ShouldQueue
                 'first_name' => $consent->user->first_name,
                 'last_name' => $consent->user->last_name,
             ];
+        }
+
+        if ($consent->status === 'unsubscribed') {
+            // Withdrawal must not depend on a separate profile update succeeding.
+            $client->unsubscribeProfile($consent->channel, $profile, $listId);
+            return;
         }
 
         $client->upsertProfile($profile, ['consent_source' => $consent->source]);
