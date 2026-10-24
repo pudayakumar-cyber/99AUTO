@@ -47,7 +47,7 @@ class CustomerLifecycleService
             ], static fn ($value): bool => $value !== null && $value !== ''));
             $profile->save();
 
-            if ($order->order_status === 'Canceled') {
+            if ($order->order_status === 'Canceled' || $order->payment_status === 'Refunded') {
                 CustomerLifecycleOrder::where('order_id', $order->id)->delete();
             } else {
                 $schedule = $this->maintenanceSchedule($order);

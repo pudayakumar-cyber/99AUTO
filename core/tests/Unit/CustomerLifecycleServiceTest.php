@@ -123,4 +123,37 @@ class CustomerLifecycleServiceTest extends TestCase
         $this->assertSame('eligible', $profile->referral_status);
         $this->assertSame(1, $profile->total_orders);
     }
+
+    public function test_refund_removes_only_the_refunded_purchase_from_lifecycle(): void
+    {
+        $order = $this->order();
+        $this->service->recordOrder($order, false);
+        $order->payment_status = 'Refunded';
+        $profile = $this->service->recordOrder($order, false);
+        $this->assertSame(0, $profile->total_orders);
+        $this->assertSame('inactive', $profile->referral_status);
+        $this->assertNull($profile->next_maintenance_due_date);
+        $this->assertSame(0, CustomerLifecycleOrder::count());
+        $this->service->recordOrder($this->order(2), false);
+        $profile = $this->service->recordOrder($order, false);
+        $this->assertSame(1, $profile->total_orders);
+        $this->assertSame('eligible', $profile->referral_status);
+        $this->assertSame([2], CustomerLifecycleOrder::pluck('order_id')->all());
+    }
+
+    public function test_payment_only_update_refreshes_lifecycle_before_refund_event(): void
+    {
+        $order = $this->order();
+        $order->syncOriginal();
+        $order->payment_status = 'Refunded';
+        $order->syncChanges();
+        $lifecycle = \Mockery::mock(CustomerLifecycleService::class);
+        $events = \Mockery::mock(\App\Services\KlaviyoOrderEventService::class);
+        $lifecycle->shouldReceive('recordOrder')->once()->with($order)->globally()->ordered();
+        $events->shouldReceive('trackRefund')->once()->with($order)->globally()->ordered();
+        (new \App\Observers\OrderObserver($events, $lifecycle))->updated($order);
+        \Mockery::close();
+        $this->assertTrue($order->wasChanged('payment_status'));
+        $this->assertFalse($order->wasChanged('order_status'));
+    }
 }

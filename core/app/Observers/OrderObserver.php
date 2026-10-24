@@ -26,7 +26,7 @@ class OrderObserver
         $placedOrder = $order->wasChanged('transaction_number') && $this->hasFinalOrderNumber($order);
         $orderStatusChanged = $order->wasChanged('order_status');
 
-        if ($placedOrder || ($orderStatusChanged && $this->hasFinalOrderNumber($order))) {
+        if ($placedOrder || (($orderStatusChanged || $order->wasChanged('payment_status')) && $this->hasFinalOrderNumber($order))) {
             // Queue profile properties before events that may immediately enter a Klaviyo flow.
             $this->lifecycle->recordOrder($order);
         }
