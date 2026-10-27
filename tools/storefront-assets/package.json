@@ -1,0 +1,12 @@
+{
+  "name": "99auto-storefront-assets",
+  "private": true,
+  "scripts": {
+    "build": "node build.cjs",
+    "check": "node build.cjs --check"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12",
+    "terser": "5.44.0"
+  }
+}
