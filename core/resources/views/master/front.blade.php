@@ -2821,7 +2821,9 @@ body_theme4 @endif
     document.querySelectorAll("img:not(.hero-img):not([loading])")
 
 </script>
-@include('includes.stripe_elements_script')
+@if (\App\Support\StorefrontAssetPolicy::loadsStripe(request()->route()?->getName()))
+    @include('includes.stripe_elements_script')
+@endif
 <script>
     (function () {
         const verificationPattern = /^\s*google-site-verification\s*=\s*[A-Za-z0-9_-]+\s*$/i;
