@@ -30,12 +30,17 @@
     @php
         // Dynamic Page SEO Module Integration
         $routeName = Route::currentRouteName();
+        $catalogQuery = $routeName === 'front.catalog' ? request()->query() : [];
+        $catalogShouldIndex = $routeName !== 'front.catalog'
+            || \App\Support\CatalogUrl::shouldIndex($catalogQuery);
+        $catalogPageNumber = $routeName === 'front.catalog' ? request()->integer('page') : 0;
+        $catalogPageSuffix = $catalogPageNumber > 1 ? ' Page ' . $catalogPageNumber . '.' : '';
         $seoPageKey = null;
         if ($routeName === 'front.index') {
             $seoPageKey = 'home';
         } elseif ($routeName === 'front.catalog') {
-            // Apply shop page SEO only if no category, subcategory, childcategory, or brand filter is selected
-            if (!request()->filled('category') && !request()->filled('subcategory') && !request()->filled('childcategory') && !request()->filled('brand')) {
+            // Apply the configured shop SEO only to the unfiltered catalog and its pages.
+            if (! \App\Support\CatalogUrl::hasContentFilters($catalogQuery)) {
                 $seoPageKey = 'catalog';
             }
         } elseif ($routeName === 'front.blog') {
@@ -94,6 +99,9 @@
         : ($routeName === 'front.catalog'
             ? \App\Support\CatalogUrl::canonical(url()->current(), request()->query())
             : url()->current()) }}">
+    @if (! $catalogShouldIndex)
+        <meta name="robots" content="noindex, follow">
+    @endif
     @if ($googleSiteVerification)
         <meta name="google-site-verification" content="{{ $googleSiteVerification }}">
     @endif
@@ -112,17 +120,20 @@
     @if ($activePageSeo)
         @php
             $seoKeywords = $activePageSeo->meta_keywords;
+            $activeMetaDescription = $catalogPageSuffix
+                ? rtrim((string) $activePageSeo->meta_description, '. ') . '.' . $catalogPageSuffix
+                : $activePageSeo->meta_description;
             if (strpos($seoKeywords, '[{') !== false) {
                 $seoKeywords = str_replace(["value","{","}","[","]",":","\""], '', $seoKeywords);
             }
         @endphp
         <meta name="author" content="99 Auto Parts">
         <meta name="distribution" content="web">
-        <meta name="description" content="{{ $activePageSeo->meta_description }}">
+        <meta name="description" content="{{ $activeMetaDescription }}">
         <meta name="keywords" content="{{ $seoKeywords }}">
         <meta name="image" content="{{ $defaultSocialImage }}">
         <meta property="og:title" content="{{ $activePageSeo->title }}">
-        <meta property="og:description" content="{{ $activePageSeo->meta_description }}">
+        <meta property="og:description" content="{{ $activeMetaDescription }}">
         <meta property="og:image" content="{{ $defaultSocialImage }}">
         <meta property="og:image:secure_url" content="{{ $defaultSocialImage }}">
         <meta property="og:url" content="{{ url()->current() }}">
@@ -130,7 +141,7 @@
         <meta property="og:type" content="website">
         <meta name="twitter:card" content="summary_large_image">
         <meta name="twitter:title" content="{{ $activePageSeo->title }}">
-        <meta name="twitter:description" content="{{ $activePageSeo->meta_description }}">
+        <meta name="twitter:description" content="{{ $activeMetaDescription }}">
         <meta name="twitter:image" content="{{ $defaultSocialImage }}">
     @else
         @if (url()->current() == route('front.index'))

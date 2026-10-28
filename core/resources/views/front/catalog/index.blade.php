@@ -17,6 +17,13 @@
     } elseif (isset($brand) && $brand) {
         $metaKeywords = $brand->meta_keywords ?: "{$brand->name} Canada, buy {$brand->name} parts, {$brand->name} auto parts online, {$brand->name} replacement parts Canada, 99AutoParts {$brand->name}";
         $metaDescription = $brand->meta_descriptions ?: "Shop premium {$brand->name} replacement auto parts online at 99AutoParts Canada. Enjoy fast province-wide shipping and discount prices on all {$brand->name} parts.";
+    } elseif (request()->filled('tag')) {
+        $tagLabel = trim((string) request()->input('tag'));
+        $metaDescription = "Browse 99AutoParts products tagged {$tagLabel}. Check current pricing and availability for auto parts shipped across Canada.";
+    }
+
+    if (request()->integer('page') > 1) {
+        $metaDescription = rtrim((string) $metaDescription, '. ') . '. Page ' . request()->integer('page') . '.';
     }
     
     // Clean Tagify JSON if present
@@ -32,6 +39,8 @@
         $titleParts = [];
         if (request()->filled('search')) {
             $titleParts[] = __('Search results for: ') . request()->input('search');
+        } elseif (request()->filled('tag')) {
+            $titleParts[] = __('Products tagged') . ' ' . request()->input('tag');
         } elseif (isset($childcategory) && $childcategory) {
             $titleParts[] = $childcategory->name;
         } elseif (isset($subcategory) && $subcategory) {
