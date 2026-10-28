@@ -505,7 +505,7 @@
                                 <img class="lazy" data-src="{{ asset('storage/images/'.$service->photo) }}" alt="Shipping">
                                 <div class="content">
                                     <h6 class="mb-2">{{ $service->title }}</h6>
-                                    <p class="text-sm text-muted mb-0">{{ $service->details }}</p>
+                                    <p class="text-sm text-muted mb-0">{{ \App\Support\StorefrontCopy::serviceDetails($service->details) }}</p>
                                 </div>
                             </div>
                         </div>

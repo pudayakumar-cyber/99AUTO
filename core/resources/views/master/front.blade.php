@@ -2482,7 +2482,7 @@ body_theme4 @endif
                 <div class="col-lg-4 col-sm-6">
                     <!-- Customer Info-->
                     <div class="widget widget-links widget-light-skin">
-                        <h3 class="widget-title">{{ __('Usefull Links') }}</h3>
+                        <h3 class="widget-title">{{ \App\Support\StorefrontCopy::usefulLinksLabel(__('Usefull Links')) }}</h3>
                           
                         <ul>
                             <li>
