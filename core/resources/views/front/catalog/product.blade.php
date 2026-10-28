@@ -537,7 +537,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         }
                         $paHighlightIcons = ['fa-gauge-high', 'fa-road', 'fa-gears', 'fa-clipboard-check', 'fa-spray-can', 'fa-car-side'];
 
-                        $rawDetailsFull = html_entity_decode($item->details ?? '', ENT_QUOTES, 'UTF-8');
+                        $rawDetailsFull = \App\Support\ProductDetailHtml::withoutLegacyManufacturerImages(
+                            html_entity_decode($item->details ?? '', ENT_QUOTES, 'UTF-8')
+                        );
                         $fitmentHtml = '';
                         $overviewHtml = $rawDetailsFull;
                         if (preg_match('/<table[^>]*class="[^"]*\bpa-fitment-table\b[^"]*"[^>]*>[\s\S]*?<\/table>/i', $rawDetailsFull, $ftMatch)) {
