@@ -26,9 +26,11 @@
     <div class="container">
         <div class="row justify-content-center pt-5">
             <div class="col-lg-8">
+                <h1 class="h4 mb-4 text-center">{{ __('Track your order') }}</h1>
                 <div class="row">
                     <div class="col-sm-9">
                         <div class="input-group">
+                            <label class="sr-only" for="order_number">{{ __('Order Number') }}</label>
                             <input class="form-control" type="text" id="order_number" name="order_number" placeholder="{{ __('Order Number') }}">
                             <span class="input-group-addon"><i class="icon-map-pin"></i></span>
                         </div>

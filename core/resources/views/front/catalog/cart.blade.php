@@ -23,6 +23,10 @@
     </div>
   </div>
 
+  <div class="container">
+    <h1 class="h4 mb-2">{{ __('Shopping Cart') }}</h1>
+  </div>
+
   @if(Session::has('cart') && count(Session::get('cart')) > 0)
   <div class="container  padding-bottom-3x mb-1">
 
