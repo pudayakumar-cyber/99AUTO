@@ -3259,7 +3259,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const hintEl = document.getElementById('vehiclePickerHint');
     const form = document.getElementById('header_search_form');
     const ymmMsg = @json(__('Please select Year, Make, and Model.'));
-    const shouldAutoPrompt = @json($shouldAutoPromptVehicle);
+    // Temporarily disable the automatic vehicle picker popup.
+    // const shouldAutoPrompt = @json($shouldAutoPromptVehicle);
+    const shouldAutoPrompt = false;
     const promptSessionKey = 'vehicle_picker_prompted';
 
     if (!toggleBtn || !backdrop) return;
