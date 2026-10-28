@@ -77,6 +77,7 @@
         $facebookPixelMarkup = $verification['sources']['facebook_pixel'];
         $shouldAutoPromptVehicle = in_array($routeName, ['front.index', 'front.catalog', 'front.product'], true);
         $googleSiteVerification = $verification['token'];
+        $generatedTitleSuffix = $routeName === 'front.catalog' ? '99 Auto Parts' : $setting->title;
     @endphp
 
     @if ($activePageSeo)
@@ -86,7 +87,7 @@
     @elseif ($routeName === 'front.product')
         <title>@yield('title')</title>
     @else
-        <title>@yield('title') - {{ $setting->title }}</title>
+        <title>@yield('title') - {{ $generatedTitleSuffix }}</title>
     @endif
 
     <link rel="canonical" href="{{ $routeName === 'front.product' && isset($item)
