@@ -2375,7 +2375,8 @@ body_theme4 @endif
     </main>
 
     <!--    announcement banner section start   -->
-    <a class="announcement-banner" href="#announcement-modal"></a>
+    <a class="announcement-banner" href="#announcement-modal"
+        aria-label="{{ $setting->announcement_title ?: __('View announcement') }}"></a>
     <div id="announcement-modal" class="mfp-hide white-popup">
         @php
             $announceWidth = 400;

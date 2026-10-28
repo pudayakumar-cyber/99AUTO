@@ -25,6 +25,12 @@
     $productShareUrl = request()->fullUrl();
     $encodedProductShareUrl = rawurlencode($productShareUrl);
     $encodedProductShareTitle = rawurlencode($displayProductName);
+    $breadcrumbCategory = $item->category;
+    $breadcrumbSubcategory = $item->subcategory;
+    $breadcrumbChildcategory = $item->childcategory;
+    $hasBreadcrumbCategory = $breadcrumbCategory && filled($breadcrumbCategory->name) && filled($breadcrumbCategory->slug);
+    $hasBreadcrumbSubcategory = $breadcrumbSubcategory && filled($breadcrumbSubcategory->name) && filled($breadcrumbSubcategory->slug);
+    $hasBreadcrumbChildcategory = $breadcrumbChildcategory && filled($breadcrumbChildcategory->name) && filled($breadcrumbChildcategory->slug);
 @endphp
 
 
@@ -214,16 +220,6 @@
         }
     </style>
 @endsection
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.ewa-rteLine').forEach(function (el) {
-        if (!el.textContent.trim() && el.children.length === 0) {
-            el.style.display = 'none';
-        }
-    });
-});
-</script>
 
 @section('content')
     <div class="page-title">
@@ -415,20 +411,21 @@ document.addEventListener('DOMContentLoaded', function () {
                                     </div>
                                 @endif
 
-                                <div class="pt-1 mb-1"><span class="text-medium">{{ __('Categories') }}:</span>
-                                    <a
-                                        href="{{ route('front.catalog') . '?category=' . $item->category->slug }}">{{ $item->category->name }}</a>
-                                    @if ($item->subcategory->name)
-                                        /
-                                    @endif
-                                    <a
-                                        href="{{ route('front.catalog') . '?subcategory=' . $item->subcategory->slug }}">{{ $item->subcategory->name }}</a>
-                                    @if ($item->childcategory->name)
-                                        /
-                                    @endif
-                                    <a
-                                        href="{{ route('front.catalog') . '?childcategory=' . $item->childcategory->slug }}">{{ $item->childcategory->name }}</a>
-                                </div>
+                                @if ($hasBreadcrumbCategory || $hasBreadcrumbSubcategory || $hasBreadcrumbChildcategory)
+                                    <div class="pt-1 mb-1"><span class="text-medium">{{ __('Categories') }}:</span>
+                                        @if ($hasBreadcrumbCategory)
+                                            <a href="{{ route('front.catalog') . '?category=' . $breadcrumbCategory->slug }}">{{ $breadcrumbCategory->name }}</a>
+                                        @endif
+                                        @if ($hasBreadcrumbSubcategory)
+                                            @if ($hasBreadcrumbCategory) / @endif
+                                            <a href="{{ route('front.catalog') . '?subcategory=' . $breadcrumbSubcategory->slug }}">{{ $breadcrumbSubcategory->name }}</a>
+                                        @endif
+                                        @if ($hasBreadcrumbChildcategory)
+                                            @if ($hasBreadcrumbCategory || $hasBreadcrumbSubcategory) / @endif
+                                            <a href="{{ route('front.catalog') . '?childcategory=' . $breadcrumbChildcategory->slug }}">{{ $breadcrumbChildcategory->name }}</a>
+                                        @endif
+                                    </div>
+                                @endif
                                 <div class="pt-1 mb-1"><span class="text-medium">{{ __('Tags') }}:</span>
                                     @if ($item->tags)
                                         @foreach (explode(',', $item->tags) as $tag)
@@ -1236,6 +1233,12 @@ document.addEventListener('DOMContentLoaded', function () {
 @section('script')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.ewa-rteLine').forEach(function (el) {
+        if (!el.textContent.trim() && el.children.length === 0) {
+            el.style.display = 'none';
+        }
+    });
+
     var productPayload = {
         content_type: 'product',
         content_ids: [@json((string)($item->id ?? $item->prod_number ?? ''))],
