@@ -173,6 +173,9 @@
         flex: 0 0 auto;
         margin-top: 0.08rem;
     }
+    #main_div .product-card .js-fitment-status.text-universal-fit {
+        color: #c25b00 !important;
+    }
     @media (max-width: 575.98px) {
         #main_div .product-card.product-list {
             grid-template-columns: 6.75rem minmax(0, 1fr);

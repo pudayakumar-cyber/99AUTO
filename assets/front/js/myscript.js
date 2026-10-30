@@ -759,8 +759,8 @@ $(function ($) {
                     return;
                 }
                 if (card.getAttribute('data-universal-fit') === '1') {
-                    statusEl.classList.remove('d-none', 'text-success', 'text-danger');
-                    statusEl.classList.add('text-muted');
+                    statusEl.classList.remove('d-none', 'text-success', 'text-danger', 'text-muted');
+                    statusEl.classList.add('text-universal-fit');
                     statusEl.innerHTML = '<i class="fas fa-info-circle"></i> '
                         + '<span><strong>Universal Fit</strong><br>Check Vehicle Owner&#39;s Manual.</span>';
                     return;
@@ -775,7 +775,7 @@ $(function ($) {
                     rows = [];
                 }
                 var matched = fitsVehicle(rows, selectedVehicle);
-                statusEl.classList.remove('d-none', 'text-success', 'text-danger', 'text-muted');
+                statusEl.classList.remove('d-none', 'text-success', 'text-danger', 'text-muted', 'text-universal-fit');
                 statusEl.classList.add(matched ? 'text-success' : 'text-danger');
                 statusEl.innerHTML = '<i class="fas ' + (matched ? 'fa-check-circle' : 'fa-times-circle') + '"></i> '
                     + (matched ? fitsText : notFitsText) + ' ' + vehicleLabel;

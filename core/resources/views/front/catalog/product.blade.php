@@ -118,9 +118,9 @@
             color: #1f7a34;
         }
         .pa-fitment-status.is-universal {
-            border-color: #cfd4da;
-            background: #f8f9fa;
-            color: #343a40;
+            border-color: #f0a45d;
+            background: #fff7ed;
+            color: #c25b00;
         }
         .pa-fitment-status-top {
             margin: 0.35rem 0 0.85rem;

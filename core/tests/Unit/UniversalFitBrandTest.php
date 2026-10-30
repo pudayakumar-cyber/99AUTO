@@ -50,6 +50,8 @@ class UniversalFitBrandTest extends TestCase
         $this->assertStringContainsString("Check Vehicle Owner's Manual.", $product);
         $this->assertStringContainsString('Universal Fit', $catalogScript);
         $this->assertStringContainsString('data-universal-fit', $catalogScript);
+        $this->assertStringContainsString('text-universal-fit', $catalogScript);
+        $this->assertStringContainsString('#c25b00', $product);
     }
 
     public function test_vehicle_search_includes_universal_fit_items_in_catalog_and_suggestions(): void
