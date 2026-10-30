@@ -18,6 +18,7 @@ use App\Models\Brand;
 use App\Models\ChieldCategory;
 use App\Models\Setting;
 use App\Models\Subcategory;
+use App\Support\UniversalFitBrand;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -142,6 +143,7 @@ class CatalogController extends Controller
 
         if ($year || $make || $model) {
             $matchedFitmentIds = $this->getFitmentMatchedItemIds($itemsQuery, $request, $year, $make, $model);
+            $matchedFitmentIds = $this->includeUniversalFitItemIds($itemsQuery, $matchedFitmentIds);
 
             $items = empty($matchedFitmentIds)
                 ? $itemsQuery->whereRaw('1 = 0')->paginate($perPage)->appends($request->query())
@@ -318,6 +320,7 @@ class CatalogController extends Controller
 
         if ($year || $make || $model) {
             $matchedFitmentIds = $this->getFitmentMatchedItemIds($itemsQuery, $request, $year, $make, $model);
+            $matchedFitmentIds = $this->includeUniversalFitItemIds($itemsQuery, $matchedFitmentIds);
             $items = empty($matchedFitmentIds)
                 ? collect()
                 : (clone $itemsQuery)->whereIn('id', $matchedFitmentIds)->take(30)->get()->take(10);
@@ -620,6 +623,26 @@ class CatalogController extends Controller
                 $model
             )->pluck('id')->all();
         });
+    }
+
+    private function includeUniversalFitItemIds($itemsQuery, array $matchedFitmentIds): array
+    {
+        $brandIds = Brand::query()
+            ->whereIn('name', UniversalFitBrand::names())
+            ->pluck('id');
+
+        if ($brandIds->isEmpty()) {
+            return $matchedFitmentIds;
+        }
+
+        $universalItemsQuery = clone $itemsQuery;
+        $universalItemsQuery->setEagerLoads([]);
+        $universalItemsQuery->getQuery()->orders = null;
+
+        return array_values(array_unique(array_merge(
+            $matchedFitmentIds,
+            $universalItemsQuery->whereIn('brand_id', $brandIds)->pluck('id')->all()
+        )));
     }
 
     private function getIndexedFitmentMatchedItemIds($itemsQuery, $year, $make, $model): ?array
