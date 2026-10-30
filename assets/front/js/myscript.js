@@ -745,11 +745,10 @@ $(function ($) {
                 selectedVehicle = null;
             }
 
-            if (!hasVehicle(selectedVehicle)) {
-                return;
-            }
-
-            var vehicleLabel = [selectedVehicle.year, selectedVehicle.make, selectedVehicle.model].join(' ');
+            var hasSelectedVehicle = hasVehicle(selectedVehicle);
+            var vehicleLabel = hasSelectedVehicle
+                ? [selectedVehicle.year, selectedVehicle.make, selectedVehicle.model].join(' ')
+                : '';
             var fitsText = 'Fits';
             var notFitsText = 'Does not fit';
 
@@ -759,6 +758,16 @@ $(function ($) {
                 if (!statusEl) {
                     return;
                 }
+                if (card.getAttribute('data-universal-fit') === '1') {
+                    statusEl.classList.remove('d-none', 'text-success', 'text-danger');
+                    statusEl.classList.add('text-muted');
+                    statusEl.innerHTML = '<i class="fas fa-info-circle"></i> '
+                        + '<span><strong>Universal Fit</strong><br>Check Vehicle Owner&#39;s Manual.</span>';
+                    return;
+                }
+                if (!hasSelectedVehicle) {
+                    return;
+                }
                 var rows = [];
                 try {
                     rows = JSON.parse(card.getAttribute('data-fitment-rows') || '[]');
@@ -766,7 +775,7 @@ $(function ($) {
                     rows = [];
                 }
                 var matched = fitsVehicle(rows, selectedVehicle);
-                statusEl.classList.remove('d-none', 'text-success', 'text-danger');
+                statusEl.classList.remove('d-none', 'text-success', 'text-danger', 'text-muted');
                 statusEl.classList.add(matched ? 'text-success' : 'text-danger');
                 statusEl.innerHTML = '<i class="fas ' + (matched ? 'fa-check-circle' : 'fa-times-circle') + '"></i> '
                     + (matched ? fitsText : notFitsText) + ' ' + vehicleLabel;
