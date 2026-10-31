@@ -7,6 +7,7 @@
         data-item-category2="{{ optional($item->subcategory)->name }}"
         data-item-category3="{{ optional($item->childcategory)->name }}"
         data-item-price="{{ (float) ($item->discount_price ?? $item->previous_price ?? 0) }}"
+        data-universal-fit="{{ $item->isUniversalFit() ? '1' : '0' }}"
         data-fitment-rows='@json($extractItemFitmentRows($item))'>
         @if ($item->is_stock())
             <div class="product-badge

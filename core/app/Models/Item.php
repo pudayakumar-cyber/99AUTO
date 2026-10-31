@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Wishlist;
+use App\Support\UniversalFitBrand;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
@@ -10,6 +11,11 @@ class Item extends Model
 {
 
     protected $fillable = ['prod_number','moog','product_part_number','category_id','subcategory_id','childcategory_id','brand_id','name','slug','sku','tags','video','sort_details','specification_name','specification_description','is_specification','details','photo','thumbnail','discount_price','previous_price','stock','meta_keywords','meta_description','status','is_type','tax_id','date','item_type','file','link','file_type','license_name','license_key','affiliate_link',"seller_id"];
+
+    public function isUniversalFit(): bool
+    {
+        return UniversalFitBrand::matches(optional($this->brand)->name);
+    }
 
     public function getDisplayNameAttribute(): string
     {

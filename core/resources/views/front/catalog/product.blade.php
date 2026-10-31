@@ -31,6 +31,7 @@
     $hasBreadcrumbCategory = $breadcrumbCategory && filled($breadcrumbCategory->name) && filled($breadcrumbCategory->slug);
     $hasBreadcrumbSubcategory = $breadcrumbSubcategory && filled($breadcrumbSubcategory->name) && filled($breadcrumbSubcategory->slug);
     $hasBreadcrumbChildcategory = $breadcrumbChildcategory && filled($breadcrumbChildcategory->name) && filled($breadcrumbChildcategory->slug);
+    $isUniversalFit = $item->isUniversalFit();
 @endphp
 
 
@@ -115,6 +116,11 @@
             border-color: #b8ddc0;
             background: #f5fff7;
             color: #1f7a34;
+        }
+        .pa-fitment-status.is-universal {
+            border-color: #f0a45d;
+            background: #fff7ed;
+            color: #c25b00;
         }
         .pa-fitment-status-top {
             margin: 0.35rem 0 0.85rem;
@@ -319,7 +325,9 @@
                                 <span class="text-danger  d-inline-block">{{ __('Out of stock') }}</span>
                             @endif
                         </div>
-                        <div id="product_fitment_status_top" class="pa-fitment-status pa-fitment-status-top" role="alert"></div>
+                        <div id="product_fitment_status_top" class="pa-fitment-status pa-fitment-status-top{{ $isUniversalFit ? ' is-universal' : '' }}" role="status" @if($isUniversalFit) style="display: block" @endif>
+                            @if($isUniversalFit)<i class="fas fa-info-circle" aria-hidden="true"></i><strong>{{ __('Universal Fit') }}</strong><br>{{ __("Check Vehicle Owner's Manual.") }}@endif
+                        </div>
 
 
                         @if ($item->is_type == 'flash_deal')
@@ -513,7 +521,9 @@
                                     tabindex="-1" aria-disabled="true">{{ __('Shop with this vehicle') }}</a>
                                 <span id="product_ymm_hint" class="small text-muted"></span>
                             </div>
-                            <div id="product_fitment_status" class="pa-fitment-status" role="alert"></div>
+                            <div id="product_fitment_status" class="pa-fitment-status{{ $isUniversalFit ? ' is-universal' : '' }}" role="status" @if($isUniversalFit) style="display: block" @endif>
+                                @if($isUniversalFit)<i class="fas fa-info-circle" aria-hidden="true"></i><strong>{{ __('Universal Fit') }}</strong><br>{{ __("Check Vehicle Owner's Manual.") }}@endif
+                            </div>
                         </div>
                     </div>
 
@@ -921,6 +931,7 @@
             var hint = document.getElementById('product_ymm_hint');
             var fitmentStatus = document.getElementById('product_fitment_status');
             var fitmentStatusTop = document.getElementById('product_fitment_status_top');
+            var isUniversalFit = @json($isUniversalFit);
             if (!py || !pm || !pmodel || !shopLink) return;
 
             var yearsUrl = @json(route('vehicle.years'));
@@ -1007,6 +1018,23 @@
 
             function setFitmentStatus(isMatch, label, hasSelection) {
                 if (!fitmentStatus) return;
+                if (isUniversalFit) {
+                    var universalText = '<i class="fas fa-info-circle" aria-hidden="true"></i>'
+                        + '<strong>' + @json(__('Universal Fit')) + '</strong><br>'
+                        + @json(__("Check Vehicle Owner's Manual."));
+                    currentFitMatched = true;
+                    fitmentStatus.innerHTML = universalText;
+                    fitmentStatus.classList.remove('is-fit');
+                    fitmentStatus.classList.add('is-universal');
+                    fitmentStatus.style.display = 'block';
+                    if (fitmentStatusTop) {
+                        fitmentStatusTop.innerHTML = universalText;
+                        fitmentStatusTop.classList.remove('is-fit');
+                        fitmentStatusTop.classList.add('is-universal');
+                        fitmentStatusTop.style.display = 'block';
+                    }
+                    return;
+                }
                 if (!hasSelection) {
                     currentFitMatched = null;
                     fitmentStatus.style.display = 'none';
