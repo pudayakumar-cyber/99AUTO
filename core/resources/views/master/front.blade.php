@@ -2603,7 +2603,13 @@ body_theme4 @endif
     <script type="text/javascript" src="{{ asset('assets/front/js/scripts.min.js') }}" defer></script>
     <script type="text/javascript" src="{{ asset('assets/front/js/lazy.min.js') }}" defer></script>
     <script type="text/javascript" src="{{ asset('assets/front/js/lazy.plugin.js') }}" defer></script>
-    <script type="text/javascript" src="{{ asset('assets/front/js/myscript.js') }}" defer></script>
+    @php
+        $storefrontScriptPath = base_path('../assets/front/js/myscript.js');
+        $storefrontScriptVersion = is_file($storefrontScriptPath)
+            ? filemtime($storefrontScriptPath)
+            : '1';
+    @endphp
+    <script type="text/javascript" src="{{ asset('assets/front/js/myscript.js') }}?v={{ $storefrontScriptVersion }}" defer></script>
     @yield('script')
 
     <!-- Lazy load tracking scripts (GTM, GA, Facebook Pixel) on first user interaction -->

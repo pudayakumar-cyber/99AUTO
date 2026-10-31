@@ -24,4 +24,15 @@ class VehiclePickerPopupTest extends TestCase
         $this->assertStringContainsString("toggleBtn.addEventListener('click'", $view);
         $this->assertStringContainsString("searchBtn.addEventListener('click'", $view);
     }
+
+    public function test_storefront_script_url_changes_when_the_asset_changes(): void
+    {
+        $view = file_get_contents(__DIR__.'/../../resources/views/master/front.blade.php');
+
+        $this->assertStringContainsString("filemtime(\$storefrontScriptPath)", $view);
+        $this->assertStringContainsString(
+            "myscript.js') }}?v={{ \$storefrontScriptVersion }}",
+            $view
+        );
+    }
 }
