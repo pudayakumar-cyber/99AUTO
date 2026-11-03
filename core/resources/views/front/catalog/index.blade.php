@@ -5,8 +5,10 @@
     $metaKeywords = $setting->meta_keywords;
     $metaDescription = $setting->meta_description;
     
-    if (isset($category) && $category && $category->meta_keywords) {
-        $metaKeywords = $category->meta_keywords;
+    if (isset($category) && $category && ($category->meta_keywords || trim((string) $category->meta_descriptions) !== '')) {
+        if ($category->meta_keywords) {
+            $metaKeywords = $category->meta_keywords;
+        }
         $metaDescription = $category->meta_descriptions;
     } elseif (isset($subcategory) && $subcategory && $subcategory->category && $subcategory->category->meta_keywords) {
         $metaKeywords = $subcategory->category->meta_keywords;
@@ -22,7 +24,23 @@
         $metaDescription = "Browse 99AutoParts products tagged {$tagLabel}. Check current pricing and availability for auto parts shipped across Canada.";
     }
 
-    if (request()->integer('page') > 1) {
+    if (isset($category) && $category && $category->meta_keywords
+        && trim((string) $category->meta_descriptions) === '') {
+        if (isset($brand) && $brand) {
+            $metaDescription = $brand->meta_descriptions ?: "Shop premium {$brand->name} replacement auto parts online at 99AutoParts Canada. Enjoy fast province-wide shipping and discount prices on all {$brand->name} parts.";
+        } elseif (request()->filled('tag')) {
+            $tagLabel = trim((string) request()->input('tag'));
+            $metaDescription = "Browse 99AutoParts products tagged {$tagLabel}. Check current pricing and availability for auto parts shipped across Canada.";
+        }
+    }
+
+    if (isset($category) && $category
+        && ! \App\Support\CatalogUrl::hasContentFilters(array_diff_key(request()->query(), ['category' => true]))
+        && trim((string) $category->meta_descriptions) === '') {
+        $metaDescription = null;
+    }
+
+    if (request()->integer('page') > 1 && trim((string) $metaDescription) !== '') {
         $metaDescription = rtrim((string) $metaDescription, '. ') . '. Page ' . request()->integer('page') . '.';
     }
     
@@ -32,7 +50,9 @@
     }
 @endphp
 <meta name="keywords" content="{{ $metaKeywords }}">
+@if (trim((string) $metaDescription) !== '')
 <meta name="description" content="{{ $metaDescription }}">
+@endif
 @endsection
 @section('title')
     @php
