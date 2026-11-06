@@ -318,7 +318,7 @@
     <script type="text/javascript" src="{{ asset('assets/back/js/plugin/bootstrap-notify/bootstrap-notify.min.js') }}">
     </script>
     <script type="text/javascript" src="{{ asset('assets/front/js/plugin.js') }}"></script>
-    <script type="text/javascript" src="{{ asset('assets/front/js/myscript.js') }}"></script>
+    <script type="text/javascript" src="{{ asset('assets/front/js/myscript.33ddb7b9b380.min.js') }}"></script>
 
 </body>
 

@@ -2603,7 +2603,7 @@ body_theme4 @endif
     <script type="text/javascript" src="{{ asset('assets/front/js/scripts.min.js') }}" defer></script>
     <script type="text/javascript" src="{{ asset('assets/front/js/lazy.min.js') }}" defer></script>
     <script type="text/javascript" src="{{ asset('assets/front/js/lazy.plugin.js') }}" defer></script>
-    <script type="text/javascript" src="{{ asset('assets/front/js/myscript.js') }}" defer></script>
+    <script type="text/javascript" src="{{ asset('assets/front/js/myscript.33ddb7b9b380.min.js') }}" defer></script>
     @yield('script')
 
     <!-- Lazy load tracking scripts (GTM, GA, Facebook Pixel) on first user interaction -->
