@@ -12,7 +12,7 @@
     <title>{{ $setting->title }}</title>
     <link rel="stylesheet" media="screen" href="{{ asset('assets/front/css/vendor.min.css') }}">
     <!-- Main Template Styles-->
-    <link id="mainStyles" rel="stylesheet" media="screen" href="{{ asset('assets/front/css/styles.min.css') }}">
+    <link id="mainStyles" rel="stylesheet" media="screen" href="{{ asset('assets/front/css/styles.1d34856a32eb.min.css') }}">
     <!-- Modernizr-->
     @yield('css')
 

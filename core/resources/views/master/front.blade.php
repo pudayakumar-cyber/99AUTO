@@ -206,16 +206,16 @@
 
     <!-- Preload critical stylesheets -->
     <link rel="preload" href="{{ asset('assets/front/css/plugins.min.css') }}" as="style">
-    <link rel="preload" href="{{ asset('assets/front/css/styles.min.css') }}" as="style">
-    <link rel="preload" href="{{ asset('assets/front/css/responsive.css') }}" as="style">
+    <link rel="preload" href="{{ asset('assets/front/css/styles.1d34856a32eb.min.css') }}" as="style">
+    <link rel="preload" href="{{ asset('assets/front/css/responsive.a32d676b9566.min.css') }}" as="style">
 
     <!-- Vendor Styles including: Bootstrap, Font Icons, Plugins, etc.-->
     <link rel="stylesheet" href="{{ asset('assets/front/css/plugins.min.css') }}">
     @yield('styleplugins')
 
-    <link id="mainStyles" rel="stylesheet" href="{{ asset('assets/front/css/styles.min.css') }}">
+    <link id="mainStyles" rel="stylesheet" href="{{ asset('assets/front/css/styles.1d34856a32eb.min.css') }}">
 
-    <link id="mainStyles" rel="stylesheet" href="{{ asset('assets/front/css/responsive.css') }}">
+    <link id="mainStyles" rel="stylesheet" href="{{ asset('assets/front/css/responsive.a32d676b9566.min.css') }}">
 
     <!-- Non-critical Stylesheet Loaded Asynchronously -->
     <link rel="stylesheet" href="{{ asset('assets/front/css/paymentfont.min.css') }}" media="print" onload="this.media='all'; this.onload=null;">
