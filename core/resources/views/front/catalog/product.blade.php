@@ -414,8 +414,12 @@
                                                 alt="{{ $item->brand->name }}" loading="lazy"
                                                 onerror="this.hidden=true;">
                                         @endif
-                                        <a
-                                            href="{{ route('front.catalog') . '?brand=' . $item->brand->slug }}">{{ $item->brand->name }}</a>
+                                        @if (filled($item->brand->name) && filled($item->brand->slug))
+                                            <a
+                                                href="{{ route('front.catalog') . '?brand=' . $item->brand->slug }}">{{ $item->brand->name }}</a>
+                                        @elseif (filled($item->brand->name))
+                                            <span>{{ $item->brand->name }}</span>
+                                        @endif
                                     </div>
                                 @endif
 
@@ -896,8 +900,12 @@
                                         </div>
                                     </div>
                                     <div class="product-card-body">
-                                        <div class="product-category"><a
-                                                href="{{ route('front.catalog') . '?category=' . $related->category->slug }}">{{ $related->category->name }}</a>
+                                        <div class="product-category">
+                                            @if (filled($related->category->name) && filled($related->category->slug))
+                                                <a href="{{ route('front.catalog') . '?category=' . $related->category->slug }}">{{ $related->category->name }}</a>
+                                            @elseif (filled($related->category->name))
+                                                <span>{{ $related->category->name }}</span>
+                                            @endif
                                         </div>
                                             <h3 class="product-title"><a
                                                 href="{{ \App\Support\ProductUrl::for($related) }}"

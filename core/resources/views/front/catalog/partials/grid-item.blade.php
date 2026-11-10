@@ -41,7 +41,11 @@
         </div>
         <div class="product-card-body">
             <div class="product-category">
-                <a href="{{ route('front.catalog') . '?category=' . $item->category->slug }}">{{ $item->category->name }}</a>
+                @if (filled($item->category->name) && filled($item->category->slug))
+                    <a href="{{ route('front.catalog') . '?category=' . $item->category->slug }}">{{ $item->category->name }}</a>
+                @elseif (filled($item->category->name))
+                    <span>{{ $item->category->name }}</span>
+                @endif
             </div>
             <h3 class="product-title"><a href="{{ \App\Support\ProductUrl::for($item) }}"
                 title="{{ $item->display_name }}">

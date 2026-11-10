@@ -37,7 +37,13 @@
         <div class="product-card-inner">
             <div class="product-card-body">
                 <div class="product-list-meta">
-                    <div class="product-category"><a href="{{ route('front.catalog') . '?category=' . $item->category->slug }}">{{ $item->category->name }}</a></div>
+                    <div class="product-category">
+                        @if (filled($item->category->name) && filled($item->category->slug))
+                            <a href="{{ route('front.catalog') . '?category=' . $item->category->slug }}">{{ $item->category->name }}</a>
+                        @elseif (filled($item->category->name))
+                            <span>{{ $item->category->name }}</span>
+                        @endif
+                    </div>
                     @if(optional($item->brand)->name)
                         <span class="product-list-brand">{{ optional($item->brand)->name }}</span>
                     @endif
