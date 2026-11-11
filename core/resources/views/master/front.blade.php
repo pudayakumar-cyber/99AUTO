@@ -2600,9 +2600,9 @@ body_theme4 @endif
     <!-- JavaScript (jQuery) libraries, plugins and custom scripts-->
     <script type="text/javascript" src="{{ asset('assets/front/js/plugins.min.js') }}" defer></script>
     <script type="text/javascript" src="{{ asset('assets/back/js/plugin/bootstrap-notify/bootstrap-notify.min.js') }}" defer></script>
-    <script type="text/javascript" src="{{ asset('assets/front/js/scripts.min.js') }}" defer></script>
-    <script type="text/javascript" src="{{ asset('assets/front/js/lazy.min.js') }}" defer></script>
-    <script type="text/javascript" src="{{ asset('assets/front/js/lazy.plugin.js') }}" defer></script>
+    <script type="text/javascript" src="{{ asset('assets/front/js/scripts.890c32e6fc2a.min.js') }}" defer></script>
+    <script type="text/javascript" src="{{ asset('assets/front/js/lazy.d58c0696c971.min.js') }}" defer></script>
+    <script type="text/javascript" src="{{ asset('assets/front/js/lazy.plugin.558bb3cf1ce4.min.js') }}" defer></script>
     <script type="text/javascript" src="{{ asset('assets/front/js/myscript.33ddb7b9b380.min.js') }}" defer></script>
     @yield('script')
 
