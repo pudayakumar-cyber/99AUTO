@@ -36,6 +36,40 @@ class SeoTemplateStructureTest extends TestCase
         $this->assertStringNotContainsString("'?category=' . \$item->category->slug", $template);
     }
 
+    public function test_product_brand_link_requires_a_named_brand_with_a_slug(): void
+    {
+        $template = $this->view('front/catalog/product.blade.php');
+
+        $this->assertStringContainsString('@if ($item->brand_id)', $template);
+        $this->assertStringContainsString(
+            '@if (filled($item->brand->name) && filled($item->brand->slug))',
+            $template
+        );
+        $this->assertStringContainsString("'?brand=' . \$item->brand->slug", $template);
+        $this->assertStringContainsString(
+            '@elseif (filled($item->brand->name))',
+            $template
+        );
+        $this->assertStringContainsString('<span>{{ $item->brand->name }}</span>', $template);
+    }
+
+    public function test_catalog_and_related_product_category_links_require_a_name_and_slug(): void
+    {
+        foreach ([
+            'front/catalog/partials/grid-item.blade.php' => '$item',
+            'front/catalog/partials/list-item.blade.php' => '$item',
+            'front/catalog/product.blade.php' => '$related',
+        ] as $path => $product) {
+            $template = $this->view($path);
+            $guard = '@if (filled('.$product.'->category->name) && filled('.$product.'->category->slug))';
+
+            $this->assertStringContainsString($guard, $template, $path);
+            $this->assertStringContainsString("'?category=' . ".$product.'->category->slug', $template, $path);
+            $this->assertStringContainsString('@elseif (filled('.$product.'->category->name))', $template, $path);
+            $this->assertStringContainsString('<span>{{ '.$product.'->category->name }}</span>', $template, $path);
+        }
+    }
+
     public function test_storefront_controls_and_pages_have_accessible_names_and_headings(): void
     {
         $layout = $this->view('master/front.blade.php');
