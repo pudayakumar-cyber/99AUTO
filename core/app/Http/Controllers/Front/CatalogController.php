@@ -627,11 +627,29 @@ class CatalogController extends Controller
 
     private function includeUniversalFitItemIds($itemsQuery, array $matchedFitmentIds): array
     {
-        $brandIds = Brand::query()
-            ->whereIn('name', UniversalFitBrand::names())
-            ->pluck('id');
+        // Cached/indexed or details-derived IDs can be stale: check the current item policy
+        // before either vehicle-filtered caller uses them. Keep only existing scoped items.
+        if ($matchedFitmentIds) {
+            $matchedItemsQuery = clone $itemsQuery;
+            $matchedItemsQuery->setEagerLoads([]);
+            $matchedItemsQuery->getQuery()->orders = null;
+            $matchedFitmentIds = $matchedItemsQuery->with('brand')
+                ->whereIn('id', $matchedFitmentIds)
+                ->get(['id', 'brand_id', 'sku'])
+                ->reject(fn (Item $item): bool => $item->requiresApplicationCheck())
+                ->pluck('id')->all();
+        }
 
-        if ($brandIds->isEmpty()) {
+        $verifiedSkus = UniversalFitBrand::verifiedSkus();
+        if (empty($verifiedSkus)) {
+            return $matchedFitmentIds;
+        }
+
+        $brandNamesById = Brand::query()
+            ->pluck('name', 'id')
+            ->filter(fn (?string $name): bool => UniversalFitBrand::matches($name));
+
+        if ($brandNamesById->isEmpty()) {
             return $matchedFitmentIds;
         }
 
@@ -641,7 +659,13 @@ class CatalogController extends Controller
 
         return array_values(array_unique(array_merge(
             $matchedFitmentIds,
-            $universalItemsQuery->whereIn('brand_id', $brandIds)->pluck('id')->all()
+            $universalItemsQuery->whereIn('brand_id', $brandNamesById->keys())
+                ->whereIn(DB::raw('TRIM(sku)'), $verifiedSkus)
+                ->get(['id', 'brand_id', 'sku'])
+                ->filter(fn (Item $item): bool => UniversalFitBrand::isVerifiedProduct(
+                    $brandNamesById->get($item->brand_id), $item->sku
+                ))
+                ->pluck('id')->all()
         )));
     }
 

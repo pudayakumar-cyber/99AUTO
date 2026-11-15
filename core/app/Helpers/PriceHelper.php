@@ -145,6 +145,25 @@ class PriceHelper
 
     public static function grandCurrencyPrice($item)
     {
+        $curr = self::getActiveCurrency();
+        $setting = self::getSetting();
+        $price = self::testPrice(self::grandConvertedPrice($item));
+        if ($setting->currency_direction == 1) {
+            return $curr->sign . $price;
+        } else {
+            return $price . $curr->sign;
+        }
+    }
+
+    // Numeric counterpart to the initial main_price display, not the cart price.
+    public static function grandCurrencyPriceValue($item): float
+    {
+        $price = self::grandConvertedPrice($item);
+        return self::getSetting()->is_decimal == 1 ? $price : round($price);
+    }
+
+    private static function grandConvertedPrice($item): float
+    {
         $option_price = 0;
         if (count($item->attributes) > 0) {
             foreach ($item->attributes as $attr) {
@@ -156,17 +175,7 @@ class PriceHelper
 
         $curr = self::getActiveCurrency();
         $price = $item->discount_price + $option_price;
-
-        $setting = self::getSetting();
-
-        $price = self::testPrice(round($price * $curr->value, 2));
-
-        if ($setting->currency_direction == 1) {
-            return $curr->sign . $price;
-        } else {
-            return $price . $curr->sign;
-        }
-
+        return round($price * $curr->value, 2);
     }
 
     public static function grandPrice($item)

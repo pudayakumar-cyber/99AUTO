@@ -23,6 +23,13 @@ final class ProductMetaTitle
             $name = 'Auto Part';
         }
 
+        // These brands' listing names carry product type, part and sometimes
+        // package size. The general 60-character cap truncates meaningful facts
+        // and leaves a doubled separator on Lucas titles.
+        if (in_array(mb_strtolower($brand), ['liqui moly', 'lucas oil'], true)) {
+            return preg_replace('/\s+-\s+/u', ' ', self::normalize($item->display_name)).self::SITE_SUFFIX;
+        }
+
         $qualifier = $identifier;
         if ($qualifier !== '' && mb_stripos($name, $qualifier) !== false) {
             $name = self::normalize(str_ireplace($qualifier, ' ', $name));

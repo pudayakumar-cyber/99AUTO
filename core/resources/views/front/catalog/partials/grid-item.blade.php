@@ -8,7 +8,10 @@
         data-item-category3="{{ optional($item->childcategory)->name }}"
         data-item-price="{{ (float) ($item->discount_price ?? $item->previous_price ?? 0) }}"
         data-universal-fit="{{ $item->isUniversalFit() ? '1' : '0' }}"
-        data-fitment-rows='@json($extractItemFitmentRows($item))'>
+        @unless($item->requiresApplicationCheck())
+            data-fitment-rows='@json($extractItemFitmentRows($item))'
+        @endunless
+        >
         @if ($item->is_stock())
             <div class="product-badge
                 @if($item->is_type == 'feature')
@@ -60,7 +63,11 @@
                 @endif
                 {{ PriceHelper::grandCurrencyPrice($item) }}
             </h4>
-            <div class="small mt-1 js-fitment-status d-none" aria-live="polite"></div>
+            @if($item->requiresApplicationCheck())
+                <div class="small mt-1 js-fitment-status text-muted" aria-live="polite"><i class="fas fa-info-circle" aria-hidden="true"></i> {{ __('Check application specifications') }}</div>
+            @else
+                <div class="small mt-1 js-fitment-status d-none" aria-live="polite"></div>
+            @endif
         </div>
     </div>
 </div>

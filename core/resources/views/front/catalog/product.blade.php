@@ -32,6 +32,7 @@
     $hasBreadcrumbSubcategory = $breadcrumbSubcategory && filled($breadcrumbSubcategory->name) && filled($breadcrumbSubcategory->slug);
     $hasBreadcrumbChildcategory = $breadcrumbChildcategory && filled($breadcrumbChildcategory->name) && filled($breadcrumbChildcategory->slug);
     $isUniversalFit = $item->isUniversalFit();
+    $requiresApplicationCheck = $item->requiresApplicationCheck();
 @endphp
 
 
@@ -53,6 +54,19 @@
     <meta property="og:url" content="{{ $productShareUrl }}">
     <meta property="og:type" content="product">
     <meta property="og:site_name" content="{{ $setting->title }}">
+
+    @if (\App\Support\ProductStructuredData::supports($item))
+        @php
+            $productSchema = \App\Support\ProductStructuredData::for(
+                $item,
+                \App\Support\ProductUrl::for($item),
+                \App\Support\StorefrontImage::isSafe($item->photo) ? $primaryProductImageUrl : null,
+                PriceHelper::grandCurrencyPriceValue($item),
+                PriceHelper::setCurrencyName()
+            );
+        @endphp
+        <script type="application/ld+json">{!! json_encode($productSchema, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE) !!}</script>
+    @endif
 
 @endsection
 
@@ -325,8 +339,8 @@
                                 <span class="text-danger  d-inline-block">{{ __('Out of stock') }}</span>
                             @endif
                         </div>
-                        <div id="product_fitment_status_top" class="pa-fitment-status pa-fitment-status-top{{ $isUniversalFit ? ' is-universal' : '' }}" role="status" @if($isUniversalFit) style="display: block" @endif>
-                            @if($isUniversalFit)<i class="fas fa-info-circle" aria-hidden="true"></i><strong>{{ __('Universal Fit') }}</strong><br>{{ __("Check Vehicle Owner's Manual.") }}@endif
+                        <div id="product_fitment_status_top" class="pa-fitment-status pa-fitment-status-top{{ $isUniversalFit ? ' is-universal' : '' }}" role="status" @if($isUniversalFit || $requiresApplicationCheck) style="display: block" @endif>
+                            @if($isUniversalFit)<i class="fas fa-info-circle" aria-hidden="true"></i><strong>{{ __('Universal Fit') }}</strong><br>{{ __("Check Vehicle Owner's Manual.") }}@elseif($requiresApplicationCheck)<i class="fas fa-info-circle" aria-hidden="true"></i><strong>{{ __('Check application specifications') }}</strong><br>{{ __('Confirm the engine, fluid or equipment requirements below before ordering.') }}@endif
                         </div>
 
 
@@ -507,7 +521,7 @@
                         <div class="card-body">
                             <h5 class="h6 mb-2 text-medium">{{ __('Vehicle Fitment') }}</h5>
                             <p class="small text-muted mb-3 mb-md-2">
-                                <i class="fas fa-info-circle me-1"></i>{{ __('Select Year, Make, and Model to match your vehicle when browsing parts.') }}
+                                <i class="fas fa-info-circle me-1"></i>@if($requiresApplicationCheck){{ __('Year, make and model alone cannot confirm compatibility for this product; check its application specifications and the manufacturer instructions.') }}@else{{ __('Select Year, Make, and Model to match your vehicle when browsing parts.') }}@endif
                             </p>
                             <div class="pa-ymm-bar d-flex flex-wrap gap-2 align-items-stretch">
                                 <select id="product_ymm_year" class="form-control form-control-sm flex-grow-1" style="min-width: 8rem;">
@@ -525,8 +539,8 @@
                                     tabindex="-1" aria-disabled="true">{{ __('Shop with this vehicle') }}</a>
                                 <span id="product_ymm_hint" class="small text-muted"></span>
                             </div>
-                            <div id="product_fitment_status" class="pa-fitment-status{{ $isUniversalFit ? ' is-universal' : '' }}" role="status" @if($isUniversalFit) style="display: block" @endif>
-                                @if($isUniversalFit)<i class="fas fa-info-circle" aria-hidden="true"></i><strong>{{ __('Universal Fit') }}</strong><br>{{ __("Check Vehicle Owner's Manual.") }}@endif
+                            <div id="product_fitment_status" class="pa-fitment-status{{ $isUniversalFit ? ' is-universal' : '' }}" role="status" @if($isUniversalFit || $requiresApplicationCheck) style="display: block" @endif>
+                                @if($isUniversalFit)<i class="fas fa-info-circle" aria-hidden="true"></i><strong>{{ __('Universal Fit') }}</strong><br>{{ __("Check Vehicle Owner's Manual.") }}@elseif($requiresApplicationCheck)<i class="fas fa-info-circle" aria-hidden="true"></i><strong>{{ __('Check application specifications') }}</strong><br>{{ __('Confirm the engine, fluid or equipment requirements below before ordering.') }}@endif
                             </div>
                         </div>
                     </div>
@@ -677,7 +691,7 @@
                                     @if ($hasFitmentTable)
                                         <div class="table-responsive">{!! $fitmentHtml !!}</div>
                                     @else
-                                        <p class="text-muted small mb-0">{{ __('No fitting vehicle table is listed for this product. Use the vehicle selector above to check compatibility when browsing.') }}</p>
+                                        <p class="text-muted small mb-0">@if($requiresApplicationCheck){{ __('No verified year/make/model fitment table is available. Compare the product application with your manual and the manufacturer instructions.') }}@else{{ __('No fitting vehicle table is listed for this product. Use the vehicle selector above to check compatibility when browsing.') }}@endif</p>
                                     @endif
                                 </div>
                             </div>
@@ -940,6 +954,7 @@
             var fitmentStatus = document.getElementById('product_fitment_status');
             var fitmentStatusTop = document.getElementById('product_fitment_status_top');
             var isUniversalFit = @json($isUniversalFit);
+            var requiresApplicationCheck = @json($requiresApplicationCheck);
             if (!py || !pm || !pmodel || !shopLink) return;
 
             var yearsUrl = @json(route('vehicle.years'));
@@ -1041,6 +1056,18 @@
                         fitmentStatusTop.classList.add('is-universal');
                         fitmentStatusTop.style.display = 'block';
                     }
+                    return;
+                }
+                if (requiresApplicationCheck) {
+                    var applicationText = '<i class="fas fa-info-circle" aria-hidden="true"></i>'
+                        + '<strong>' + @json(__('Check application specifications')) + '</strong><br>'
+                        + @json(__('Confirm the engine, fluid or equipment requirements below before ordering.'));
+                    currentFitMatched = null;
+                    [fitmentStatus, fitmentStatusTop].filter(Boolean).forEach(function (status) {
+                        status.innerHTML = applicationText;
+                        status.classList.remove('is-fit', 'is-universal');
+                        status.style.display = 'block';
+                    });
                     return;
                 }
                 if (!hasSelection) {

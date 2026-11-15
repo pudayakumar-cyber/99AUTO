@@ -14,7 +14,12 @@ class Item extends Model
 
     public function isUniversalFit(): bool
     {
-        return UniversalFitBrand::matches(optional($this->brand)->name);
+        return UniversalFitBrand::isVerifiedProduct(optional($this->brand)->name, $this->sku);
+    }
+
+    public function requiresApplicationCheck(): bool
+    {
+        return UniversalFitBrand::matches(optional($this->brand)->name) && ! $this->isUniversalFit();
     }
 
     public function getDisplayNameAttribute(): string
