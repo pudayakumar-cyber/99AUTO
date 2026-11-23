@@ -78,6 +78,8 @@ Route::group(['middleware' => ['adminlocalize', 'demo']], function () {
             Route::get('get/childcategory', 'Back\ItemController@getChildCategory')->name('back.get.childcategory');
             Route::get('stock/out/product', 'Back\ItemController@stockOut')->name('back.item.stock.out');
             Route::resource('item', 'Back\ItemController', ['as' => 'back', 'except' => 'show', 'getsubCategory']);
+            Route::get('item/{item}/metadata', 'Back\ProductMetadataController@edit')->name('back.item.metadata.edit');
+            Route::post('item/{item}/metadata', 'Back\ProductMetadataController@update')->name('back.item.metadata.update');
             Route::get('item/highlight/{item}', 'Back\ItemController@highlight')->name('back.item.highlight');
             Route::post('item/highlight/update/{item}', 'Back\ItemController@highlight_update')->name('back.item.highlight.update');
             Route::get('item/galleries/{item}', 'Back\ItemController@galleries')->name('back.item.gallery');
