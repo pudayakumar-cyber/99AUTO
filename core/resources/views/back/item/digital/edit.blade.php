@@ -9,7 +9,10 @@
     <div class="card-body">
         <div class="d-sm-flex align-items-center justify-content-between">
             <h3 class="mb-0 bc-title"><b>{{ __('Update Digital Product') }}</b> </h3>
-            <a class="btn btn-primary   btn-sm" href="{{route('back.item.index')}}"><i class="fas fa-chevron-left"></i> {{ __('Back') }}</a>
+            <div class="d-flex align-items-center">
+                <a class="btn btn-info btn-sm mr-2" href="{{ route('back.item.metadata.edit', ['item' => $item->id]) }}">{{ __('Edit SEO Metadata') }}</a>
+                <a class="btn btn-primary btn-sm" href="{{route('back.item.index')}}"><i class="fas fa-chevron-left"></i> {{ __('Back') }}</a>
+            </div>
         </div>
     </div>
 </div>

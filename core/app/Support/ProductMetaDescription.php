@@ -9,6 +9,11 @@ final class ProductMetaDescription
 {
     public static function for(Item $item): string
     {
+        $custom = trim((string) $item->seo_meta_description);
+        if ($custom !== '') {
+            return $custom;
+        }
+
         $name = trim((string) $item->display_name);
         $details = trim(strip_tags((string) (
             $item->meta_description ?: ($item->sort_details ?: $item->details)

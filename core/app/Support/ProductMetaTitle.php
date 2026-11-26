@@ -13,6 +13,11 @@ final class ProductMetaTitle
 
     public static function for(Item $item): string
     {
+        $custom = trim((string) $item->seo_title);
+        if ($custom !== '') {
+            return $custom;
+        }
+
         $name = self::normalize((string) $item->name);
         $brand = self::normalize((string) optional($item->brand)->name);
         $identifier = self::normalize((string) (
